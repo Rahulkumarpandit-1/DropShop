@@ -13,6 +13,7 @@ function Products() {
   const [priceRange, setPriceRange] = useState({ min: 0, max: Infinity });
   const [wishlist, setWishlist] = useState([]);
   const [showFiltersDrawer, setShowFiltersDrawer] = useState(false);
+  const [catalogSearch, setCatalogSearch] = useState("");
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -52,6 +53,11 @@ function Products() {
     const titleSearch = searchQuery ? `Search: "${searchQuery}"` : "";
     document.title = titleSearch ? `DropShop | ${titleSearch}` : `DropShop | ${titleCategory} Collection`;
   }, [selectedCategory, searchQuery]);
+
+  // ── Sync catalog search input ──
+  useEffect(() => {
+    setCatalogSearch(searchQuery);
+  }, [searchQuery]);
 
   // ── Reset subcategory on category change ──
   useEffect(() => {
@@ -141,7 +147,7 @@ function Products() {
       .filter((p) => p.price >= priceRange.min && p.price <= priceRange.max)
       .sort((a, b) => {
         if (sortBy === "price-asc") return a.price - b.price;
-        if (sortBy === "price-desc") return b.price - a.price;
+        if (sortBy === "price-desc") return a.price - b.price;
         if (sortBy === "newest")
           return new Date(b.createdAt) - new Date(a.createdAt);
         return 0;
@@ -357,6 +363,28 @@ function Products() {
           </div>
 
           <div className="catalog-toolbar__right">
+            {/* Catalog search bar */}
+            <div className="catalog-search-wrapper">
+              <span className="catalog-search-icon">⌕</span>
+              <input
+                type="text"
+                placeholder="Search collection..."
+                value={catalogSearch}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setCatalogSearch(val);
+                  const params = new URLSearchParams(location.search);
+                  if (val) {
+                    params.set("search", val);
+                  } else {
+                    params.delete("search");
+                  }
+                  navigate(`/products?${params.toString()}`, { replace: true });
+                }}
+                className="catalog-search-input"
+              />
+            </div>
+
             <button 
               className={`premium-filter-btn ${hasActiveFilters ? "active" : ""}`}
               onClick={() => setShowFiltersDrawer(true)}
@@ -397,254 +425,258 @@ function Products() {
           </div>
         </div>
 
-        {/* ── FILTER DRAWER ── */}
-        <div 
-          className={`filter-drawer-overlay ${showFiltersDrawer ? "active" : ""}`} 
-          onClick={() => setShowFiltersDrawer(false)} 
-        />
-        
-        <div className={`filter-drawer ${showFiltersDrawer ? "open" : ""}`}>
-          <div className="filter-drawer-header">
-            <h3>Filters</h3>
-            <button className="filter-drawer-close-btn" onClick={() => setShowFiltersDrawer(false)}>✕</button>
-          </div>
+        {/* ── LAYOUT WRAPPER (PC Sidebar / Mobile Drawer) ── */}
+        <div className="catalog-layout-wrapper">
+
+          {/* ── FILTER DRAWER ── */}
+          <div 
+            className={`filter-drawer-overlay ${showFiltersDrawer ? "active" : ""}`} 
+            onClick={() => setShowFiltersDrawer(false)} 
+          />
           
-          <div className="filter-drawer-body">
-            {/* Category Section */}
-            <div className="filter-drawer-section">
-              <h4 className="filter-section-title">Category</h4>
-              <div className="filter-options-list">
-                {categories.map((cat) => {
-                  const active = selectedCategory === cat;
-                  return (
-                    <div
-                      key={cat}
-                      onClick={() => {
-                        setSelectedCategory(cat);
-                        navigate(`/products${cat !== "All" ? `?category=${cat}` : ""}`);
-                      }}
-                      className={`filter-option-row ${active ? "active" : ""}`}
-                    >
-                      <span>{cat}</span>
-                      <span className="filter-option-count">
-                        {
-                          products.filter(
-                            (p) =>
-                              cat === "All" ||
-                              p.category?.toLowerCase() === cat.toLowerCase()
-                          ).length
-                        }
-                      </span>
-                    </div>
-                  );
-                })}
-              </div>
+          <div className={`filter-drawer ${showFiltersDrawer ? "open" : ""}`}>
+            <div className="filter-drawer-header">
+              <h3>Filters</h3>
+              <button className="filter-drawer-close-btn" onClick={() => setShowFiltersDrawer(false)}>✕</button>
             </div>
-
-            {/* Subcategory Section */}
-            {selectedCategory !== "All" &&
-              categoryMap[selectedCategory]?.length > 0 && (
-                <div className="filter-drawer-section">
-                  <h4 className="filter-section-title">Subcategory</h4>
-                  <div className="filter-options-list">
-                    {["All", ...categoryMap[selectedCategory]].map((sub) => {
-                      const active = selectedSubcategory === sub;
-                      return (
-                        <div
-                          key={sub}
-                          onClick={() => setSelectedSubcategory(sub)}
-                          className={`filter-option-row ${active ? "active" : ""}`}
-                        >
-                          <span>{sub}</span>
-                        </div>
-                      );
-                    })}
-                  </div>
+            
+            <div className="filter-drawer-body">
+              {/* Category Section */}
+              <div className="filter-drawer-section">
+                <h4 className="filter-section-title">Category</h4>
+                <div className="filter-options-list">
+                  {categories.map((cat) => {
+                    const active = selectedCategory === cat;
+                    return (
+                      <div
+                        key={cat}
+                        onClick={() => {
+                          setSelectedCategory(cat);
+                          navigate(`/products${cat !== "All" ? `?category=${cat}` : ""}`);
+                        }}
+                        className={`filter-option-row ${active ? "active" : ""}`}
+                      >
+                        <span>{cat}</span>
+                        <span className="filter-option-count">
+                          {
+                            products.filter(
+                              (p) =>
+                                cat === "All" ||
+                                p.category?.toLowerCase() === cat.toLowerCase()
+                            ).length
+                          }
+                        </span>
+                      </div>
+                    );
+                  })}
                 </div>
-              )}
+              </div>
 
-            {/* Price Range Section */}
-            <div className="filter-drawer-section">
-              <h4 className="filter-section-title">Price Range</h4>
-              <div className="filter-options-list">
-                {priceRanges.map(({ label, min, max }) => {
-                  const active = priceRange.min === min && priceRange.max === max;
-                  return (
-                    <div
-                      key={label}
-                      onClick={() => setPriceRange(active ? { min: 0, max: Infinity } : { min, max })}
-                      className={`filter-option-row ${active ? "active" : ""}`}
-                    >
-                      <div className={`filter-radio-indicator ${active ? "active" : ""}`} />
-                      <span>{label}</span>
+              {/* Subcategory Section */}
+              {selectedCategory !== "All" &&
+                categoryMap[selectedCategory]?.length > 0 && (
+                  <div className="filter-drawer-section">
+                    <h4 className="filter-section-title">Subcategory</h4>
+                    <div className="filter-options-list">
+                      {["All", ...categoryMap[selectedCategory]].map((sub) => {
+                        const active = selectedSubcategory === sub;
+                        return (
+                          <div
+                            key={sub}
+                            onClick={() => setSelectedSubcategory(sub)}
+                            className={`filter-option-row ${active ? "active" : ""}`}
+                          >
+                            <span>{sub}</span>
+                          </div>
+                        );
+                      })}
                     </div>
-                  );
-                })}
+                  </div>
+                )}
+
+              {/* Price Range Section */}
+              <div className="filter-drawer-section">
+                <h4 className="filter-section-title">Price Range</h4>
+                <div className="filter-options-list">
+                  {priceRanges.map(({ label, min, max }) => {
+                    const active = priceRange.min === min && priceRange.max === max;
+                    return (
+                      <div
+                        key={label}
+                        onClick={() => setPriceRange(active ? { min: 0, max: Infinity } : { min, max })}
+                        className={`filter-option-row ${active ? "active" : ""}`}
+                      >
+                        <div className={`filter-radio-indicator ${active ? "active" : ""}`} />
+                        <span>{label}</span>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
             </div>
-          </div>
 
-          <div className="filter-drawer-footer">
-            {hasActiveFilters && (
-              <button
-                className="premium-btn-secondary filter-clear-btn"
-                onClick={() => {
-                  resetFilters();
-                  setShowFiltersDrawer(false);
-                }}
-              >
-                Clear All
-              </button>
-            )}
-            <button
-              className="premium-btn-primary filter-apply-btn"
-              onClick={() => setShowFiltersDrawer(false)}
-            >
-              View {filteredProducts.length} Results
-            </button>
-          </div>
-        </div>
-
-        {/* ── PRODUCT CATALOG GRID ── */}
-        <div className="catalog-grid-full">
-          {loading ? (
-            /* Loading Skeleton */
-            [...Array(8)].map((_, i) => (
-              <div
-                key={i}
-                style={{
-                  background: "var(--card-bg)",
-                  borderRadius: "16px",
-                  overflow: "hidden",
-                  border: "1px solid var(--border)",
-                }}
-              >
-                <div
-                  style={{
-                    height: "200px",
-                    background: "linear-gradient(90deg, var(--black) 25%, var(--border) 50%, var(--black) 75%)",
-                    backgroundSize: "200% 100%",
-                    animation: "shimmer 1.4s infinite",
+            <div className="filter-drawer-footer">
+              {hasActiveFilters && (
+                <button
+                  className="premium-btn-secondary filter-clear-btn"
+                  onClick={() => {
+                    resetFilters();
+                    setShowFiltersDrawer(false);
                   }}
-                />
-                <div style={{ padding: "1rem" }}>
-                  <div
-                    style={{
-                      height: "14px",
-                      background: "var(--border)",
-                      borderRadius: "6px",
-                      marginBottom: "8px",
-                      width: "70%",
-                    }}
-                  />
-                  <div
-                    style={{
-                      height: "12px",
-                      background: "var(--border)",
-                      borderRadius: "6px",
-                      width: "50%",
-                    }}
-                  />
-                </div>
-              </div>
-            ))
-          ) : filteredProducts.length === 0 ? (
-            /* Empty State */
-            <div style={{ ...styles.emptyWrap, gridColumn: "1 / -1" }}>
-              <p style={{ fontSize: "3rem", marginBottom: "1rem" }}>🔍</p>
-              <h3
-                style={{
-                  fontSize: "1.5rem",
-                  fontWeight: 700,
-                  color: "var(--white)",
-                  marginBottom: "0.5rem",
-                }}
+                >
+                  Clear All
+                </button>
+              )}
+              <button
+                className="premium-btn-primary filter-apply-btn"
+                onClick={() => setShowFiltersDrawer(false)}
               >
-                No products found
-              </h3>
-              <p style={{ color: "var(--grey)", marginBottom: "1.5rem" }}>
-                Try a different category, price range, or search term
-              </p>
-              <button style={styles.emptyBtn} onClick={resetFilters}>
-                View All Products
+                View {filteredProducts.length} Results
               </button>
             </div>
-          ) : (
-            /* Products Grid */
-            filteredProducts.map((p) => (
-              <div
-                key={p._id}
-                onClick={() => navigate(`/product/${p._id}`)}
-                className="premium-card"
-              >
-                {/* Image */}
-                <div style={styles.imgWrap}>
-                  <img src={p.image} alt={p.name} style={styles.img} />
+          </div>
 
-                  {/* Wishlist button */}
-                  <button
-                    style={styles.wishBtn(wishlist.includes(p._id))}
-                    onClick={(e) => handleToggleWishlist(e, p._id)}
-                    title={
-                      wishlist.includes(p._id)
-                        ? "Remove from wishlist"
-                        : "Add to wishlist"
-                    }
-                  >
-                    {wishlist.includes(p._id) ? "❤️" : "🤍"}
-                  </button>
-
-                  {/* Low stock badge */}
-                  {p.stock !== undefined &&
-                    p.stock <= 5 &&
-                    p.stock > 0 && (
-                      <span style={styles.lowStockBadge}>
-                        Only {p.stock} left!
-                      </span>
-                    )}
-
-                  {/* Out of stock overlay */}
-                  {p.stock === 0 && (
-                    <div style={styles.outOfStockOverlay}>
-                      <span style={styles.outOfStockLabel}>
-                        Out of Stock
-                      </span>
-                    </div>
-                  )}
-                </div>
-
-                {/* Card body */}
-                <div style={styles.cardBody}>
-                  <h3 style={styles.cardName}>{p.name}</h3>
-                  <p style={styles.cardDesc}>{p.description}</p>
-                  <div style={styles.cardBottom}>
-                    <div style={{ display: "flex", flexDirection: "column" }}>
-                      <p style={styles.price}>
-                        ₹{p.price?.toLocaleString("en-IN")}
-                      </p>
-                      {p.originalPrice && p.originalPrice > p.price && (
-                        <div style={{ display: "flex", alignItems: "center", gap: "0.3rem" }}>
-                          <span style={{ fontSize: "0.72rem", color: "var(--grey)", textDecoration: "line-through" }}>₹{p.originalPrice.toLocaleString()}</span>
-                          <span style={{ fontSize: "0.7rem", color: "var(--success)", fontWeight: 600 }}>{Math.round(((p.originalPrice - p.price) / p.originalPrice) * 100)}% OFF</span>
-                        </div>
-                      )}
-                    </div>
-                    <button
-                      onClick={(e) => handleAddToCart(e, p._id)}
-                      disabled={p.stock === 0}
-                      style={styles.cartBtn(
-                        addedId === p._id,
-                        p.stock === 0
-                      )}
-                    >
-                      {addedId === p._id ? "✓ Added" : "+ Cart"}
-                    </button>
+          {/* ── PRODUCT CATALOG GRID ── */}
+          <div className="catalog-grid-full">
+            {loading ? (
+              /* Loading Skeleton */
+              [...Array(8)].map((_, i) => (
+                <div
+                  key={i}
+                  style={{
+                    background: "var(--card-bg)",
+                    borderRadius: "16px",
+                    overflow: "hidden",
+                    border: "1px solid var(--border)",
+                  }}
+                >
+                  <div
+                    style={{
+                      height: "200px",
+                      background: "linear-gradient(90deg, var(--black) 25%, var(--border) 50%, var(--black) 75%)",
+                      backgroundSize: "200% 100%",
+                      animation: "shimmer 1.4s infinite",
+                    }}
+                  />
+                  <div style={{ padding: "1rem" }}>
+                    <div
+                      style={{
+                        height: "14px",
+                        background: "var(--border)",
+                        borderRadius: "6px",
+                        marginBottom: "8px",
+                        width: "70%",
+                      }}
+                    />
+                    <div
+                      style={{
+                        height: "12px",
+                        background: "var(--border)",
+                        borderRadius: "6px",
+                        width: "50%",
+                      }}
+                    />
                   </div>
                 </div>
+              ))
+            ) : filteredProducts.length === 0 ? (
+              /* Empty State */
+              <div style={{ ...styles.emptyWrap, gridColumn: "1 / -1" }}>
+                <p style={{ fontSize: "3rem", marginBottom: "1rem" }}>🔍</p>
+                <h3
+                  style={{
+                    fontSize: "1.5rem",
+                    fontWeight: 700,
+                    color: "var(--white)",
+                    marginBottom: "0.5rem",
+                  }}
+                >
+                  No products found
+                </h3>
+                <p style={{ color: "var(--grey)", marginBottom: "1.5rem" }}>
+                  Try a different category, price range, or search term
+                </p>
+                <button style={styles.emptyBtn} onClick={resetFilters}>
+                  View All Products
+                </button>
               </div>
-            ))
-          )}
-        </div>
+            ) : (
+              /* Products Grid */
+              filteredProducts.map((p) => (
+                <div
+                  key={p._id}
+                  onClick={() => navigate(`/product/${p._id}`)}
+                  className="premium-card"
+                >
+                  {/* Image */}
+                  <div style={styles.imgWrap}>
+                    <img src={p.image} alt={p.name} style={styles.img} />
+
+                    {/* Wishlist button */}
+                    <button
+                      style={styles.wishBtn(wishlist.includes(p._id))}
+                      onClick={(e) => handleToggleWishlist(e, p._id)}
+                      title={
+                        wishlist.includes(p._id)
+                          ? "Remove from wishlist"
+                          : "Add to wishlist"
+                      }
+                    >
+                      {wishlist.includes(p._id) ? "❤️" : "🤍"}
+                    </button>
+
+                    {/* Low stock badge */}
+                    {p.stock !== undefined &&
+                      p.stock <= 5 &&
+                      p.stock > 0 && (
+                        <span style={styles.lowStockBadge}>
+                          Only {p.stock} left!
+                        </span>
+                      )}
+
+                    {/* Out of stock overlay */}
+                    {p.stock === 0 && (
+                      <div style={styles.outOfStockOverlay}>
+                        <span style={styles.outOfStockLabel}>
+                          Out of Stock
+                        </span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Card body */}
+                  <div style={styles.cardBody}>
+                    <h3 style={styles.cardName}>{p.name}</h3>
+                    <p style={styles.cardDesc}>{p.description}</p>
+                    <div style={styles.cardBottom}>
+                      <div style={{ display: "flex", flexDirection: "column" }}>
+                        <p style={styles.price}>
+                          ₹{p.price?.toLocaleString("en-IN")}
+                        </p>
+                        {p.originalPrice && p.originalPrice > p.price && (
+                          <div style={{ display: "flex", alignItems: "center", gap: "0.3rem" }}>
+                            <span style={{ fontSize: "0.72rem", color: "var(--grey)", textDecoration: "line-through" }}>₹{p.originalPrice.toLocaleString()}</span>
+                            <span style={{ fontSize: "0.7rem", color: "var(--success)", fontWeight: 600 }}>{Math.round(((p.originalPrice - p.price) / p.originalPrice) * 100)}% OFF</span>
+                          </div>
+                        )}
+                      </div>
+                      <button
+                        onClick={(e) => handleAddToCart(e, p._id)}
+                        disabled={p.stock === 0}
+                        style={styles.cartBtn(
+                          addedId === p._id,
+                          p.stock === 0
+                        )}
+                      >
+                        {addedId === p._id ? "✓ Added" : "+ Cart"}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div> {/* ── END catalog-layout-wrapper ── */}
         <style>{`@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}`}</style>
       </div>
     </div>

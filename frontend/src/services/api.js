@@ -1,9 +1,18 @@
-const BASE_URL = "http://localhost:3000/api";
+export const BASE_URL = (() => {
+  if (import.meta.env.VITE_API_URL) {
+    return import.meta.env.VITE_API_URL;
+  }
+  const hostname = window.location.hostname;
+  if (hostname !== "localhost" && hostname !== "127.0.0.1" && hostname !== "") {
+    return `http://${hostname}:3000/api`;
+  }
+  return "http://localhost:3000/api";
+})();
 
-export const getProducts = async (page,category="All") => {
+export const getProducts = async (page, category = "All") => {
   try {
-       const query = category && category !== "All" ? `&category=${encodeURIComponent(category)}` : "";
-  const res = await fetch(`http://localhost:3000/api/products?page=${page}${query}`);
+    const query = category && category !== "All" ? `&category=${encodeURIComponent(category)}` : "";
+    const res = await fetch(`${BASE_URL}/products?page=${page}${query}`);
     const data = await res.json();
     return data;
   } catch (err) {
@@ -12,16 +21,13 @@ export const getProducts = async (page,category="All") => {
   }
 };
 
-
 export const addToCart = async (productId) => {
   try {
     const token = localStorage.getItem("token");
-
     if (!token) {
       throw new Error("User not logged in");
     }
-     
-    const res = await fetch("http://localhost:3000/api/cart/add", {
+    const res = await fetch(`${BASE_URL}/cart/add`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -29,48 +35,40 @@ export const addToCart = async (productId) => {
       },
       body: JSON.stringify({ productId })
     });
-
     if (!res.ok) {
       throw new Error("Failed to add to cart");
     }
-
     const data = await res.json();
     return data;
-
   } catch (err) {
     console.error("Add to cart error:", err);
   }
 };
+
 export const getCart = async () => {
   try {
     const token = localStorage.getItem("token");
-
     if (!token) {
       throw new Error("User not logged in");
     }
-
-    const res = await fetch("http://localhost:3000/api/cart", {
+    const res = await fetch(`${BASE_URL}/cart`, {
       headers: {
         "Authorization": `Bearer ${token}`
       }
     });
-
     if (!res.ok) {
       throw new Error("Failed to fetch cart");
     }
-
     const data = await res.json();
     return data;
-
   } catch (err) {
     console.error("getCart error:", err.message);
     return { items: [] };
   }
 };
 
-
- export const updateCartItem = async (itemId, quantity) => {
-  const res = await fetch(`http://localhost:3000/api/cart/${itemId}/update`, {
+export const updateCartItem = async (itemId, quantity) => {
+  const res = await fetch(`${BASE_URL}/cart/${itemId}/update`, {
     method: "PUT",
     headers: {
       "Content-Type": "application/json"
@@ -81,9 +79,9 @@ export const getCart = async () => {
 };
 
 export const placeOrder = async (address, itemId = null, couponCode = "") => {
- console.log("sending itemId:", itemId, "couponCode:", couponCode);
+  console.log("sending itemId:", itemId, "couponCode:", couponCode);
   const token = localStorage.getItem("token");
-  const res = await fetch("http://localhost:3000/api/orders/place", {
+  const res = await fetch(`${BASE_URL}/orders/place`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -91,14 +89,14 @@ export const placeOrder = async (address, itemId = null, couponCode = "") => {
     },
     body: JSON.stringify({ address, itemId, couponCode })
   });
-
   const data = await res.json();
-  console.log("placeOrder response:", data); // 👈 what error comes back?
+  console.log("placeOrder response:", data);
   return data;
 };
+
 export const getOrders = async () => {
   const token = localStorage.getItem("token");
-  const res = await fetch("http://localhost:3000/api/orders", {
+  const res = await fetch(`${BASE_URL}/orders`, {
     headers: { "Authorization": `Bearer ${token}` }
   });
   return res.json();
@@ -106,16 +104,16 @@ export const getOrders = async () => {
 
 export const getProfile = async () => {
   const token = localStorage.getItem("token");
-  console.log("Fetching profile with token:", token); // 👈 check token value
-  const res = await fetch("http://localhost:3000/api/profile", {
+  console.log("Fetching profile with token:", token);
+  const res = await fetch(`${BASE_URL}/profile`, {
     headers: { "Authorization": `Bearer ${token}` }
   });
   return res.json();
-}
+};
 
 export const updateProfile = async (data) => {
   const token = localStorage.getItem("token");
-  const res = await fetch("http://localhost:3000/api/profile/update", {
+  const res = await fetch(`${BASE_URL}/profile/update`, {
     method: "PUT",
     headers: {
       "Content-Type": "application/json",
@@ -124,11 +122,11 @@ export const updateProfile = async (data) => {
     body: JSON.stringify(data)
   });
   return res.json();
-}
+};
 
 export const changePassword = async (data) => {
   const token = localStorage.getItem("token");
-  const res = await fetch("http://localhost:3000/api/profile/change-password", {
+  const res = await fetch(`${BASE_URL}/profile/change-password`, {
     method: "PUT",
     headers: {
       "Content-Type": "application/json",
@@ -137,11 +135,11 @@ export const changePassword = async (data) => {
     body: JSON.stringify(data)
   });
   return res.json();
-}
+};
 
 export const updateAddress = async (data) => {
   const token = localStorage.getItem("token");
-  const res = await fetch("http://localhost:3000/api/profile/address", {
+  const res = await fetch(`${BASE_URL}/profile/address`, {
     method: "PUT",
     headers: {
       "Content-Type": "application/json",
@@ -150,11 +148,11 @@ export const updateAddress = async (data) => {
     body: JSON.stringify(data)
   });
   return res.json();
-}
+};
 
 export const addAddress = async (data) => {
   const token = localStorage.getItem("token");
-  const res = await fetch("http://localhost:3000/api/profile/addresses", {
+  const res = await fetch(`${BASE_URL}/profile/addresses`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -167,7 +165,7 @@ export const addAddress = async (data) => {
 
 export const updateAddressItem = async (addressId, data) => {
   const token = localStorage.getItem("token");
-  const res = await fetch(`http://localhost:3000/api/profile/addresses/${addressId}`, {
+  const res = await fetch(`${BASE_URL}/profile/addresses/${addressId}`, {
     method: "PUT",
     headers: {
       "Content-Type": "application/json",
@@ -180,7 +178,7 @@ export const updateAddressItem = async (addressId, data) => {
 
 export const deleteAddress = async (addressId) => {
   const token = localStorage.getItem("token");
-  const res = await fetch(`http://localhost:3000/api/profile/addresses/${addressId}`, {
+  const res = await fetch(`${BASE_URL}/profile/addresses/${addressId}`, {
     method: "DELETE",
     headers: {
       "Authorization": `Bearer ${token}`
@@ -191,7 +189,7 @@ export const deleteAddress = async (addressId) => {
 
 export const setDefaultAddress = async (addressId) => {
   const token = localStorage.getItem("token");
-  const res = await fetch(`http://localhost:3000/api/profile/addresses/${addressId}/default`, {
+  const res = await fetch(`${BASE_URL}/profile/addresses/${addressId}/default`, {
     method: "PATCH",
     headers: {
       "Authorization": `Bearer ${token}`
@@ -199,11 +197,10 @@ export const setDefaultAddress = async (addressId) => {
   });
   return res.json();
 };
-// api.js — add these at the bottom
 
 export const createRazorpayOrder = async (amount) => {
   const token = localStorage.getItem("token");
-  const res = await fetch("http://localhost:3000/api/payment/create-order", {
+  const res = await fetch(`${BASE_URL}/payment/create-order`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -216,7 +213,7 @@ export const createRazorpayOrder = async (amount) => {
 
 export const verifyPayment = async (data) => {
   const token = localStorage.getItem("token");
-  const res = await fetch("http://localhost:3000/api/payment/verify", {
+  const res = await fetch(`${BASE_URL}/payment/verify`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -226,9 +223,10 @@ export const verifyPayment = async (data) => {
   });
   return res.json();
 };
+
 export const addReview = async (data) => {
   const token = localStorage.getItem("token");
-  const res = await fetch("http://localhost:3000/api/reviews", {
+  const res = await fetch(`${BASE_URL}/reviews`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -240,13 +238,13 @@ export const addReview = async (data) => {
 };
 
 export const getReviews = async (productId) => {
-  const res = await fetch(`http://localhost:3000/api/reviews/${productId}`);
+  const res = await fetch(`${BASE_URL}/reviews/${productId}`);
   return res.json();
 };
 
 export const deleteReview = async (reviewId) => {
   const token = localStorage.getItem("token");
-  const res = await fetch(`http://localhost:3000/api/reviews/${reviewId}`, {
+  const res = await fetch(`${BASE_URL}/reviews/${reviewId}`, {
     method: "DELETE",
     headers: { "Authorization": `Bearer ${token}` }
   });
@@ -255,7 +253,7 @@ export const deleteReview = async (reviewId) => {
 
 export const getAllOrdersAdmin = async () => {
   const token = localStorage.getItem("token");
-  const res = await fetch("http://localhost:3000/api/orders/admin/orders", {
+  const res = await fetch(`${BASE_URL}/orders/admin/orders`, {
     headers: { "Authorization": `Bearer ${token}` }
   });
   return res.json();
@@ -263,7 +261,7 @@ export const getAllOrdersAdmin = async () => {
 
 export const updateOrderStatusAdmin = async (orderId, status, message = "") => {
   const token = localStorage.getItem("token");
-  const res = await fetch(`http://localhost:3000/api/orders/admin/${orderId}/tracking`, {
+  const res = await fetch(`${BASE_URL}/orders/admin/${orderId}/tracking`, {
     method: "PATCH",
     headers: {
       "Content-Type": "application/json",
@@ -276,7 +274,7 @@ export const updateOrderStatusAdmin = async (orderId, status, message = "") => {
 
 export const addProductAdmin = async (productData) => {
   const token = localStorage.getItem("token");
-  const res = await fetch("http://localhost:3000/api/products", {
+  const res = await fetch(`${BASE_URL}/products`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -289,7 +287,7 @@ export const addProductAdmin = async (productData) => {
 
 export const updateProductAdmin = async (productId, productData) => {
   const token = localStorage.getItem("token");
-  const res = await fetch(`http://localhost:3000/api/products/${productId}`, {
+  const res = await fetch(`${BASE_URL}/products/${productId}`, {
     method: "PUT",
     headers: {
       "Content-Type": "application/json",
@@ -302,7 +300,7 @@ export const updateProductAdmin = async (productId, productData) => {
 
 export const deleteProductAdmin = async (productId) => {
   const token = localStorage.getItem("token");
-  const res = await fetch(`http://localhost:3000/api/products/${productId}`, {
+  const res = await fetch(`${BASE_URL}/products/${productId}`, {
     method: "DELETE",
     headers: { "Authorization": `Bearer ${token}` }
   });
@@ -310,7 +308,7 @@ export const deleteProductAdmin = async (productId) => {
 };
 
 export const forgotPassword = async (email) => {
-  const res = await fetch("http://localhost:3000/api/auth/forgot-password", {
+  const res = await fetch(`${BASE_URL}/auth/forgot-password`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ email })
@@ -319,7 +317,7 @@ export const forgotPassword = async (email) => {
 };
 
 export const resetPassword = async (token, password) => {
-  const res = await fetch("http://localhost:3000/api/auth/reset-password", {
+  const res = await fetch(`${BASE_URL}/auth/reset-password`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ token, password })
@@ -330,7 +328,7 @@ export const resetPassword = async (token, password) => {
 export const getWishlist = async () => {
   const token = localStorage.getItem("token");
   if (!token) return { wishlist: [] };
-  const res = await fetch("http://localhost:3000/api/wishlist", {
+  const res = await fetch(`${BASE_URL}/wishlist`, {
     headers: { "Authorization": `Bearer ${token}` }
   });
   return res.json();
@@ -339,7 +337,7 @@ export const getWishlist = async () => {
 export const toggleWishlist = async (productId) => {
   const token = localStorage.getItem("token");
   if (!token) throw new Error("Authentication required");
-  const res = await fetch("http://localhost:3000/api/wishlist/toggle", {
+  const res = await fetch(`${BASE_URL}/wishlist/toggle`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -352,7 +350,7 @@ export const toggleWishlist = async (productId) => {
 
 export const cancelOrder = async (orderId) => {
   const token = localStorage.getItem("token");
-  const res = await fetch(`http://localhost:3000/api/orders/${orderId}/cancel`, {
+  const res = await fetch(`${BASE_URL}/orders/${orderId}/cancel`, {
     method: "POST",
     headers: {
       "Authorization": `Bearer ${token}`
@@ -363,7 +361,7 @@ export const cancelOrder = async (orderId) => {
 
 export const getAllUsersAdmin = async () => {
   const token = localStorage.getItem("token");
-  const res = await fetch("http://localhost:3000/api/admin/users", {
+  const res = await fetch(`${BASE_URL}/admin/users`, {
     headers: { "Authorization": `Bearer ${token}` }
   });
   return res.json();
@@ -371,7 +369,7 @@ export const getAllUsersAdmin = async () => {
 
 export const updateUserRoleAdmin = async (userId, role) => {
   const token = localStorage.getItem("token");
-  const res = await fetch(`http://localhost:3000/api/admin/users/${userId}/role`, {
+  const res = await fetch(`${BASE_URL}/admin/users/${userId}/role`, {
     method: "PUT",
     headers: {
       "Content-Type": "application/json",

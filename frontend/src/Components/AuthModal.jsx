@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { BASE_URL } from "../services/api";
 
 function AuthModal({ isOpen, onClose, onSuccess }) {
   const [isLogin, setIsLogin] = useState(true);
@@ -18,8 +19,8 @@ function AuthModal({ isOpen, onClose, onSuccess }) {
 
   const handleSubmit = async () => {
     const url = isLogin
-      ? "http://localhost:3000/api/auth/login"
-      : "http://localhost:3000/api/auth/register";
+      ? `${BASE_URL}/auth/login`
+      : `${BASE_URL}/auth/register`;
 
     const body = isLogin ? { phone: form.phone, password: form.password } : form;
 
@@ -55,7 +56,7 @@ function AuthModal({ isOpen, onClose, onSuccess }) {
     }
     setLoading(true);
     try {
-      const res = await fetch("http://localhost:3000/api/auth/forgot-password", {
+      const res = await fetch(`${BASE_URL}/auth/forgot-password`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: form.email })
@@ -248,7 +249,7 @@ function AuthModal({ isOpen, onClose, onSuccess }) {
           <>
             {/* Google Login Button */}
             <button
-              onClick={() => window.location.href = "http://localhost:3000/api/auth/google"}
+              onClick={() => window.location.href = `${BASE_URL}/auth/google`}
               style={{
                 width: "100%", padding: "0.85rem",
                 background: "#fff", color: "#111",

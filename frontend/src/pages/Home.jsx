@@ -131,7 +131,7 @@ function Home({ selectedCategory, setSelectedCategory }) {
       </div>
 
       {/* ── CATEGORIES ── */}
-      <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "3rem 2rem 0" }}>
+      <div className="home-section">
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem" }}>
           <h2 style={{ fontSize: "1.4rem", fontWeight: 600, color: "var(--white)", margin: 0, fontFamily: "Cormorant Garamond, serif" }}>Shop by Category</h2>
         </div>
@@ -152,7 +152,7 @@ function Home({ selectedCategory, setSelectedCategory }) {
       </div>
 
       {/* ── TRENDING ── */}
-      <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "3rem 2rem 0" }}>
+      <div className="home-section">
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem" }}>
           <div>
             <p style={{ fontSize: "0.72rem", letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--grey)", marginBottom: "0.3rem" }}>Hot right now</p>
@@ -190,7 +190,7 @@ function Home({ selectedCategory, setSelectedCategory }) {
                       </div>
                     )}
                   </div>
-                  <button onClick={(e) => handleAddToCart(e, p._id)} style={{ background: addedId === p._id ? "var(--success)" : "rgba(255,255,255,0.08)", color: addedId === p._id ? "#09090b" : "var(--white)", border: "none", borderRadius: "980px", padding: "0.4rem 1rem", fontSize: "0.75rem", fontWeight: 600, cursor: "pointer", transition: "all 0.2s" }}>
+                  <button onClick={(e) => handleAddToCart(e, p._id)} style={{ background: addedId === p._id ? "var(--success)" : "rgba(0, 0, 0, 0.05)", color: addedId === p._id ? "#fff" : "var(--white)", border: "none", borderRadius: "980px", padding: "0.4rem 1rem", fontSize: "0.75rem", fontWeight: 600, cursor: "pointer", transition: "all 0.2s" }}>
                     {addedId === p._id ? "✓" : "+ Cart"}
                   </button>
                 </div>
@@ -201,14 +201,8 @@ function Home({ selectedCategory, setSelectedCategory }) {
       </div>
 
       {/* ── PROMO BANNER ── */}
-      <div style={{ maxWidth: "1200px", margin: "3rem auto 0", padding: "0 2rem" }}>
-        <div style={{
-          background: "linear-gradient(135deg, #ffffff, #f4f4f7)",
-          border: "1px solid var(--border)",
-          borderRadius: "24px", padding: "3rem",
-          display: "flex", justifyContent: "space-between",
-          alignItems: "center", flexWrap: "wrap", gap: "1.5rem"
-        }}>
+      <div style={{ maxWidth: "1200px", margin: "3rem auto 0", padding: "0 1rem" }}>
+        <div className="promo-banner">
           <div>
             <p style={{ fontSize: "0.72rem", letterSpacing: "0.15em", textTransform: "uppercase", color: "var(--accent)", marginBottom: "0.5rem" }}>Limited Offer</p>
             <h2 style={{ fontSize: "1.8rem", fontWeight: 600, color: "var(--white)", margin: "0 0 0.5rem", lineHeight: 1.2, fontFamily: "Cormorant Garamond, serif" }}>
@@ -224,7 +218,7 @@ function Home({ selectedCategory, setSelectedCategory }) {
       </div>
 
       {/* ── ALL PRODUCTS ── */}
-      <div id="products" style={{ maxWidth: "1200px", margin: "0 auto", padding: "3rem 2rem" }}>
+      <div id="products" className="home-section home-section--bottom">
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "2rem" }}>
           <div>
             <p style={{ fontSize: "0.72rem", letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--grey)", marginBottom: "0.3rem" }}>
@@ -243,10 +237,10 @@ function Home({ selectedCategory, setSelectedCategory }) {
           <div className="premium-product-grid">
             {[...Array(8)].map((_, i) => (
               <div key={i} className="premium-card">
-                <div style={{ height: "220px", background: "rgba(255,255,255,0.02)" }} />
+                <div style={{ height: "220px", background: "linear-gradient(90deg, var(--black) 25%, var(--border) 50%, var(--black) 75%)", backgroundSize: "200% 100%", animation: "shimmer 1.4s infinite" }} />
                 <div style={{ padding: "1.25rem" }}>
-                  <div style={{ height: "14px", background: "#333", borderRadius: "6px", marginBottom: "8px", width: "70%" }} />
-                  <div style={{ height: "12px", background: "#333", borderRadius: "6px", width: "50%" }} />
+                  <div style={{ height: "14px", background: "var(--border)", borderRadius: "6px", marginBottom: "8px", width: "70%" }} />
+                  <div style={{ height: "12px", background: "var(--border)", borderRadius: "6px", width: "50%" }} />
                 </div>
               </div>
             ))}
@@ -303,8 +297,8 @@ function Home({ selectedCategory, setSelectedCategory }) {
                       onClick={(e) => handleAddToCart(e, p._id)}
                       disabled={p.stock === 0}
                       style={{
-                        background: addedId === p._id ? "var(--success)" : "rgba(255,255,255,0.08)",
-                        color: addedId === p._id ? "#09090b" : "var(--white)", border: "none",
+                        background: addedId === p._id ? "var(--success)" : "rgba(0, 0, 0, 0.05)",
+                        color: addedId === p._id ? "#fff" : "var(--white)", border: "none",
                         borderRadius: "980px", padding: "0.5rem 1.1rem",
                         fontSize: "0.78rem", fontWeight: 600,
                         cursor: p.stock === 0 ? "not-allowed" : "pointer",
@@ -325,11 +319,11 @@ function Home({ selectedCategory, setSelectedCategory }) {
         {/* Pagination */}
         {totalPages > 1 && (
           <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5rem", marginTop: "3rem" }}>
-            <button disabled={page === 1} onClick={() => setPage(page - 1)} style={{ background: page === 1 ? "#f5f5f5" : "#fff", color: page === 1 ? "#ccc" : "#111", border: "1px solid", borderColor: page === 1 ? "#eee" : "#ddd", borderRadius: "980px", padding: "0.5rem 1.25rem", fontSize: "0.82rem", cursor: page === 1 ? "not-allowed" : "pointer", fontFamily: "Inter, sans-serif" }}>← Prev</button>
+            <button disabled={page === 1} onClick={() => setPage(page - 1)} style={{ background: page === 1 ? "rgba(0,0,0,0.02)" : "var(--card-bg)", color: page === 1 ? "var(--grey)" : "var(--white)", border: "1px solid var(--border)", borderRadius: "980px", padding: "0.5rem 1.25rem", fontSize: "0.82rem", cursor: page === 1 ? "not-allowed" : "pointer", fontFamily: "Inter, sans-serif" }}>← Prev</button>
             {[...Array(totalPages)].map((_, i) => (
-              <button key={i} onClick={() => setPage(i + 1)} style={{ width: "36px", height: "36px", borderRadius: "50%", background: page === i + 1 ? "#111" : "#fff", color: page === i + 1 ? "#fff" : "#888", border: "1px solid", borderColor: page === i + 1 ? "#111" : "#ddd", fontSize: "0.82rem", cursor: "pointer", fontFamily: "Inter, sans-serif", transition: "all 0.2s" }}>{i + 1}</button>
+              <button key={i} onClick={() => setPage(i + 1)} style={{ width: "36px", height: "36px", borderRadius: "50%", background: page === i + 1 ? "var(--white)" : "var(--card-bg)", color: page === i + 1 ? "var(--black)" : "var(--grey)", border: "1px solid", borderColor: page === i + 1 ? "var(--white)" : "var(--border)", fontSize: "0.82rem", cursor: "pointer", fontFamily: "Inter, sans-serif", transition: "all 0.2s" }}>{i + 1}</button>
             ))}
-            <button disabled={page === totalPages} onClick={() => setPage(page + 1)} style={{ background: page === totalPages ? "#f5f5f5" : "#fff", color: page === totalPages ? "#ccc" : "#111", border: "1px solid", borderColor: page === totalPages ? "#eee" : "#ddd", borderRadius: "980px", padding: "0.5rem 1.25rem", fontSize: "0.82rem", cursor: page === totalPages ? "not-allowed" : "pointer", fontFamily: "Inter, sans-serif" }}>Next →</button>
+            <button disabled={page === totalPages} onClick={() => setPage(page + 1)} style={{ background: page === totalPages ? "rgba(0,0,0,0.02)" : "var(--card-bg)", color: page === totalPages ? "var(--grey)" : "var(--white)", border: "1px solid var(--border)", borderRadius: "980px", padding: "0.5rem 1.25rem", fontSize: "0.82rem", cursor: page === totalPages ? "not-allowed" : "pointer", fontFamily: "Inter, sans-serif" }}>Next →</button>
           </div>
         )}
       </div>

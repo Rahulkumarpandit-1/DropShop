@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import AuthModal from "./AuthModal";
+import { BASE_URL } from "../services/api";
 
 
 function Navbar({ selectedCategory, setSelectedCategory, setPage }) {
@@ -20,7 +21,7 @@ function Navbar({ selectedCategory, setSelectedCategory, setPage }) {
       const token = localStorage.getItem("token");
       if (token) {
         try {
-          const res = await fetch("http://localhost:3000/api/profile", {
+          const res = await fetch(`${BASE_URL}/profile`, {
             headers: { "Authorization": `Bearer ${token}` }
           });
           const data = await res.json();
@@ -51,7 +52,7 @@ function Navbar({ selectedCategory, setSelectedCategory, setPage }) {
     console.log("token:", token);
 
     try {
-      const res = await fetch("http://localhost:3000/api/profile", {
+      const res = await fetch(`${BASE_URL}/profile`, {
         headers: { "Authorization": `Bearer ${token}` }
       });
       const data = await res.json();
@@ -205,9 +206,7 @@ function Navbar({ selectedCategory, setSelectedCategory, setPage }) {
               onClick={() => {
                 setSelectedCategory(cat.name);
                 setIsMenuOpen(false);
-                setTimeout(() => {
-                  document.getElementById("products")?.scrollIntoView({ behavior: "smooth" });
-                }, 100);
+                navigate(`/products?category=${cat.name}`);
               }}
               style={{
                 cursor: "pointer",

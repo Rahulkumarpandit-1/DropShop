@@ -8,7 +8,7 @@ const app = express();
 
 // ✅ CORS must be FIRST
 app.use(cors({
-  origin: "http://localhost:5173",
+  origin: process.env.FRONTEND_URL || "http://localhost:5173",
   credentials: true
 }));
 app.use(express.json());
@@ -27,10 +27,10 @@ app.use(passport.session());
 
 const seedAdmin = async () => {
   try {
-    const adminPhone = process.env.SEED_ADMIN_PHONE || "9999999999";
+    const adminPhone = process.env.SEED_ADMIN_PHONE || "6399400242";
     const adminPassword = process.env.SEED_ADMIN_PASSWORD || "admin123";
-    const adminEmail = process.env.SEED_ADMIN_EMAIL || "demo.admin@dropshop.com";
-    const adminName = process.env.SEED_ADMIN_NAME || "Demo Admin";
+    const adminEmail = process.env.SEED_ADMIN_EMAIL || "rahulkumar99rah@gmail.com";
+    const adminName = process.env.SEED_ADMIN_NAME || "Rahul";
 
     const adminExists = await User.findOne({ phone: adminPhone });
     if (!adminExists) {
@@ -52,7 +52,8 @@ const seedAdmin = async () => {
   }
 };
 
-mongoose.connect("mongodb://localhost:27017/products")
+const MONGODB_URI = process.env.MONGODB_URI || "mongodb://localhost:27017/products";
+mongoose.connect(MONGODB_URI)
   .then(() => {
     console.log("MongoDB connected");
     seedAdmin();
@@ -82,4 +83,5 @@ app.use("/api/admin", adminRoutes);
 
 app.get("/", (req, res) => res.send("Backend running"));
 
-app.listen(3000, () => console.log("Server running on port 3000"));
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));

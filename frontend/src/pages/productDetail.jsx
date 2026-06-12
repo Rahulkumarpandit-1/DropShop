@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { addToCart, getCart, addReview, getReviews, deleteReview } from "../services/api";
+import { addToCart, getCart, addReview, getReviews, deleteReview, BASE_URL } from "../services/api";
 import toast from "react-hot-toast";
 
 
@@ -36,7 +36,7 @@ function ProductDetail() {
 
   // ── ALL FUNCTIONS ──
   const fetchProduct = async () => {
-    const res = await fetch(`http://localhost:3000/api/products/${id}`);
+    const res = await fetch(`${BASE_URL}/products/${id}`);
     const data = await res.json();
     setProduct(data);
     setLoading(false);

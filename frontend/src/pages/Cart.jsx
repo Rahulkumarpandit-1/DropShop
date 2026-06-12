@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { getCart } from "../services/api";
+import { getCart, BASE_URL } from "../services/api";
 import { useNavigate } from "react-router-dom";
 
 function Cart() {
@@ -25,7 +25,7 @@ function Cart() {
   const handleIncrement = async (itemId) => {
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch(`http://localhost:3000/api/cart/${itemId}/increment`, {
+      const res = await fetch(`${BASE_URL}/cart/${itemId}/increment`, {
         method: "PUT", headers: { "Authorization": `Bearer ${token}` }
       });
       const data = await res.json();
@@ -37,7 +37,7 @@ function Cart() {
   const handleDecrement = async (itemId) => {
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch(`http://localhost:3000/api/cart/${itemId}/decrement`, {
+      const res = await fetch(`${BASE_URL}/cart/${itemId}/decrement`, {
         method: "PUT", headers: { "Authorization": `Bearer ${token}` }
       });
       if (!res.ok) return;
@@ -48,7 +48,7 @@ function Cart() {
   const handleRemove = async (itemId) => {
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch(`http://localhost:3000/api/cart/${itemId}/remove`, {
+      const res = await fetch(`${BASE_URL}/cart/${itemId}/remove`, {
         method: "DELETE", headers: { "Authorization": `Bearer ${token}` }
       });
       if (!res.ok) return;
