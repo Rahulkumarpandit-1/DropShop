@@ -54,7 +54,7 @@ exports.login = async (req,res)=>{
 
   const token = jwt.sign(
    { id: user._id },
-   "dropshop_jwt_secret_123",
+   process.env.JWT_SECRET || "dropshop_jwt_secret_123",
    { expiresIn: "1d" }
   );
 

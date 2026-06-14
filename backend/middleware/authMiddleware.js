@@ -9,7 +9,7 @@ const authMiddleware = (req, res, next) => {
     }
 
     const token = authHeader.split(" ")[1];
-    const verified = jwt.verify(token, "dropshop_jwt_secret_123");
+    const verified = jwt.verify(token, process.env.JWT_SECRET || "dropshop_jwt_secret_123");
 
     req.user = verified; // { id: ... }
 
