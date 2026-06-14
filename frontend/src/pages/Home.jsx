@@ -135,7 +135,7 @@ function Home({ selectedCategory, setSelectedCategory }) {
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem" }}>
           <h2 style={{ fontSize: "1.4rem", fontWeight: 600, color: "var(--white)", margin: 0, fontFamily: "Cormorant Garamond, serif" }}>Shop by Category</h2>
         </div>
-        <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap" }}>
+        <div className="category-scroll-container">
           {categories.map(({ name, icon }) => (
             <div
               key={name}

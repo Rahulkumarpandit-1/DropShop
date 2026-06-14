@@ -12,8 +12,26 @@ if (frontendUrl) {
   frontendUrl = frontendUrl.trim().replace(/^['"]|['"]$/g, "").replace(/\/$/, "");
 }
 
+const allowedOrigins = [
+  "http://localhost:5173",
+  "http://localhost:5174",
+  "http://localhost:5175",
+  "http://127.0.0.1:5173",
+  "http://127.0.0.1:5174",
+  "http://127.0.0.1:5175"
+];
+
+if (frontendUrl) {
+  allowedOrigins.push(frontendUrl);
+}
+
 app.use(cors({
-  origin: frontendUrl || "http://localhost:5173",
+  origin: function (origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+    return callback(new Error(`Origin ${origin} not allowed by CORS`));
+  },
   credentials: true
 }));
 app.use(express.json());

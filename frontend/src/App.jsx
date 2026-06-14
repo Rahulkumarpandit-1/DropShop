@@ -16,6 +16,7 @@ import AuthCallback from "./pages/AuthCallback";
 import AdminDashboard from "./pages/AdminDashboard";
 import ResetPassword from "./pages/ResetPassword";
 import Wishlist from "./pages/Wishlist";
+import BottomNavigation from "./Components/BottomNavigation";
 
 function App() {
    const [selectedCategory, setSelectedCategory] = useState("All");
@@ -67,6 +68,7 @@ function App() {
         <Route path="/admin" element={<AdminDashboard />} />
         <Route path="/reset-password" element={<ResetPassword />} />
       </Routes>
+      {!isAdminPath && <BottomNavigation />}
     </>
   );
 }

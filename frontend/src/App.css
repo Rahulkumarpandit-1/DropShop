@@ -1908,3 +1908,168 @@ body {
     order: -1;
   }
 }
+
+/* ── PREMIUM MOBILE RESPONSIVE GRID & CARDS (2 COLUMNS) ── */
+@media (max-width: 600px) {
+  /* Make grids display 2 columns and reduce spacing */
+  .premium-product-grid,
+  .catalog-grid-full {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 0.75rem !important;
+  }
+
+  /* Make catalog section padding smaller */
+  [class*="page"], .catalog-toolbar {
+    padding-left: 0.75rem !important;
+    padding-right: 0.75rem !important;
+  }
+
+  .catalog-toolbar {
+    margin-bottom: 1.25rem !important;
+    padding-bottom: 1rem !important;
+  }
+
+  .catalog-title {
+    font-size: 1.6rem !important;
+  }
+
+  /* Polish cards for mobile screen size */
+  .premium-card {
+    border-radius: 12px !important;
+  }
+
+  /* Scale down product image wrappers dynamically */
+  .premium-card [style*="height:"] {
+    height: 130px !important;
+  }
+  
+  .premium-card img {
+    padding: 0.6rem !important;
+  }
+
+  /* Reduce body text padding inside cards */
+  .premium-card [style*="padding: 1.25rem"],
+  .premium-card [style*="padding: 1.25rem"],
+  .premium-card [style*="padding:1.25rem"],
+  .premium-card [style*="padding: 1rem"],
+  .premium-card [style*="padding:1rem"] {
+    padding: 0.6rem 0.75rem 0.75rem !important;
+  }
+
+  /* Refine Typography */
+  .premium-card h3 {
+    font-size: 0.8rem !important;
+    margin-bottom: 0.25rem !important;
+  }
+
+  /* Hide description or clip to 1 line to save vertical space */
+  .premium-card p[style*="display: -webkit-box"],
+  .premium-card [style*="min-height:"] {
+    font-size: 0.7rem !important;
+    margin-bottom: 0.5rem !important;
+    min-height: auto !important;
+    -webkit-line-clamp: 1 !important;
+  }
+
+  /* Scale down price and button layout */
+  .premium-card p[style*="font-size: 1.05rem"],
+  .premium-card p[style*="font-size: 0.95rem"],
+  .premium-card [style*="color: var(--accent)"] {
+    font-size: 0.88rem !important;
+  }
+
+  .premium-card span[style*="text-decoration: line-through"] {
+    font-size: 0.68rem !important;
+  }
+
+  .premium-card span[style*="color: var(--success)"] {
+    font-size: 0.65rem !important;
+    display: block !important;
+    margin-top: 0.1rem;
+  }
+
+  .premium-card button {
+    padding: 0.35rem 0.7rem !important;
+    font-size: 0.7rem !important;
+  }
+}
+
+/* ── HORIZONTAL CATEGORIES SCROLL ON MOBILE ── */
+.category-scroll-container {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 768px) {
+  .category-scroll-container {
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+    padding-bottom: 0.5rem !important;
+    margin-bottom: 0.5rem;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none; /* Firefox */
+  }
+  .category-scroll-container::-webkit-scrollbar {
+    display: none; /* Safari/Chrome */
+  }
+  .category-pill {
+    flex-shrink: 0 !important;
+  }
+}
+
+/* ── APP-STYLE MOBILE BOTTOM NAVIGATION BAR ── */
+.mobile-bottom-nav {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .mobile-bottom-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 60px;
+    background: rgba(18, 18, 18, 0.85);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    z-index: 9999;
+    padding-bottom: calc(env(safe-area-inset-bottom) / 1.5);
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.4);
+  }
+
+  .mobile-bottom-nav__item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: var(--grey);
+    font-size: 0.65rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    flex: 1;
+    gap: 0.15rem;
+  }
+
+  .mobile-bottom-nav__item.active {
+    color: var(--accent);
+  }
+
+  .mobile-bottom-nav__icon {
+    font-size: 1.15rem;
+  }
+
+  .mobile-bottom-nav__label {
+    letter-spacing: 0.02em;
+  }
+
+  /* Add margin to avoid overlapping with bottom bar content */
+  body {
+    padding-bottom: 74px !important;
+  }
+}

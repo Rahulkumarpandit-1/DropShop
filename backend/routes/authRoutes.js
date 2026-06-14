@@ -15,8 +15,10 @@ router.get("/google",
   passport.authenticate("google", { scope: ["profile", "email"] })
 );
 
+const frontendUrl = (process.env.FRONTEND_URL || "http://localhost:5173").trim().replace(/\/$/, "");
+
 router.get("/google/callback",
-  passport.authenticate("google", { failureRedirect: "http://localhost:5173/?error=auth_failed" }),
+  passport.authenticate("google", { failureRedirect: `${frontendUrl}/?error=auth_failed` }),
   googleCallback
 );
 

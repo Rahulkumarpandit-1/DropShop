@@ -66,23 +66,23 @@ exports.login = async (req,res)=>{
 };
 exports.googleCallback = async (req, res) => {
   try {
-    
     const { displayName, emails, id } = req.user;
-    
     const email = emails[0].value;
     let user = await User.findOne({ email });
     
     const token = jwt.sign(
-  { id: user._id }, 
-  process.env.JWT_SECRET || "dropshop_jwt_secret_123", // 👈 fallback
-  { expiresIn: "1d" }
-);
+      { id: user._id }, 
+      process.env.JWT_SECRET || "dropshop_jwt_secret_123",
+      { expiresIn: "1d" }
+    );
     
-    res.redirect(`http://localhost:5173/auth/callback?token=${token}`);
+    const frontendUrl = (process.env.FRONTEND_URL || "http://localhost:5173").trim().replace(/\/$/, "");
+    res.redirect(`${frontendUrl}/auth/callback?token=${token}`);
   } catch (err) {
     console.log("googleCallback error:", err.message);
-    console.log("full error:", err); // 👈 full error details
-    res.redirect("http://localhost:5173/?error=auth_failed");
+    console.log("full error:", err);
+    const frontendUrl = (process.env.FRONTEND_URL || "http://localhost:5173").trim().replace(/\/$/, "");
+    res.redirect(`${frontendUrl}/?error=auth_failed`);
   }
 };
 
