@@ -7,8 +7,13 @@ const User = require("./models/User");
 const app = express();
 
 // ✅ CORS must be FIRST
+let frontendUrl = process.env.FRONTEND_URL;
+if (frontendUrl) {
+  frontendUrl = frontendUrl.trim().replace(/^['"]|['"]$/g, "").replace(/\/$/, "");
+}
+
 app.use(cors({
-  origin: process.env.FRONTEND_URL || "http://localhost:5173",
+  origin: frontendUrl || "http://localhost:5173",
   credentials: true
 }));
 app.use(express.json());
