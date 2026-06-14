@@ -18,7 +18,7 @@ const session = require("express-session");
 const passport = require("./middleware/passport");
 
 app.use(session({
-  secret: process.env.GOOGLE_CLIENT_ID,
+  secret: process.env.SESSION_SECRET || process.env.GOOGLE_CLIENT_ID || "dropshop_fallback_session_secret",
   resave: false,
   saveUninitialized: false
 }));

@@ -5,9 +5,18 @@ const passport = require("passport");
 const GoogleStrategy = require("passport-google-oauth20").Strategy;
 const User = require("../models/User");
 
+const clientID = process.env.GOOGLE_CLIENT_ID || "dummy_client_id";
+const clientSecret = process.env.GOOGLE_CLIENT_SECRET || "dummy_client_secret";
+
+if (process.env.GOOGLE_CLIENT_ID) {
+  console.log("Registering GoogleStrategy with Client ID:", process.env.GOOGLE_CLIENT_ID);
+} else {
+  console.warn("GOOGLE_CLIENT_ID not found. Google Auth is disabled.");
+}
+
 passport.use(new GoogleStrategy({
-  clientID: process.env.GOOGLE_CLIENT_ID,
-  clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+  clientID: clientID,
+  clientSecret: clientSecret,
   callbackURL: "http://localhost:3000/api/auth/google/callback"
 }, async (accessToken, refreshToken, profile, done) => {
   try {

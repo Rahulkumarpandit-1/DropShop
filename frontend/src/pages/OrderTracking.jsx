@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
+import { BASE_URL } from "../services/api";
 
 const STEPS = [
   { label: "Placed", icon: "🛍️", desc: "Order received" },
@@ -31,7 +32,7 @@ useEffect(() => {
   const token = localStorage.getItem("token");
   
   axios
-    .get(`/api/orders/${orderId}/tracking`, {
+    .get(`${BASE_URL}/orders/${orderId}/tracking`, {
       headers: { Authorization: `Bearer ${token}` }
     })
     .then((res) => {

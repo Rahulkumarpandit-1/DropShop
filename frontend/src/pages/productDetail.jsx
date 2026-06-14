@@ -284,8 +284,8 @@ function ProductDetail() {
             <div style={{ background: "rgba(0,0,0,0.01)", border: "1px solid var(--border)", borderRadius: "16px", padding: "1.25rem", marginBottom: "2rem" }}>
               <p style={{ fontSize: "0.85rem", fontWeight: 600, color: "var(--white)", margin: "0 0 0.5rem" }}>Delivery Estimator</p>
               <div style={{ display: "flex", gap: "0.5rem" }}>
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   placeholder="Enter 6-digit Pincode"
                   maxLength={6}
                   id="pincode-input"
@@ -295,7 +295,7 @@ function ProductDetail() {
                     color: "var(--white)", width: "160px", outline: "none"
                   }}
                 />
-                <button 
+                <button
                   onClick={() => {
                     const pin = document.getElementById("pincode-input")?.value;
                     if (pin && pin.length === 6 && /^\d+$/.test(pin)) {
@@ -333,7 +333,7 @@ function ProductDetail() {
                 style={{
                   flex: 1, padding: "1rem",
                   background: added ? "var(--success)" : "var(--white)",
-                  color: added ? "var(--black)" : "#09090b", border: "none",
+                  color: added ? "var(--black)" : "#ffffffff", border: "none",
                   borderRadius: "980px", fontSize: "0.9rem",
                   fontWeight: 600, cursor: product.stock === 0 ? "not-allowed" : "pointer",
                   fontFamily: "Inter, sans-serif",
@@ -368,20 +368,20 @@ function ProductDetail() {
               <h4 style={{ fontSize: "0.95rem", fontWeight: 600, color: "var(--white)", marginBottom: "0.75rem", textTransform: "uppercase", letterSpacing: "0.05em" }}>Product Specifications</h4>
               <div style={{ border: "1px solid var(--border)", borderRadius: "12px", overflow: "hidden" }}>
                 {Object.entries(
-                  product.specs && Object.keys(product.specs).length > 0 
-                    ? product.specs 
+                  product.specs && Object.keys(product.specs).length > 0
+                    ? product.specs
                     : {
-                        "Brand": "DropShop Premium",
-                        "Category": product.category || "General",
-                        "Stock Status": product.stock > 0 ? "In Stock" : "Out of Stock",
-                        "Warranty": "1 Year Manufacturer Warranty",
-                        "Estimated Shipping": "Ships in 24-48 Hours",
-                        "Country of Origin": "India"
-                      }
+                      "Brand": "DropShop Premium",
+                      "Category": product.category || "General",
+                      "Stock Status": product.stock > 0 ? "In Stock" : "Out of Stock",
+                      "Warranty": "1 Year Manufacturer Warranty",
+                      "Estimated Shipping": "Ships in 24-48 Hours",
+                      "Country of Origin": "India"
+                    }
                 ).map(([key, val], idx, arr) => (
-                  <div key={key} style={{ 
-                    display: "flex", 
-                    fontSize: "0.82rem", 
+                  <div key={key} style={{
+                    display: "flex",
+                    fontSize: "0.82rem",
                     borderBottom: idx === arr.length - 1 ? "none" : "1px solid var(--border)",
                     background: idx % 2 === 0 ? "rgba(0,0,0,0.01)" : "transparent"
                   }}>
@@ -398,172 +398,172 @@ function ProductDetail() {
       {/* ── REVIEWS SECTION ── */}
       <div style={{ marginTop: "4rem" }}>
 
-  {/* Rating Summary */}
-  <div style={{
-    display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
-    gap: "2rem", background: "var(--card-bg)",
-    border: "1px solid var(--border)", borderRadius: "20px",
-    padding: "2rem", marginBottom: "2rem"
-  }}>
-    <div style={{ textAlign: "center", borderRight: "1px solid var(--border)", paddingRight: "2rem" }}>
-      <p style={{ fontSize: "4rem", fontWeight: 800, color: "var(--white)", margin: 0, lineHeight: 1 }}>
-        {avgRating}
-      </p>
-      <div style={{ display: "flex", justifyContent: "center", gap: "2px", margin: "0.5rem 0" }}>
-        {[1,2,3,4,5].map(star => (
-          <span key={star} style={{ fontSize: "1.2rem", color: star <= Math.round(avgRating) ? "#f59e0b" : "rgba(255,255,255,0.15)" }}>★</span>
-        ))}
-      </div>
-      <p style={{ fontSize: "0.82rem", color: "var(--grey)", margin: 0 }}>{totalReviews} reviews</p>
-    </div>
-    <div style={{ display: "flex", flexDirection: "column", justifyContent: "center", gap: "0.5rem" }}>
-      {[5,4,3,2,1].map(star => {
-        const count = reviews.filter(r => r.rating === star).length;
-        const percent = totalReviews ? (count / totalReviews) * 100 : 0;
-        return (
-          <div key={star} style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
-            <span style={{ fontSize: "0.78rem", color: "var(--grey)", width: "12px" }}>{star}</span>
-            <span style={{ fontSize: "0.9rem", color: "#f59e0b" }}>★</span>
-            <div style={{ flex: 1, height: "6px", background: "rgba(255,255,255,0.05)", borderRadius: "980px", overflow: "hidden" }}>
-              <div style={{ width: `${percent}%`, height: "100%", background: "#f59e0b", borderRadius: "980px", transition: "width 0.3s ease" }} />
+        {/* Rating Summary */}
+        <div style={{
+          display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+          gap: "2rem", background: "var(--card-bg)",
+          border: "1px solid var(--border)", borderRadius: "20px",
+          padding: "2rem", marginBottom: "2rem"
+        }}>
+          <div style={{ textAlign: "center", borderRight: "1px solid var(--border)", paddingRight: "2rem" }}>
+            <p style={{ fontSize: "4rem", fontWeight: 800, color: "var(--white)", margin: 0, lineHeight: 1 }}>
+              {avgRating}
+            </p>
+            <div style={{ display: "flex", justifyContent: "center", gap: "2px", margin: "0.5rem 0" }}>
+              {[1, 2, 3, 4, 5].map(star => (
+                <span key={star} style={{ fontSize: "1.2rem", color: star <= Math.round(avgRating) ? "#f59e0b" : "rgba(255,255,255,0.15)" }}>★</span>
+              ))}
             </div>
-            <span style={{ fontSize: "0.78rem", color: "var(--grey)", width: "24px" }}>{count}</span>
+            <p style={{ fontSize: "0.82rem", color: "var(--grey)", margin: 0 }}>{totalReviews} reviews</p>
           </div>
-        );
-      })}
-    </div>
-  </div>
+          <div style={{ display: "flex", flexDirection: "column", justifyContent: "center", gap: "0.5rem" }}>
+            {[5, 4, 3, 2, 1].map(star => {
+              const count = reviews.filter(r => r.rating === star).length;
+              const percent = totalReviews ? (count / totalReviews) * 100 : 0;
+              return (
+                <div key={star} style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+                  <span style={{ fontSize: "0.78rem", color: "var(--grey)", width: "12px" }}>{star}</span>
+                  <span style={{ fontSize: "0.9rem", color: "#f59e0b" }}>★</span>
+                  <div style={{ flex: 1, height: "6px", background: "rgba(255,255,255,0.05)", borderRadius: "980px", overflow: "hidden" }}>
+                    <div style={{ width: `${percent}%`, height: "100%", background: "#f59e0b", borderRadius: "980px", transition: "width 0.3s ease" }} />
+                  </div>
+                  <span style={{ fontSize: "0.78rem", color: "var(--grey)", width: "24px" }}>{count}</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
 
-  {/* Write Review */}
-  {localStorage.getItem("token") && (
-    <div style={{ background: "var(--card-bg)", border: "1px solid var(--border)", borderRadius: "20px", padding: "2rem", marginBottom: "2rem" }}>
-      <h3 style={{ fontSize: "1.1rem", fontWeight: 600, color: "var(--white)", margin: "0 0 1.25rem", fontFamily: "Cormorant Garamond, serif" }}>Write a Review</h3>
+        {/* Write Review */}
+        {localStorage.getItem("token") && (
+          <div style={{ background: "var(--card-bg)", border: "1px solid var(--border)", borderRadius: "20px", padding: "2rem", marginBottom: "2rem" }}>
+            <h3 style={{ fontSize: "1.1rem", fontWeight: 600, color: "var(--white)", margin: "0 0 1.25rem", fontFamily: "Cormorant Garamond, serif" }}>Write a Review</h3>
 
-      {/* Star Selector */}
-      <div style={{ display: "flex", gap: "0.4rem", marginBottom: "1rem" }}>
-        {[1,2,3,4,5].map(star => (
-          <span
-            key={star}
-            onClick={() => setUserRating(star)}
-            onMouseEnter={() => setHoverRating(star)}
-            onMouseLeave={() => setHoverRating(0)}
-            style={{
-              fontSize: "2rem", cursor: "pointer",
-              color: star <= (hoverRating || userRating) ? "#f59e0b" : "rgba(255,255,255,0.15)",
-              transition: "color 0.15s ease"
-            }}
-          >★</span>
-        ))}
-        {userRating > 0 && (
-          <span style={{ fontSize: "0.85rem", color: "var(--grey)", alignSelf: "center", marginLeft: "0.5rem" }}>
-            {["", "Poor", "Fair", "Good", "Very Good", "Excellent"][userRating]}
-          </span>
+            {/* Star Selector */}
+            <div style={{ display: "flex", gap: "0.4rem", marginBottom: "1rem" }}>
+              {[1, 2, 3, 4, 5].map(star => (
+                <span
+                  key={star}
+                  onClick={() => setUserRating(star)}
+                  onMouseEnter={() => setHoverRating(star)}
+                  onMouseLeave={() => setHoverRating(0)}
+                  style={{
+                    fontSize: "2rem", cursor: "pointer",
+                    color: star <= (hoverRating || userRating) ? "#f59e0b" : "rgba(255,255,255,0.15)",
+                    transition: "color 0.15s ease"
+                  }}
+                >★</span>
+              ))}
+              {userRating > 0 && (
+                <span style={{ fontSize: "0.85rem", color: "var(--grey)", alignSelf: "center", marginLeft: "0.5rem" }}>
+                  {["", "Poor", "Fair", "Good", "Very Good", "Excellent"][userRating]}
+                </span>
+              )}
+            </div>
+
+            {/* Comment */}
+            <textarea
+              placeholder="Share your experience with this product..."
+              value={comment}
+              onChange={e => setComment(e.target.value)}
+              rows={4}
+              style={{
+                width: "100%", padding: "0.85rem 1rem",
+                background: "rgba(255,255,255,0.03)", border: "1px solid var(--border)", borderRadius: "12px",
+                fontSize: "0.88rem", color: "var(--white)", fontFamily: "Inter, sans-serif",
+                outline: "none", resize: "vertical", marginBottom: "1rem",
+                boxSizing: "border-box", transition: "border-color 0.2s"
+              }}
+              onFocus={e => e.currentTarget.style.borderColor = "var(--accent)"}
+              onBlur={e => e.currentTarget.style.borderColor = "var(--border)"}
+            />
+
+            {reviewMessage && (
+              <p style={{
+                fontSize: "0.85rem", fontWeight: 500, marginBottom: "0.75rem",
+                color: reviewMessage.startsWith("✓") ? "var(--success)" : "var(--error)"
+              }}>{reviewMessage}</p>
+            )}
+
+            <button
+              onClick={handleSubmitReview}
+              disabled={submitting}
+              style={{
+                background: "var(--accent)", color: "var(--black)", border: "none",
+                borderRadius: "980px", padding: "0.75rem 2rem",
+                fontSize: "0.85rem", fontWeight: 600, cursor: "pointer",
+                fontFamily: "Inter, sans-serif", opacity: submitting ? 0.6 : 1
+              }}
+            >
+              {submitting ? "Submitting..." : "Submit Review"}
+            </button>
+          </div>
+        )}
+
+        {/* Reviews List */}
+        <h3 style={{ fontSize: "1.1rem", fontWeight: 600, color: "var(--white)", margin: "0 0 1rem", fontFamily: "Cormorant Garamond, serif" }}>
+          Customer Reviews ({totalReviews})
+        </h3>
+
+        {reviews.length === 0 ? (
+          <div style={{ textAlign: "center", padding: "3rem", background: "var(--card-bg)", border: "1px solid var(--border)", borderRadius: "20px" }}>
+            <p style={{ fontSize: "2rem", marginBottom: "0.5rem" }}>⭐</p>
+            <p style={{ color: "var(--grey)", fontSize: "0.9rem" }}>No reviews yet. Be the first to review!</p>
+          </div>
+        ) : (
+          <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+            {reviews.map(review => (
+              <div key={review._id} style={{
+                background: "var(--card-bg)", border: "1px solid var(--border)",
+                borderRadius: "16px", padding: "1.5rem"
+              }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "0.75rem" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+                    <div style={{
+                      width: "40px", height: "40px", borderRadius: "50%",
+                      background: "rgba(255,255,255,0.06)", color: "var(--accent)",
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                      fontSize: "0.85rem", fontWeight: 700, flexShrink: 0
+                    }}>
+                      {review.name?.charAt(0).toUpperCase()}
+                    </div>
+                    <div>
+                      <p style={{ margin: 0, fontSize: "0.9rem", fontWeight: 600, color: "var(--white)" }}>{review.name}</p>
+                      <p style={{ margin: 0, fontSize: "0.75rem", color: "var(--grey)" }}>
+                        {new Date(review.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
+                      </p>
+                    </div>
+                  </div>
+                  <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                    <div style={{ display: "flex", gap: "1px" }}>
+                      {[1, 2, 3, 4, 5].map(star => (
+                        <span key={star} style={{ fontSize: "0.9rem", color: star <= review.rating ? "#f59e0b" : "rgba(255,255,255,0.15)" }}>★</span>
+                      ))}
+                    </div>
+                    {/* Delete button — only show for own reviews */}
+                    <button
+                      onClick={() => handleDeleteReview(review._id)}
+                      style={{
+                        background: "transparent", border: "none",
+                        color: "var(--border)", cursor: "pointer", fontSize: "0.8rem",
+                        padding: "0.2rem 0.5rem", borderRadius: "6px",
+                        marginLeft: "0.5rem"
+                      }}
+                      onMouseEnter={e => e.currentTarget.style.color = "var(--error)"}
+                      onMouseLeave={e => e.currentTarget.style.color = "var(--border)"}
+                    >✕</button>
+                  </div>
+                </div>
+                <p style={{ margin: 0, fontSize: "0.88rem", color: "var(--white)", opacity: 0.9, lineHeight: 1.7 }}>
+                  {review.comment}
+                </p>
+              </div>
+            ))}
+          </div>
         )}
       </div>
 
-      {/* Comment */}
-      <textarea
-        placeholder="Share your experience with this product..."
-        value={comment}
-        onChange={e => setComment(e.target.value)}
-        rows={4}
-        style={{
-          width: "100%", padding: "0.85rem 1rem",
-          background: "rgba(255,255,255,0.03)", border: "1px solid var(--border)", borderRadius: "12px",
-          fontSize: "0.88rem", color: "var(--white)", fontFamily: "Inter, sans-serif",
-          outline: "none", resize: "vertical", marginBottom: "1rem",
-          boxSizing: "border-box", transition: "border-color 0.2s"
-        }}
-        onFocus={e => e.currentTarget.style.borderColor = "var(--accent)"}
-        onBlur={e => e.currentTarget.style.borderColor = "var(--border)"}
-      />
-
-      {reviewMessage && (
-        <p style={{
-          fontSize: "0.85rem", fontWeight: 500, marginBottom: "0.75rem",
-          color: reviewMessage.startsWith("✓") ? "var(--success)" : "var(--error)"
-        }}>{reviewMessage}</p>
-      )}
-
-      <button
-        onClick={handleSubmitReview}
-        disabled={submitting}
-        style={{
-          background: "var(--accent)", color: "var(--black)", border: "none",
-          borderRadius: "980px", padding: "0.75rem 2rem",
-          fontSize: "0.85rem", fontWeight: 600, cursor: "pointer",
-          fontFamily: "Inter, sans-serif", opacity: submitting ? 0.6 : 1
-        }}
-      >
-        {submitting ? "Submitting..." : "Submit Review"}
-      </button>
     </div>
-  )}
-
-  {/* Reviews List */}
-  <h3 style={{ fontSize: "1.1rem", fontWeight: 600, color: "var(--white)", margin: "0 0 1rem", fontFamily: "Cormorant Garamond, serif" }}>
-    Customer Reviews ({totalReviews})
-  </h3>
-
-  {reviews.length === 0 ? (
-    <div style={{ textAlign: "center", padding: "3rem", background: "var(--card-bg)", border: "1px solid var(--border)", borderRadius: "20px" }}>
-      <p style={{ fontSize: "2rem", marginBottom: "0.5rem" }}>⭐</p>
-      <p style={{ color: "var(--grey)", fontSize: "0.9rem" }}>No reviews yet. Be the first to review!</p>
-    </div>
-  ) : (
-    <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-      {reviews.map(review => (
-        <div key={review._id} style={{
-          background: "var(--card-bg)", border: "1px solid var(--border)",
-          borderRadius: "16px", padding: "1.5rem"
-        }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "0.75rem" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
-              <div style={{
-                width: "40px", height: "40px", borderRadius: "50%",
-                background: "rgba(255,255,255,0.06)", color: "var(--accent)",
-                display: "flex", alignItems: "center", justifyContent: "center",
-                fontSize: "0.85rem", fontWeight: 700, flexShrink: 0
-              }}>
-                {review.name?.charAt(0).toUpperCase()}
-              </div>
-              <div>
-                <p style={{ margin: 0, fontSize: "0.9rem", fontWeight: 600, color: "var(--white)" }}>{review.name}</p>
-                <p style={{ margin: 0, fontSize: "0.75rem", color: "var(--grey)" }}>
-                  {new Date(review.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
-                </p>
-              </div>
-            </div>
-            <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-              <div style={{ display: "flex", gap: "1px" }}>
-                {[1,2,3,4,5].map(star => (
-                  <span key={star} style={{ fontSize: "0.9rem", color: star <= review.rating ? "#f59e0b" : "rgba(255,255,255,0.15)" }}>★</span>
-                ))}
-              </div>
-              {/* Delete button — only show for own reviews */}
-              <button
-                onClick={() => handleDeleteReview(review._id)}
-                style={{
-                  background: "transparent", border: "none",
-                  color: "var(--border)", cursor: "pointer", fontSize: "0.8rem",
-                  padding: "0.2rem 0.5rem", borderRadius: "6px",
-                  marginLeft: "0.5rem"
-                }}
-                onMouseEnter={e => e.currentTarget.style.color = "var(--error)"}
-                onMouseLeave={e => e.currentTarget.style.color = "var(--border)"}
-              >✕</button>
-            </div>
-          </div>
-          <p style={{ margin: 0, fontSize: "0.88rem", color: "var(--white)", opacity: 0.9, lineHeight: 1.7 }}>
-            {review.comment}
-          </p>
-        </div>
-      ))}
-    </div>
-  )}
-</div>
-
-      </div>
 
   );
 };
