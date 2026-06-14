@@ -1,6 +1,11 @@
 export const BASE_URL = (() => {
-  if (import.meta.env.VITE_API_URL) {
-    return import.meta.env.VITE_API_URL;
+  let url = import.meta.env.VITE_API_URL;
+  if (url) {
+    url = url.trim().replace(/\/$/, "");
+    if (!url.endsWith("/api")) {
+      url += "/api";
+    }
+    return url;
   }
   const hostname = window.location.hostname;
   if (hostname !== "localhost" && hostname !== "127.0.0.1" && hostname !== "") {
