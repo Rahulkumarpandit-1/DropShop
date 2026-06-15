@@ -58,9 +58,10 @@ function Home({ selectedCategory, setSelectedCategory }) {
   const fetchTrendingProducts = async () => {
     try {
       const data = await getTrendingProducts(8);
-      setTrendingProducts(data);
+      setTrendingProducts(Array.isArray(data) ? data : data.products || []);
     } catch (err) {
       console.error("fetchTrendingProducts error:", err);
+      setTrendingProducts([]);
     } finally {
       setTrendingLoading(false);
     }
