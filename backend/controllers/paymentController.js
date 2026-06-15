@@ -7,14 +7,19 @@ const Product = require("../models/Product");
 const User = require("../models/User");
 const { sendOrderConfirmation } = require("../utils/sendEmail");
 
-const razorpay = new Razorpay({
+const razorpay = process.env.RAZORPAY_KEY_ID ? new Razorpay({
   key_id: process.env.RAZORPAY_KEY_ID,
   key_secret: process.env.RAZORPAY_KEY_SECRET,
-});
+}) : null;
+
 // STEP 1 — Create Razorpay order
 exports.createOrder = async (req, res) => {
   try {
     const { amount } = req.body; // amount in rupees
+
+    if (!razorpay) {
+      return res.status(500).json({ error: "Razorpay is not configured on the server." });
+    }
 
     const options = {
       amount: amount * 100, // convert to paise
@@ -42,6 +47,10 @@ exports.verifyPayment = async (req, res) => {
       itemId,
       couponCode
     } = req.body;
+
+    if (!process.env.RAZORPAY_KEY_SECRET) {
+      return res.status(500).json({ error: "Razorpay is not configured on the server." });
+    }
 
     // verify signature
     const body = razorpay_order_id + "|" + razorpay_payment_id;
