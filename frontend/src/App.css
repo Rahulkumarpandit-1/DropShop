@@ -1558,7 +1558,7 @@ body {
   background: rgba(0, 0, 0, 0.2);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
-  z-index: 999;
+  z-index: 10001;
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.35s cubic-bezier(0.16, 1, 0.3, 1);
@@ -1578,7 +1578,7 @@ body {
   max-width: 100%;
   background: var(--card-bg);
   box-shadow: -10px 0 40px rgba(0, 0, 0, 0.04);
-  z-index: 1000;
+  z-index: 10002;
   display: flex;
   flex-direction: column;
   transition: right 0.4s cubic-bezier(0.16, 1, 0.3, 1);
@@ -2079,5 +2079,35 @@ body {
   /* Add margin to avoid overlapping with bottom bar content */
   body {
     padding-bottom: 74px !important;
+  }
+}
+
+/* ── TRENDING PRODUCTS SLIDER ── */
+.trending-slider {
+  display: flex;
+  overflow-x: auto;
+  gap: 1.5rem;
+  padding: 0.5rem 0.5rem 1.5rem 0.5rem;
+  margin: 0 -0.5rem;
+  scroll-behavior: smooth;
+  scrollbar-width: none; /* Firefox */
+  -webkit-overflow-scrolling: touch; /* smooth momentum scroll on iOS */
+}
+
+.trending-slider::-webkit-scrollbar {
+  display: none; /* Chrome/Safari/Edge */
+}
+
+.trending-slider .premium-card {
+  flex: 0 0 280px; /* Fixed width for cards on Desktop */
+}
+
+@media (max-width: 600px) {
+  .trending-slider {
+    gap: 0.8rem;
+    padding-bottom: 1rem;
+  }
+  .trending-slider .premium-card {
+    flex: 0 0 220px; /* Shorter card width on Mobile */
   }
 }

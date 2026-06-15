@@ -109,7 +109,7 @@ function Navbar({ selectedCategory, setSelectedCategory, setPage }) {
             width: "100%",
             height: "100%",
             background: "rgba(0,0,0,0.5)",
-            zIndex: 999
+            zIndex: 10001
           }}
         />
       )}
@@ -124,7 +124,7 @@ function Navbar({ selectedCategory, setSelectedCategory, setPage }) {
         background: "rgba(255, 255, 255, 0.98)",
         backdropFilter: "blur(20px)",
         WebkitBackdropFilter: "blur(20px)",
-        zIndex: 1000,
+        zIndex: 10002,
         padding: "2rem 1.5rem",
         transition: "left 0.3s cubic-bezier(0.16, 1, 0.3, 1)",
         borderRight: "1px solid var(--border)",

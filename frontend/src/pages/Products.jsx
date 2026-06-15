@@ -221,13 +221,12 @@ function Products() {
     },
     wishBtn: (active) => ({
       position: "absolute",
-      top: "10px",
-      left: "10px",
+      top: "15px",
+      right: "10px",
       background: active ? "rgba(255, 69, 58, 0.12)" : "rgba(255, 255, 255, 0.8)",
       border: active ? "1px solid rgba(255, 69, 58, 0.25)" : "1px solid var(--border)",
       borderRadius: "50%",
-      width: "32px",
-      height: "32px",
+      width: "10px",
       display: "flex",
       alignItems: "center",
       justifyContent: "center",
@@ -347,17 +346,17 @@ function Products() {
                 {searchQuery
                   ? "Search"
                   : selectedCategory === "All"
-                  ? "All Products"
-                  : selectedCategory}
+                    ? "All Products"
+                    : selectedCategory}
               </span>
             </div>
-            
+
             <h1 className="catalog-title">
               {searchQuery
                 ? `Results for "${searchQuery}"`
                 : selectedCategory === "All"
-                ? "All Products"
-                : selectedCategory}
+                  ? "All Products"
+                  : selectedCategory}
               <span className="catalog-count-label">({filteredProducts.length})</span>
             </h1>
           </div>
@@ -385,7 +384,7 @@ function Products() {
               />
             </div>
 
-            <button 
+            <button
               className={`premium-filter-btn ${hasActiveFilters ? "active" : ""}`}
               onClick={() => setShowFiltersDrawer(true)}
             >
@@ -403,9 +402,9 @@ function Products() {
               <span>Filter</span>
               {hasActiveFilters && (
                 <span className="filter-badge-dot">
-                  { (selectedCategory !== "All" ? 1 : 0) + 
-                    (selectedSubcategory !== "All" ? 1 : 0) + 
-                    (priceRange.min !== 0 || priceRange.max !== Infinity ? 1 : 0) }
+                  {(selectedCategory !== "All" ? 1 : 0) +
+                    (selectedSubcategory !== "All" ? 1 : 0) +
+                    (priceRange.min !== 0 || priceRange.max !== Infinity ? 1 : 0)}
                 </span>
               )}
             </button>
@@ -429,17 +428,17 @@ function Products() {
         <div className="catalog-layout-wrapper">
 
           {/* ── FILTER DRAWER ── */}
-          <div 
-            className={`filter-drawer-overlay ${showFiltersDrawer ? "active" : ""}`} 
-            onClick={() => setShowFiltersDrawer(false)} 
+          <div
+            className={`filter-drawer-overlay ${showFiltersDrawer ? "active" : ""}`}
+            onClick={() => setShowFiltersDrawer(false)}
           />
-          
+
           <div className={`filter-drawer ${showFiltersDrawer ? "open" : ""}`}>
             <div className="filter-drawer-header">
               <h3>Filters</h3>
               <button className="filter-drawer-close-btn" onClick={() => setShowFiltersDrawer(false)}>✕</button>
             </div>
-            
+
             <div className="filter-drawer-body">
               {/* Category Section */}
               <div className="filter-drawer-section">

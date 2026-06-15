@@ -5,9 +5,10 @@ const Product=require("../models/Product")
 const authMiddleware = require("../middleware/authMiddleware");
 const isAdmin = require("../middleware/adminMiddleware");
 
-const {getProducts,addProduct,updateProduct,deleteProduct}=require("../controllers/productController");
+const {getProducts,addProduct,updateProduct,deleteProduct,getTrendingProducts}=require("../controllers/productController");
 
 router.get("/products",getProducts);
+router.get("/products/trending",getTrendingProducts);
 router.post("/products", authMiddleware, isAdmin, addProduct);
 router.put("/products/:id", authMiddleware, isAdmin, updateProduct);
 router.delete("/products/:id", authMiddleware, isAdmin, deleteProduct);

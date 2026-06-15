@@ -82,7 +82,7 @@ function AuthModal({ isOpen, onClose, onSuccess }) {
         background: "rgba(0,0,0,0.7)",
         backdropFilter: "blur(16px)",
         WebkitBackdropFilter: "blur(16px)",
-        zIndex: 999,
+        zIndex: 10003,
         display: "flex", alignItems: "center", justifyContent: "center",
         padding: "1rem"
       }}

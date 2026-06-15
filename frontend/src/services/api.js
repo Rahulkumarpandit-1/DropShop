@@ -26,6 +26,17 @@ export const getProducts = async (page, category = "All") => {
   }
 };
 
+export const getTrendingProducts = async (limit = 8) => {
+  try {
+    const res = await fetch(`${BASE_URL}/products/trending?limit=${limit}`);
+    const data = await res.json();
+    return data;
+  } catch (err) {
+    console.error("Error fetching trending products:", err);
+    return [];
+  }
+};
+
 export const addToCart = async (productId) => {
   try {
     const token = localStorage.getItem("token");

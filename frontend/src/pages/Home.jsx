@@ -1,12 +1,14 @@
-import { useEffect, useState } from "react";
-import { getProducts, addToCart } from "../services/api";
+import { useEffect, useState, useRef } from "react";
+import { getProducts, addToCart, getTrendingProducts } from "../services/api";
 import { useNavigate, useLocation } from "react-router-dom";
 import toast from "react-hot-toast";
 
 function Home({ selectedCategory, setSelectedCategory }) {
   const [products, setProducts] = useState([]);
+  const [trendingProducts, setTrendingProducts] = useState([]);
   const [addedId, setAddedId] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [trendingLoading, setTrendingLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -14,6 +16,18 @@ function Home({ selectedCategory, setSelectedCategory }) {
   const navigate = useNavigate();
   const location = useLocation();
   const searchQuery = new URLSearchParams(location.search).get("search") || "";
+
+  const sliderRef = useRef(null);
+
+  const scrollSlider = (direction) => {
+    if (sliderRef.current) {
+      const scrollAmount = 320;
+      sliderRef.current.scrollBy({
+        left: direction === "left" ? -scrollAmount : scrollAmount,
+        behavior: "smooth"
+      });
+    }
+  };
 
   const images = ["/banner_electronics.png", "/banner_fashion.png", "/banner_accessories.png"];
 
@@ -35,6 +49,21 @@ function Home({ selectedCategory, setSelectedCategory }) {
       setTotalPages(data.totalPages || 1);
     } catch { setProducts([]); }
     finally { setLoading(false); }
+  };
+
+  useEffect(() => {
+    fetchTrendingProducts();
+  }, []);
+
+  const fetchTrendingProducts = async () => {
+    try {
+      const data = await getTrendingProducts(8);
+      setTrendingProducts(data);
+    } catch (err) {
+      console.error("fetchTrendingProducts error:", err);
+    } finally {
+      setTrendingLoading(false);
+    }
   };
 
   const handleAddToCart = async (e, id) => {
@@ -158,45 +187,109 @@ function Home({ selectedCategory, setSelectedCategory }) {
             <p style={{ fontSize: "0.72rem", letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--grey)", marginBottom: "0.3rem" }}>Hot right now</p>
             <h2 style={{ fontSize: "1.4rem", fontWeight: 600, color: "var(--white)", margin: 0, fontFamily: "Cormorant Garamond, serif" }}>Trending Products</h2>
           </div>
-          <span
-            onClick={() => navigate("/products")}
-            style={{ fontSize: "0.82rem", color: "var(--grey)", cursor: "pointer", display: "flex", alignItems: "center", gap: "0.3rem" }}
-            onMouseEnter={e => e.currentTarget.style.color = "var(--accent)"}
-            onMouseLeave={e => e.currentTarget.style.color = "var(--grey)"}
-          >View all →</span>
+          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+            <button
+              onClick={() => scrollSlider("left")}
+              style={{
+                background: "var(--card-bg)",
+                border: "1px solid var(--border)",
+                color: "var(--white)",
+                borderRadius: "50%",
+                width: "32px",
+                height: "32px",
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                transition: "all 0.2s"
+              }}
+              onMouseEnter={e => e.currentTarget.style.borderColor = "var(--accent)"}
+              onMouseLeave={e => e.currentTarget.style.borderColor = "var(--border)"}
+            >
+              ‹
+            </button>
+            <button
+              onClick={() => scrollSlider("right")}
+              style={{
+                background: "var(--card-bg)",
+                border: "1px solid var(--border)",
+                color: "var(--white)",
+                borderRadius: "50%",
+                width: "32px",
+                height: "32px",
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                transition: "all 0.2s"
+              }}
+              onMouseEnter={e => e.currentTarget.style.borderColor = "var(--accent)"}
+              onMouseLeave={e => e.currentTarget.style.borderColor = "var(--border)"}
+            >
+              ›
+            </button>
+            <span
+              onClick={() => navigate("/products")}
+              style={{ fontSize: "0.82rem", color: "var(--grey)", cursor: "pointer", display: "flex", alignItems: "center", gap: "0.3rem", marginLeft: "0.5rem" }}
+              onMouseEnter={e => e.currentTarget.style.color = "var(--accent)"}
+              onMouseLeave={e => e.currentTarget.style.color = "var(--grey)"}
+            >View all →</span>
+          </div>
         </div>
 
-        <div className="premium-product-grid">
-          {products.slice(0, 4).map((p) => (
-            <div
-              key={p._id}
-              onClick={() => navigate(`/product/${p._id}`)}
-              className="premium-card"
-              style={{ cursor: "pointer" }}
-            >
-              <div style={{ position: "relative", height: "180px", background: "rgba(255,255,255,0.01)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <img src={p.image} alt={p.name} style={{ width: "100%", height: "100%", objectFit: "contain", padding: "1rem" }} />
-                <span style={{ position: "absolute", top: "10px", left: "10px", background: "var(--error)", color: "#fff", fontSize: "0.65rem", fontWeight: 700, padding: "0.2rem 0.6rem", borderRadius: "980px" }}>🔥 HOT</span>
-              </div>
-              <div style={{ padding: "1rem" }}>
-                <h3 style={{ fontSize: "0.88rem", fontWeight: 600, color: "var(--white)", margin: "0 0 0.25rem", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.name}</h3>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "0.75rem" }}>
-                  <div style={{ display: "flex", flexDirection: "column" }}>
-                    <p style={{ fontSize: "0.95rem", fontWeight: 700, color: "var(--accent)", margin: 0 }}>₹{p.price?.toLocaleString()}</p>
-                    {p.originalPrice && p.originalPrice > p.price && (
-                      <div style={{ display: "flex", alignItems: "center", gap: "0.3rem" }}>
-                        <span style={{ fontSize: "0.72rem", color: "var(--grey)", textDecoration: "line-through" }}>₹{p.originalPrice.toLocaleString()}</span>
-                        <span style={{ fontSize: "0.7rem", color: "var(--success)", fontWeight: 600 }}>{Math.round(((p.originalPrice - p.price) / p.originalPrice) * 100)}% OFF</span>
-                      </div>
-                    )}
-                  </div>
-                  <button onClick={(e) => handleAddToCart(e, p._id)} style={{ background: addedId === p._id ? "var(--success)" : "rgba(0, 0, 0, 0.05)", color: addedId === p._id ? "#fff" : "var(--white)", border: "none", borderRadius: "980px", padding: "0.4rem 1rem", fontSize: "0.75rem", fontWeight: 600, cursor: "pointer", transition: "all 0.2s" }}>
-                    {addedId === p._id ? "✓" : "+ Cart"}
-                  </button>
+        <div
+          ref={sliderRef}
+          className="trending-slider"
+        >
+          {trendingLoading ? (
+            /* Loading skeletons for trending products */
+            [...Array(6)].map((_, i) => (
+              <div
+                key={i}
+                className="premium-card"
+                style={{ flex: "0 0 280px" }}
+              >
+                <div style={{ height: "180px", background: "linear-gradient(90deg, var(--black) 25%, var(--border) 50%, var(--black) 75%)", backgroundSize: "200% 100%", animation: "shimmer 1.4s infinite" }} />
+                <div style={{ padding: "1rem" }}>
+                  <div style={{ height: "14px", background: "var(--border)", borderRadius: "6px", marginBottom: "8px", width: "70%" }} />
+                  <div style={{ height: "12px", background: "var(--border)", borderRadius: "6px", width: "50%" }} />
                 </div>
               </div>
-            </div>
-          ))}
+            ))
+          ) : trendingProducts.length === 0 ? (
+            <div style={{ padding: "2rem", color: "var(--grey)", fontSize: "0.88rem" }}>No trending products yet</div>
+          ) : (
+            trendingProducts.map((p) => (
+              <div
+                key={p._id}
+                onClick={() => navigate(`/product/${p._id}`)}
+                className="premium-card"
+                style={{ cursor: "pointer" }}
+              >
+                <div style={{ position: "relative", height: "180px", background: "rgba(255,255,255,0.01)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <img src={p.image} alt={p.name} style={{ width: "100%", height: "100%", objectFit: "contain", padding: "1rem" }} />
+                  <span style={{ position: "absolute", top: "10px", left: "10px", background: "var(--error)", color: "#fff", fontSize: "0.65rem", fontWeight: 700, padding: "0.2rem 0.6rem", borderRadius: "980px" }}>🔥 HOT</span>
+                </div>
+                <div style={{ padding: "1rem" }}>
+                  <h3 style={{ fontSize: "0.88rem", fontWeight: 600, color: "var(--white)", margin: "0 0 0.25rem", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.name}</h3>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "0.75rem" }}>
+                    <div style={{ display: "flex", flexDirection: "column" }}>
+                      <p style={{ fontSize: "0.95rem", fontWeight: 700, color: "var(--accent)", margin: 0 }}>₹{p.price?.toLocaleString()}</p>
+                      {p.originalPrice && p.originalPrice > p.price && (
+                        <div style={{ display: "flex", alignItems: "center", gap: "0.3rem" }}>
+                          <span style={{ fontSize: "0.72rem", color: "var(--grey)", textDecoration: "line-through" }}>₹{p.originalPrice.toLocaleString()}</span>
+                          <span style={{ fontSize: "0.7rem", color: "var(--success)", fontWeight: 600 }}>{Math.round(((p.originalPrice - p.price) / p.originalPrice) * 100)}% OFF</span>
+                        </div>
+                      )}
+                    </div>
+                    <button onClick={(e) => handleAddToCart(e, p._id)} style={{ background: addedId === p._id ? "var(--success)" : "rgba(0, 0, 0, 0.05)", color: addedId === p._id ? "#fff" : "var(--white)", border: "none", borderRadius: "980px", padding: "0.4rem 1rem", fontSize: "0.75rem", fontWeight: 600, cursor: "pointer", transition: "all 0.2s" }}>
+                      {addedId === p._id ? "✓" : "+ Cart"}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))
+          )}
         </div>
       </div>
 
