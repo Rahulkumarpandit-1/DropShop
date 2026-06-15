@@ -219,7 +219,10 @@ const seedProducts = async () => {
   }
 };
 
-const MONGODB_URI = process.env.MONGODB_URI;
+let MONGODB_URI = process.env.MONGODB_URI;
+if (MONGODB_URI) {
+  MONGODB_URI = MONGODB_URI.trim().replace(/^['"]|['"]$/g, "");
+}
 mongoose.connect(MONGODB_URI)
   .then(() => {
     console.log("MongoDB connected");
