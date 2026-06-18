@@ -31,6 +31,10 @@ app.use(cors({
     if (!origin || allowedOrigins.includes(origin)) {
       return callback(null, true);
     }
+    // Allow any Vercel or Netlify subdomains
+    if (origin.endsWith(".vercel.app") || origin.endsWith(".netlify.app") || origin.includes("vercel.app") || origin.includes("netlify.app")) {
+      return callback(null, true);
+    }
     return callback(new Error(`Origin ${origin} not allowed by CORS`));
   },
   credentials: true
