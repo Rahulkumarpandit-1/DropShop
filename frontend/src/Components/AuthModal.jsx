@@ -1,26 +1,11 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { BASE_URL } from "../services/api";
 
 function AuthModal({ isOpen, onClose, onSuccess }) {
   const [isLogin, setIsLogin] = useState(true);
-  const [loginMode, setLoginMode] = useState("password"); // "password" or "otp"
   const [isForgot, setIsForgot] = useState(false);
-  const [form, setForm] = useState({ name: "", phone: "", password: "", otp: "", email: "" });
+  const [form, setForm] = useState({ name: "", phone: "", password: "", email: "" });
   const [loading, setLoading] = useState(false);
-  const [otpSent, setOtpSent] = useState(false);
-  const [timer, setTimer] = useState(0);
-
-  useEffect(() => {
-    let interval = null;
-    if (timer > 0) {
-      interval = setInterval(() => {
-        setTimer((prev) => prev - 1);
-      }, 1000);
-    } else {
-      clearInterval(interval);
-    }
-    return () => clearInterval(interval);
-  }, [timer]);
 
   if (!isOpen) return null;
 
@@ -29,46 +14,13 @@ function AuthModal({ isOpen, onClose, onSuccess }) {
   const handleClose = () => {
     setIsForgot(false);
     setIsLogin(true);
-    setLoginMode("password");
-    setOtpSent(false);
-    setTimer(0);
-    setForm({ name: "", phone: "", password: "", otp: "", email: "" });
+    setForm({ name: "", phone: "", password: "", email: "" });
     onClose();
   };
 
-  const handleSendOtp = async () => {
-    if (!form.phone) {
-      alert("Please enter your phone number");
-      return;
-    }
-    setLoading(true);
-    try {
-      const res = await fetch(`${BASE_URL}/auth/send-otp`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone: form.phone })
-      });
-      const data = await res.json();
-      setLoading(false);
-
-      if (!res.ok) {
-        alert(data.message || "Failed to send OTP");
-        return;
-      }
-
-      setOtpSent(true);
-      setTimer(30);
-
-      alert("OTP sent successfully to your phone");
-    } catch (err) {
-      setLoading(false);
-      alert("Failed to send OTP. Please try again.");
-    }
-  };
-
   const handleSubmit = async () => {
-    // 1. Password Login Mode
-    if (isLogin && loginMode === "password") {
+    // 1. Sign In Mode
+    if (isLogin) {
       if (!form.phone || !form.password) {
         alert("Phone number and Password are required");
         return;
@@ -102,62 +54,10 @@ function AuthModal({ isOpen, onClose, onSuccess }) {
       return;
     }
 
-    // 2. OTP Login Mode
-    if (isLogin && loginMode === "otp") {
-      if (!form.phone) {
-        alert("Phone number is required");
-        return;
-      }
-      if (!otpSent) {
-        await handleSendOtp();
-        return;
-      }
-      if (!form.otp) {
-        alert("Please enter the 6-digit OTP");
-        return;
-      }
-
-      setLoading(true);
-      try {
-        const res = await fetch(`${BASE_URL}/auth/login`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ phone: form.phone, otp: form.otp })
-        });
-        const data = await res.json();
-        setLoading(false);
-
-        if (!res.ok) {
-          alert(data.message || "Invalid OTP code");
-          return;
-        }
-
-        if (data.token) {
-          localStorage.setItem("token", data.token);
-          onSuccess?.();
-          handleClose();
-        } else {
-          alert(data.message || "Done");
-        }
-      } catch (err) {
-        setLoading(false);
-        alert("Something went wrong");
-      }
-      return;
-    }
-
-    // 3. Register Mode (Name, Phone, Password, OTP verification)
+    // 2. Register Mode
     if (!isLogin) {
       if (!form.name || !form.phone || !form.password) {
-        alert("Name, phone, and password are required");
-        return;
-      }
-      if (!otpSent) {
-        await handleSendOtp();
-        return;
-      }
-      if (!form.otp) {
-        alert("Please verify your phone using the OTP");
+        alert("Name, phone number, and password are required");
         return;
       }
 
@@ -169,8 +69,7 @@ function AuthModal({ isOpen, onClose, onSuccess }) {
           body: JSON.stringify({
             name: form.name,
             phone: form.phone,
-            password: form.password,
-            otp: form.otp
+            password: form.password
           })
         });
         const data = await res.json();
@@ -300,10 +199,7 @@ function AuthModal({ isOpen, onClose, onSuccess }) {
                 onClick={() => {
                   const toLogin = tab === "Sign In";
                   setIsLogin(toLogin);
-                  setOtpSent(false);
-                  setTimer(0);
-                  setLoginMode("password");
-                  setForm({ name: "", phone: "", password: "", otp: "", email: "" });
+                  setForm({ name: "", phone: "", password: "", email: "" });
                 }}
                 style={{
                   background: (isLogin && tab === "Sign In") || (!isLogin && tab === "Register")
@@ -343,107 +239,46 @@ function AuthModal({ isOpen, onClose, onSuccess }) {
             />
           ) : isLogin ? (
             // 1. SIGN IN TAB
-            loginMode === "password" ? (
-              // 1a. Password Sign-in
-              <>
-                <input
-                  type="tel" name="phone" placeholder="Phone Number"
-                  value={form.phone}
-                  onChange={handleChange}
-                  style={{
-                    background: "rgba(255,255,255,0.05)",
-                    border: "1px solid rgba(255,255,255,0.08)",
-                    borderRadius: "12px", padding: "0.85rem 1rem",
-                    fontSize: "0.88rem", color: "#f5f5f7",
-                    outline: "none", fontFamily: "Inter, sans-serif",
-                    transition: "border-color 0.2s ease"
-                  }}
-                  onFocus={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.3)"}
-                  onBlur={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)"}
-                />
-                <input
-                  type="password" name="password" placeholder="Password"
-                  value={form.password}
-                  onChange={handleChange}
-                  style={{
-                    background: "rgba(255,255,255,0.05)",
-                    border: "1px solid rgba(255,255,255,0.08)",
-                    borderRadius: "12px", padding: "0.85rem 1rem",
-                    fontSize: "0.88rem", color: "#f5f5f7",
-                    outline: "none", fontFamily: "Inter, sans-serif",
-                    transition: "border-color 0.2s ease"
-                  }}
-                  onFocus={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.3)"}
-                  onBlur={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)"}
-                />
-                <div style={{ display: "flex", justifyContent: "flex-end", marginTop: "-0.25rem" }}>
-                  <span
-                    onClick={() => setIsForgot(true)}
-                    style={{ fontSize: "0.78rem", color: "#e8d5b7", cursor: "pointer", textDecoration: "underline", textUnderlineOffset: "2px" }}
-                  >
-                    Forgot Password?
-                  </span>
-                </div>
-              </>
-            ) : (
-              // 1b. OTP Sign-in
-              <>
-                <div style={{ display: "flex", gap: "0.5rem" }}>
-                  <input
-                    type="tel" name="phone" placeholder="Phone Number"
-                    value={form.phone}
-                    onChange={handleChange}
-                    style={{
-                      flex: 1,
-                      background: "rgba(255,255,255,0.05)",
-                      border: "1px solid rgba(255,255,255,0.08)",
-                      borderRadius: "12px", padding: "0.85rem 1rem",
-                      fontSize: "0.88rem", color: "#f5f5f7",
-                      outline: "none", fontFamily: "Inter, sans-serif",
-                      transition: "border-color 0.2s ease"
-                    }}
-                    onFocus={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.3)"}
-                    onBlur={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)"}
-                  />
-                  <button
-                    type="button"
-                    onClick={handleSendOtp}
-                    disabled={loading || timer > 0}
-                    style={{
-                      padding: "0.85rem 1rem",
-                      background: timer > 0 ? "rgba(255,255,255,0.05)" : "#e8d5b7",
-                      color: timer > 0 ? "#86868b" : "#0a0a0a",
-                      border: "none", borderRadius: "12px",
-                      fontSize: "0.82rem", fontWeight: 600,
-                      cursor: (loading || timer > 0) ? "not-allowed" : "pointer",
-                      fontFamily: "Inter, sans-serif",
-                      whiteSpace: "nowrap",
-                      transition: "all 0.2s ease"
-                    }}
-                  >
-                    {timer > 0 ? `${timer}s` : otpSent ? "Resend" : "Send OTP"}
-                  </button>
-                </div>
-                {otpSent && (
-                  <input
-                    type="text" name="otp" placeholder="6-digit OTP"
-                    value={form.otp}
-                    onChange={handleChange}
-                    maxLength={6}
-                    style={{
-                      background: "rgba(255,255,255,0.05)",
-                      border: "1px solid rgba(255,255,255,0.08)",
-                      borderRadius: "12px", padding: "0.85rem 1rem",
-                      fontSize: "0.88rem", color: "#f5f5f7",
-                      outline: "none", fontFamily: "Inter, sans-serif",
-                      transition: "border-color 0.2s ease"
-                    }}
-                    onFocus={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.3)"}
-                    onBlur={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)"}
-                  />
-                )}
-              </>
-            )
+            <>
+              <input
+                type="tel" name="phone" placeholder="Phone Number"
+                value={form.phone}
+                onChange={handleChange}
+                style={{
+                  background: "rgba(255,255,255,0.05)",
+                  border: "1px solid rgba(255,255,255,0.08)",
+                  borderRadius: "12px", padding: "0.85rem 1rem",
+                  fontSize: "0.88rem", color: "#f5f5f7",
+                  outline: "none", fontFamily: "Inter, sans-serif",
+                  transition: "border-color 0.2s ease"
+                }}
+                onFocus={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.3)"}
+                onBlur={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)"}
+              />
+              <input
+                type="password" name="password" placeholder="Password"
+                value={form.password}
+                onChange={handleChange}
+                style={{
+                  background: "rgba(255,255,255,0.05)",
+                  border: "1px solid rgba(255,255,255,0.08)",
+                  borderRadius: "12px", padding: "0.85rem 1rem",
+                  fontSize: "0.88rem", color: "#f5f5f7",
+                  outline: "none", fontFamily: "Inter, sans-serif",
+                  transition: "border-color 0.2s ease"
+                }}
+                onFocus={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.3)"}
+                onBlur={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)"}
+              />
+              <div style={{ display: "flex", justifyContent: "flex-end", marginTop: "-0.25rem" }}>
+                <span
+                  onClick={() => setIsForgot(true)}
+                  style={{ fontSize: "0.78rem", color: "#e8d5b7", cursor: "pointer", textDecoration: "underline", textUnderlineOffset: "2px" }}
+                >
+                  Forgot Password?
+                </span>
+              </div>
+            </>
           ) : (
             // 2. REGISTER TAB
             <>
@@ -462,60 +297,21 @@ function AuthModal({ isOpen, onClose, onSuccess }) {
                 onFocus={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.3)"}
                 onBlur={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)"}
               />
-              <div style={{ display: "flex", gap: "0.5rem" }}>
-                <input
-                  type="tel" name="phone" placeholder="Phone Number"
-                  value={form.phone}
-                  onChange={handleChange}
-                  style={{
-                    flex: 1,
-                    background: "rgba(255,255,255,0.05)",
-                    border: "1px solid rgba(255,255,255,0.08)",
-                    borderRadius: "12px", padding: "0.85rem 1rem",
-                    fontSize: "0.88rem", color: "#f5f5f7",
-                    outline: "none", fontFamily: "Inter, sans-serif",
-                    transition: "border-color 0.2s ease"
-                  }}
-                  onFocus={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.3)"}
-                  onBlur={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)"}
-                />
-                <button
-                  type="button"
-                  onClick={handleSendOtp}
-                  disabled={loading || timer > 0}
-                  style={{
-                    padding: "0.85rem 1rem",
-                    background: timer > 0 ? "rgba(255,255,255,0.05)" : "#e8d5b7",
-                    color: timer > 0 ? "#86868b" : "#0a0a0a",
-                    border: "none", borderRadius: "12px",
-                    fontSize: "0.82rem", fontWeight: 600,
-                    cursor: (loading || timer > 0) ? "not-allowed" : "pointer",
-                    fontFamily: "Inter, sans-serif",
-                    whiteSpace: "nowrap",
-                    transition: "all 0.2s ease"
-                  }}
-                >
-                  {timer > 0 ? `${timer}s` : otpSent ? "Resend" : "Send OTP"}
-                </button>
-              </div>
-              {otpSent && (
-                <input
-                  type="text" name="otp" placeholder="6-digit OTP"
-                  value={form.otp}
-                  onChange={handleChange}
-                  maxLength={6}
-                  style={{
-                    background: "rgba(255,255,255,0.05)",
-                    border: "1px solid rgba(255,255,255,0.08)",
-                    borderRadius: "12px", padding: "0.85rem 1rem",
-                    fontSize: "0.88rem", color: "#f5f5f7",
-                    outline: "none", fontFamily: "Inter, sans-serif",
-                    transition: "border-color 0.2s ease"
-                  }}
-                  onFocus={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.3)"}
-                  onBlur={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)"}
-                />
-              )}
+              <input
+                type="tel" name="phone" placeholder="Phone Number"
+                value={form.phone}
+                onChange={handleChange}
+                style={{
+                  background: "rgba(255,255,255,0.05)",
+                  border: "1px solid rgba(255,255,255,0.08)",
+                  borderRadius: "12px", padding: "0.85rem 1rem",
+                  fontSize: "0.88rem", color: "#f5f5f7",
+                  outline: "none", fontFamily: "Inter, sans-serif",
+                  transition: "border-color 0.2s ease"
+                }}
+                onFocus={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.3)"}
+                onBlur={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)"}
+              />
               <input
                 type="password" name="password" placeholder="Password"
                 value={form.password}
@@ -559,28 +355,9 @@ function AuthModal({ isOpen, onClose, onSuccess }) {
             : isForgot 
               ? "Send Reset Link" 
               : isLogin 
-                ? loginMode === "password" 
-                  ? "Sign In" 
-                  : "Verify & Sign In"
+                ? "Sign In" 
                 : "Create Account"}
         </button>
-
-        {/* Sub-mode option toggler (Only on login screen, not forgot password) */}
-        {isLogin && !isForgot && (
-          <div style={{ textAlign: "center", marginBottom: "1rem" }}>
-            <span
-              onClick={() => {
-                setLoginMode(loginMode === "password" ? "otp" : "password");
-                setOtpSent(false);
-                setTimer(0);
-                setForm({ ...form, otp: "" });
-              }}
-              style={{ fontSize: "0.82rem", color: "#e8d5b7", cursor: "pointer", textDecoration: "underline", fontWeight: 500 }}
-            >
-              {loginMode === "password" ? "Sign in with an OTP" : "Sign in with password"}
-            </span>
-          </div>
-        )}
 
         {/* Footer */}
         <p style={{ textAlign: "center", fontSize: "0.78rem", color: "#86868b", margin: "0.5rem 0 1.5rem" }}>
@@ -600,9 +377,7 @@ function AuthModal({ isOpen, onClose, onSuccess }) {
               <span
                 onClick={() => {
                   setIsLogin(false);
-                  setOtpSent(false);
-                  setTimer(0);
-                  setForm({ name: "", phone: "", password: "", otp: "", email: "" });
+                  setForm({ name: "", phone: "", password: "", email: "" });
                 }}
                 style={{ color: "#e8d5b7", cursor: "pointer", textDecoration: "underline", textUnderlineOffset: "3px" }}
               >
@@ -615,9 +390,7 @@ function AuthModal({ isOpen, onClose, onSuccess }) {
               <span
                 onClick={() => {
                   setIsLogin(true);
-                  setOtpSent(false);
-                  setTimer(0);
-                  setForm({ name: "", phone: "", password: "", otp: "", email: "" });
+                  setForm({ name: "", phone: "", password: "", email: "" });
                 }}
                 style={{ color: "#e8d5b7", cursor: "pointer", textDecoration: "underline", textUnderlineOffset: "3px" }}
               >
