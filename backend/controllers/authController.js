@@ -44,7 +44,6 @@ exports.sendOtp = async (req, res) => {
     console.log(`[OTP Verification] Generated OTP ${code} for phone ${cleanPhone} (User exists: ${!!userExists})`);
 
     let smsError = null;
-    let smsSent = false;
 
     // Send real text message if FAST2SMS_API_KEY is configured
     if (process.env.FAST2SMS_API_KEY && process.env.FAST2SMS_API_KEY !== "your_fast2sms_api_key_here") {
@@ -55,25 +54,24 @@ exports.sendOtp = async (req, res) => {
         console.log("[Fast2SMS API Response]:", smsData);
         if (!smsRes.ok || smsData.return === false || smsData.status_code) {
           smsError = smsData.message || (smsData.status_code ? `Fast2SMS Error Code ${smsData.status_code}` : "Failed to deliver SMS");
-        } else {
-          smsSent = true;
         }
       } catch (smsErr) {
         console.error("Fast2SMS OTP delivery failed:", smsErr.message);
         smsError = smsErr.message;
       }
+    } else {
+      smsError = "SMS API key is not configured";
     }
 
-    const isProd = process.env.NODE_ENV === "production";
-    
-    // If the SMS delivery failed, always expose the OTP code so the developer/tester is not blocked
-    const shouldReturnCode = !isProd || smsError;
+    if (smsError) {
+      return res.status(400).json({
+        message: `Failed to send OTP: ${smsError}`
+      });
+    }
 
     res.json({
-      message: smsError ? `OTP generated, but SMS failed: ${smsError}` : "OTP sent successfully",
-      exists: !!userExists,
-      smsError,
-      ...(shouldReturnCode ? { code } : {})
+      message: "OTP sent successfully",
+      exists: !!userExists
     });
   } catch (err) {
     console.error("SEND OTP ERROR:", err.message);

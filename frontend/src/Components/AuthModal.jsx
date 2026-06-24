@@ -59,13 +59,7 @@ function AuthModal({ isOpen, onClose, onSuccess }) {
       setOtpSent(true);
       setTimer(30);
 
-      if (data.smsError) {
-        alert(`⚠️ SMS Provider Error: ${data.smsError}\n\n[FALLBACK MODE] Use OTP code: ${data.code || "N/A"} to proceed.`);
-      } else if (data.code) {
-        alert(`[TEST MODE] OTP code is: ${data.code}`);
-      } else {
-        alert("OTP sent successfully to your phone");
-      }
+      alert("OTP sent successfully to your phone");
     } catch (err) {
       setLoading(false);
       alert("Failed to send OTP. Please try again.");
