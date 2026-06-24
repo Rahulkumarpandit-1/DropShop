@@ -25,6 +25,18 @@ exports.sendOtp = async (req, res) => {
 
     console.log(`[OTP Verification] Generated OTP ${code} for phone ${phone} (User exists: ${!!userExists})`);
 
+    // Send real text message if FAST2SMS_API_KEY is configured
+    if (process.env.FAST2SMS_API_KEY && process.env.FAST2SMS_API_KEY !== "your_fast2sms_api_key_here") {
+      try {
+        const smsUrl = `https://www.fast2sms.com/dev/bulkV2?authorization=${process.env.FAST2SMS_API_KEY}&route=otp&variables_values=${code}&numbers=${phone}`;
+        const smsRes = await fetch(smsUrl);
+        const smsData = await smsRes.json();
+        console.log("[Fast2SMS API Response]:", smsData);
+      } catch (smsErr) {
+        console.error("Fast2SMS OTP delivery failed:", smsErr.message);
+      }
+    }
+
     const isProd = process.env.NODE_ENV === "production";
     res.json({
       message: "OTP sent successfully",
