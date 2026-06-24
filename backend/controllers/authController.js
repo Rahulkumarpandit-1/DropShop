@@ -5,6 +5,19 @@ const jwt = require("jsonwebtoken");
 const { sendWelcomeEmail, sendPasswordResetEmail } = require("../utils/sendEmail");
 const crypto = require("crypto");
 
+const sanitizePhoneNumber = (phone) => {
+  if (!phone) return "";
+  let clean = phone.toString().replace(/\D/g, ""); // Keep only digits
+  if (clean.length > 10) {
+    if (clean.startsWith("91") && clean.length === 12) {
+      clean = clean.substring(2);
+    } else if (clean.length === 11 && clean.startsWith("0")) {
+      clean = clean.substring(1);
+    }
+  }
+  return clean;
+};
+
 exports.sendOtp = async (req, res) => {
   try {
     const { phone } = req.body;
@@ -12,36 +25,55 @@ exports.sendOtp = async (req, res) => {
       return res.status(400).json({ message: "Phone number is required" });
     }
 
+    const cleanPhone = sanitizePhoneNumber(phone);
+    if (cleanPhone.length !== 10) {
+      return res.status(400).json({ message: "Please enter a valid 10-digit phone number" });
+    }
+
     // Check if user exists
-    const userExists = await User.exists({ phone });
+    const userExists = await User.exists({ phone: cleanPhone });
 
     // Generate a random 6-digit OTP
     const code = Math.floor(100000 + Math.random() * 900000).toString();
 
     // Remove any previous OTPs for this phone number, then insert the new one
-    await Otp.deleteMany({ phone });
-    const newOtp = new Otp({ phone, code });
+    await Otp.deleteMany({ phone: cleanPhone });
+    const newOtp = new Otp({ phone: cleanPhone, code });
     await newOtp.save();
 
-    console.log(`[OTP Verification] Generated OTP ${code} for phone ${phone} (User exists: ${!!userExists})`);
+    console.log(`[OTP Verification] Generated OTP ${code} for phone ${cleanPhone} (User exists: ${!!userExists})`);
+
+    let smsError = null;
+    let smsSent = false;
 
     // Send real text message if FAST2SMS_API_KEY is configured
     if (process.env.FAST2SMS_API_KEY && process.env.FAST2SMS_API_KEY !== "your_fast2sms_api_key_here") {
       try {
-        const smsUrl = `https://www.fast2sms.com/dev/bulkV2?authorization=${process.env.FAST2SMS_API_KEY}&route=otp&variables_values=${code}&numbers=${phone}`;
+        const smsUrl = `https://www.fast2sms.com/dev/bulkV2?authorization=${process.env.FAST2SMS_API_KEY}&route=otp&variables_values=${code}&numbers=${cleanPhone}`;
         const smsRes = await fetch(smsUrl);
         const smsData = await smsRes.json();
         console.log("[Fast2SMS API Response]:", smsData);
+        if (!smsRes.ok || smsData.return === false || smsData.status_code) {
+          smsError = smsData.message || (smsData.status_code ? `Fast2SMS Error Code ${smsData.status_code}` : "Failed to deliver SMS");
+        } else {
+          smsSent = true;
+        }
       } catch (smsErr) {
         console.error("Fast2SMS OTP delivery failed:", smsErr.message);
+        smsError = smsErr.message;
       }
     }
 
     const isProd = process.env.NODE_ENV === "production";
+    
+    // If the SMS delivery failed, always expose the OTP code so the developer/tester is not blocked
+    const shouldReturnCode = !isProd || smsError;
+
     res.json({
-      message: "OTP sent successfully",
+      message: smsError ? `OTP generated, but SMS failed: ${smsError}` : "OTP sent successfully",
       exists: !!userExists,
-      ...(isProd ? {} : { code })
+      smsError,
+      ...(shouldReturnCode ? { code } : {})
     });
   } catch (err) {
     console.error("SEND OTP ERROR:", err.message);
@@ -57,8 +89,13 @@ exports.register = async (req, res) => {
       return res.status(400).json({ message: "Name, phone number, password, and OTP are required" });
     }
 
+    const cleanPhone = sanitizePhoneNumber(phone);
+    if (cleanPhone.length !== 10) {
+      return res.status(400).json({ message: "Please enter a valid 10-digit phone number" });
+    }
+
     // Verify OTP
-    const otpRecord = await Otp.findOne({ phone, code: otp });
+    const otpRecord = await Otp.findOne({ phone: cleanPhone, code: otp });
     if (!otpRecord) {
       return res.status(400).json({ message: "Invalid or expired OTP" });
     }
@@ -67,7 +104,7 @@ exports.register = async (req, res) => {
     await Otp.deleteOne({ _id: otpRecord._id });
 
     // Check existing user
-    const existingUser = await User.findOne({ phone });
+    const existingUser = await User.findOne({ phone: cleanPhone });
     if (existingUser) {
       return res.status(400).json({ message: "User with this phone number already exists" });
     }
@@ -77,7 +114,7 @@ exports.register = async (req, res) => {
 
     const user = new User({
       name,
-      phone,
+      phone: cleanPhone,
       password: hashedPassword,
       role: "user"
     });
@@ -107,9 +144,14 @@ exports.login = async (req, res) => {
       return res.status(400).json({ message: "Phone number is required" });
     }
 
+    const cleanPhone = sanitizePhoneNumber(phone);
+    if (cleanPhone.length !== 10) {
+      return res.status(400).json({ message: "Please enter a valid 10-digit phone number" });
+    }
+
     if (otp) {
       // OTP-based Login
-      const otpRecord = await Otp.findOne({ phone, code: otp });
+      const otpRecord = await Otp.findOne({ phone: cleanPhone, code: otp });
       if (!otpRecord) {
         return res.status(400).json({ message: "Invalid or expired OTP" });
       }
@@ -117,7 +159,7 @@ exports.login = async (req, res) => {
       // Delete verified OTP
       await Otp.deleteOne({ _id: otpRecord._id });
 
-      const user = await User.findOne({ phone });
+      const user = await User.findOne({ phone: cleanPhone });
       if (!user) {
         return res.status(400).json({ message: "User not found. Please register first." });
       }
@@ -134,7 +176,7 @@ exports.login = async (req, res) => {
       });
     } else if (password) {
       // Password-based Login
-      const user = await User.findOne({ phone });
+      const user = await User.findOne({ phone: cleanPhone });
       if (!user) {
         return res.status(400).json({ message: "User not found. Please register first." });
       }
