@@ -39,10 +39,10 @@ exports.sendOtp = async (req, res) => {
 
 exports.register = async (req, res) => {
   try {
-    const { name, phone, otp } = req.body;
+    const { name, phone, password, otp } = req.body;
 
-    if (!name || !phone || !otp) {
-      return res.status(400).json({ message: "Name, phone number, and OTP are required" });
+    if (!name || !phone || !password || !otp) {
+      return res.status(400).json({ message: "Name, phone number, password, and OTP are required" });
     }
 
     // Verify OTP
@@ -60,9 +60,8 @@ exports.register = async (req, res) => {
       return res.status(400).json({ message: "User with this phone number already exists" });
     }
 
-    // Auto-generate a secure random password to satisfy schema requirement
-    const randomPassword = crypto.randomBytes(16).toString("hex");
-    const hashedPassword = await bcrypt.hash(randomPassword, 10);
+    // Hash the password
+    const hashedPassword = await bcrypt.hash(password, 10);
 
     const user = new User({
       name,
@@ -90,36 +89,62 @@ exports.register = async (req, res) => {
 
 exports.login = async (req, res) => {
   try {
-    const { phone, otp } = req.body;
+    const { phone, password, otp } = req.body;
 
-    if (!phone || !otp) {
-      return res.status(400).json({ message: "Phone number and OTP are required" });
+    if (!phone) {
+      return res.status(400).json({ message: "Phone number is required" });
     }
 
-    // Verify OTP
-    const otpRecord = await Otp.findOne({ phone, code: otp });
-    if (!otpRecord) {
-      return res.status(400).json({ message: "Invalid or expired OTP" });
+    if (otp) {
+      // OTP-based Login
+      const otpRecord = await Otp.findOne({ phone, code: otp });
+      if (!otpRecord) {
+        return res.status(400).json({ message: "Invalid or expired OTP" });
+      }
+
+      // Delete verified OTP
+      await Otp.deleteOne({ _id: otpRecord._id });
+
+      const user = await User.findOne({ phone });
+      if (!user) {
+        return res.status(400).json({ message: "User not found. Please register first." });
+      }
+
+      const token = jwt.sign(
+        { id: user._id },
+        process.env.JWT_SECRET || "dropshop_jwt_secret_123",
+        { expiresIn: "1d" }
+      );
+
+      return res.json({
+        message: "Login successful",
+        token
+      });
+    } else if (password) {
+      // Password-based Login
+      const user = await User.findOne({ phone });
+      if (!user) {
+        return res.status(400).json({ message: "User not found. Please register first." });
+      }
+
+      const isMatch = await bcrypt.compare(password, user.password);
+      if (!isMatch) {
+        return res.status(400).json({ message: "Wrong password" });
+      }
+
+      const token = jwt.sign(
+        { id: user._id },
+        process.env.JWT_SECRET || "dropshop_jwt_secret_123",
+        { expiresIn: "1d" }
+      );
+
+      return res.json({
+        message: "Login successful",
+        token
+      });
+    } else {
+      return res.status(400).json({ message: "Password or OTP is required" });
     }
-
-    // Delete verified OTP
-    await Otp.deleteOne({ _id: otpRecord._id });
-
-    const user = await User.findOne({ phone });
-    if (!user) {
-      return res.status(400).json({ message: "User not found. Please register first." });
-    }
-
-    const token = jwt.sign(
-      { id: user._id },
-      process.env.JWT_SECRET || "dropshop_jwt_secret_123",
-      { expiresIn: "1d" }
-    );
-
-    res.json({
-      message: "Login successful",
-      token
-    });
   } catch (err) {
     console.log("LOGIN ERROR:", err.message);
     res.status(500).json({ message: "Server error" });
