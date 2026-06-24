@@ -19,4 +19,8 @@ const productSchema = new mongoose.Schema({
   }]
 });
 
+// Indexes for fast querying (prevents full collection scans)
+productSchema.index({ category: 1 });
+productSchema.index({ name: 1 });
+
 module.exports = mongoose.models.Product || mongoose.model("Product", productSchema);
