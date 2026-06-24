@@ -5,6 +5,8 @@ const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
 const User = require("./models/User");
 const Product = require("./models/Product");
+const Coupon = require("./models/Coupon");
+const Pincode = require("./models/Pincode");
 const app = express();
 
 // ✅ CORS must be FIRST
@@ -94,13 +96,33 @@ const seedProducts = async () => {
           subcategory: "Accessories",
           description: "1.4'' Full Touch Display smart watch with 10-day battery life, heart rate monitor, sleep tracker, and sports modes.",
           image: "https://images.unsplash.com/photo-1579586337278-3befd40fd17a?auto=format&fit=crop&w=500&q=80",
+          images: [
+            "https://images.unsplash.com/photo-1579586337278-3befd40fd17a?auto=format&fit=crop&w=500&q=80",
+            "https://images.unsplash.com/photo-1508685096489-7aacd43bd3b1?auto=format&fit=crop&w=500&q=80"
+          ],
           stock: 50,
           specs: {
             "Brand": "Noise",
             "Model": "ColorFit Pulse",
             "Battery Life": "Up to 10 Days",
             "Screen Size": "1.4 inches"
-          }
+          },
+          variants: [
+            {
+              sku: "NOISE-PULSE-BLACK",
+              price: 1499,
+              stock: 30,
+              image: "https://images.unsplash.com/photo-1579586337278-3befd40fd17a?auto=format&fit=crop&w=500&q=80",
+              attributes: { "color": "Black" }
+            },
+            {
+              sku: "NOISE-PULSE-GREY",
+              price: 1599,
+              stock: 20,
+              image: "https://images.unsplash.com/photo-1508685096489-7aacd43bd3b1?auto=format&fit=crop&w=500&q=80",
+              attributes: { "color": "Grey" }
+            }
+          ]
         },
         {
           name: "OnePlus Nord Buds 2r",
@@ -110,13 +132,33 @@ const seedProducts = async () => {
           subcategory: "Audio",
           description: "True Wireless Earbuds with 12.4mm dynamic drivers, up to 38 hours playback, IP55 rating, and dual mics.",
           image: "https://images.unsplash.com/photo-1590658268037-6bf12165a8df?auto=format&fit=crop&w=500&q=80",
+          images: [
+            "https://images.unsplash.com/photo-1590658268037-6bf12165a8df?auto=format&fit=crop&w=500&q=80",
+            "https://images.unsplash.com/photo-1608156639585-b3a032ef9689?auto=format&fit=crop&w=500&q=80"
+          ],
           stock: 120,
           specs: {
             "Brand": "OnePlus",
             "Driver Size": "12.4 mm",
             "Battery Life": "Up to 38 Hours",
             "Water Resistance": "IP55"
-          }
+          },
+          variants: [
+            {
+              sku: "ONEPLUS-BUDS-BLACK",
+              price: 1999,
+              stock: 70,
+              image: "https://images.unsplash.com/photo-1590658268037-6bf12165a8df?auto=format&fit=crop&w=500&q=80",
+              attributes: { "color": "Black" }
+            },
+            {
+              sku: "ONEPLUS-BUDS-WHITE",
+              price: 2099,
+              stock: 50,
+              image: "https://images.unsplash.com/photo-1608156639585-b3a032ef9689?auto=format&fit=crop&w=500&q=80",
+              attributes: { "color": "White" }
+            }
+          ]
         },
         {
           name: "Apple iPad (10th Generation)",
@@ -126,13 +168,15 @@ const seedProducts = async () => {
           subcategory: "Laptops",
           description: "10.9-inch Liquid Retina Display, A14 Bionic chip, 64GB, Wi-Fi 6, 12MP front/back cameras, Touch ID, and USB-C support.",
           image: "https://images.unsplash.com/photo-1544244015-0df4b3ffc6b0?auto=format&fit=crop&w=500&q=80",
+          images: ["https://images.unsplash.com/photo-1544244015-0df4b3ffc6b0?auto=format&fit=crop&w=500&q=80"],
           stock: 15,
           specs: {
             "Brand": "Apple",
             "Chipset": "A14 Bionic",
             "Storage": "64 GB",
             "Screen Size": "10.9 inches"
-          }
+          },
+          variants: []
         },
         {
           name: "US Polo Association Men's Solid Polo Shirt",
@@ -142,13 +186,40 @@ const seedProducts = async () => {
           subcategory: "Shirts",
           description: "Classic fit cotton polo shirt with signature brand embroidery, ribbed collar, and double-button placket.",
           image: "https://images.unsplash.com/photo-1581655353564-df123a1eb820?auto=format&fit=crop&w=500&q=80",
+          images: [
+            "https://images.unsplash.com/photo-1581655353564-df123a1eb820?auto=format&fit=crop&w=500&q=80",
+            "https://images.unsplash.com/photo-1588359348347-9bc6cbaa689f?auto=format&fit=crop&w=500&q=80"
+          ],
           stock: 80,
           specs: {
             "Brand": "U.S. Polo Assn.",
             "Material": "100% Cotton",
             "Fit": "Classic Fit",
             "Sleeve": "Short Sleeve"
-          }
+          },
+          variants: [
+            {
+              sku: "US-POLO-RED-M",
+              price: 999,
+              stock: 40,
+              image: "https://images.unsplash.com/photo-1581655353564-df123a1eb820?auto=format&fit=crop&w=500&q=80",
+              attributes: { "color": "Red", "size": "M" }
+            },
+            {
+              sku: "US-POLO-RED-L",
+              price: 1099,
+              stock: 20,
+              image: "https://images.unsplash.com/photo-1581655353564-df123a1eb820?auto=format&fit=crop&w=500&q=80",
+              attributes: { "color": "Red", "size": "L" }
+            },
+            {
+              sku: "US-POLO-BLUE-M",
+              price: 999,
+              stock: 20,
+              image: "https://images.unsplash.com/photo-1588359348347-9bc6cbaa689f?auto=format&fit=crop&w=500&q=80",
+              attributes: { "color": "Blue", "size": "M" }
+            }
+          ]
         },
         {
           name: "Levi's Men's 511 Slim Fit Jeans",
@@ -158,13 +229,15 @@ const seedProducts = async () => {
           subcategory: "Jeans",
           description: "A modern slim with room to move, these jeans are a classic choice for everyday wear.",
           image: "https://images.unsplash.com/photo-1542272604-787c3835535d?auto=format&fit=crop&w=500&q=80",
+          images: ["https://images.unsplash.com/photo-1542272604-787c3835535d?auto=format&fit=crop&w=500&q=80"],
           stock: 45,
           specs: {
             "Brand": "Levi's",
             "Fit": "Slim Fit",
             "Material": "Stretch Denim",
             "Closure": "Button Fly"
-          }
+          },
+          variants: []
         },
         {
           name: "Fossil Grant Chronograph Leather Watch",
@@ -174,13 +247,15 @@ const seedProducts = async () => {
           subcategory: "Watches",
           description: "Roman numeral markers with a rich blue dial and genuine brown leather strap for a timeless, formal look.",
           image: "https://images.unsplash.com/photo-1524592094714-0f0654e20314?auto=format&fit=crop&w=500&q=80",
+          images: ["https://images.unsplash.com/photo-1524592094714-0f0654e20314?auto=format&fit=crop&w=500&q=80"],
           stock: 25,
           specs: {
             "Brand": "Fossil",
             "Movement": "Quartz Chronograph",
             "Strap Material": "Genuine Leather",
             "Water Resistance": "50 meters"
-          }
+          },
+          variants: []
         },
         {
           name: "Tommy Hilfiger Men's Leather Wallet",
@@ -190,13 +265,15 @@ const seedProducts = async () => {
           subcategory: "Bags",
           description: "Bifold passcase wallet with multiple card slots, a bill compartment, and removable passcase window.",
           image: "https://images.unsplash.com/photo-1627124765135-5655653443a4?auto=format&fit=crop&w=500&q=80",
+          images: ["https://images.unsplash.com/photo-1627124765135-5655653443a4?auto=format&fit=crop&w=500&q=80"],
           stock: 90,
           specs: {
             "Brand": "Tommy Hilfiger",
             "Material": "100% Leather",
             "Style": "Bifold",
             "Card Capacity": "8 Cards"
-          }
+          },
+          variants: []
         },
         {
           name: "Philips Smart Wi-Fi LED Bulb (9W)",
@@ -206,13 +283,15 @@ const seedProducts = async () => {
           subcategory: "Lighting",
           description: "B22 smart bulb compatible with Alexa and Google Assistant. Control brightness and choose from millions of colors.",
           image: "https://images.unsplash.com/photo-1550985616-10810253b84d?auto=format&fit=crop&w=500&q=80",
+          images: ["https://images.unsplash.com/photo-1550985616-10810253b84d?auto=format&fit=crop&w=500&q=80"],
           stock: 200,
           specs: {
             "Brand": "Philips",
             "Wattage": "9 Watts",
             "Fitting": "B22",
             "Control": "Wi-Fi App / Voice"
-          }
+          },
+          variants: []
         }
       ];
       await Product.insertMany(sampleProducts);
@@ -220,6 +299,57 @@ const seedProducts = async () => {
     }
   } catch (err) {
     console.error("Error auto-seeding products:", err);
+  }
+};
+
+const seedCoupons = async () => {
+  try {
+    const count = await Coupon.countDocuments();
+    if (count === 0) {
+      console.log("Seeding default coupons...");
+      const defaultCoupons = [
+        {
+          code: "DEAL20",
+          discountType: "percentage",
+          discountValue: 20,
+          minCartValue: 500,
+          expirationDate: new Date("2030-12-31"),
+          isActive: true
+        },
+        {
+          code: "WELCOME10",
+          discountType: "percentage",
+          discountValue: 10,
+          minCartValue: 0,
+          expirationDate: new Date("2030-12-31"),
+          isActive: true
+        }
+      ];
+      await Coupon.insertMany(defaultCoupons);
+      console.log("Default coupons seeded successfully.");
+    }
+  } catch (err) {
+    console.error("Error seeding coupons:", err);
+  }
+};
+
+const seedPincodes = async () => {
+  try {
+    const count = await Pincode.countDocuments();
+    if (count === 0) {
+      console.log("Seeding default serviceable pincodes...");
+      const defaultPincodes = [
+        { pincode: "110001", estDays: 2, isServiceable: true },
+        { pincode: "400001", estDays: 3, isServiceable: true },
+        { pincode: "560001", estDays: 3, isServiceable: true },
+        { pincode: "600001", estDays: 4, isServiceable: true },
+        { pincode: "700001", estDays: 4, isServiceable: true }
+      ];
+      await Pincode.insertMany(defaultPincodes);
+      console.log("Default pincodes seeded successfully.");
+    }
+  } catch (err) {
+    console.error("Error seeding pincodes:", err);
   }
 };
 
@@ -232,6 +362,8 @@ mongoose.connect(MONGODB_URI)
     console.log("MongoDB connected");
     seedAdmin();
     seedProducts();
+    seedCoupons();
+    seedPincodes();
   })
   .catch((err) => console.log(err));
 
@@ -245,6 +377,8 @@ const paymentRoutes = require("./routes/payment");
 const reviewRoutes = require("./routes/review");
 const wishlistRoutes = require("./routes/wishlist");
 const adminRoutes = require("./routes/adminRoutes");
+const couponRoutes = require("./routes/couponRoutes");
+const pincodeRoutes = require("./routes/pincodeRoutes");
 
 app.use("/api/auth", authRoutes);
 app.use("/api", productRoutes);
@@ -255,6 +389,8 @@ app.use("/api/payment", paymentRoutes);
 app.use("/api/reviews", reviewRoutes);
 app.use("/api/wishlist", wishlistRoutes);
 app.use("/api/admin", adminRoutes);
+app.use("/api/coupons", couponRoutes);
+app.use("/api/pincodes", pincodeRoutes);
 
 app.get("/", (req, res) => res.send("Backend running"));
 

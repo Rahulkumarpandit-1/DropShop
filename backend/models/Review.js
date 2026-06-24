@@ -6,6 +6,7 @@ const reviewSchema = new mongoose.Schema({
   name: { type: String, required: true },
   rating: { type: Number, required: true, min: 1, max: 5 },
   comment: { type: String, required: true },
+  isVerifiedPurchase: { type: Boolean, default: false },
 }, { timestamps: true });
 
 // one review per user per product

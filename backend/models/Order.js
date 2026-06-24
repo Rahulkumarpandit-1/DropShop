@@ -2,12 +2,14 @@ const mongoose = require("mongoose");
 
 const orderSchema = new mongoose.Schema({
   userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
-  items: [{                                        // ✅ matches controller
+  items: [{
     productId: { type: mongoose.Schema.Types.ObjectId, ref: "Product" },
     name: String,
     price: Number,
     image: String,
     quantity: Number,
+    variantSku: { type: String, default: "" },
+    selectedAttributes: { type: Map, of: String, default: {} }
   }],
   address: {
     fullName: String,

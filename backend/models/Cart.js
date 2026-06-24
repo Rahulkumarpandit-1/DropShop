@@ -11,14 +11,20 @@ const cartSchema = new mongoose.Schema(
     items: {
       type: [
         {
-          
           productId: {
             type: mongoose.Schema.Types.ObjectId,
             ref: "Product",
-
             required: true,
           },
-
+          variantSku: {
+            type: String,
+            default: ""
+          },
+          selectedAttributes: {
+            type: Map,
+            of: String,
+            default: {}
+          },
           quantity: {
             type: Number,
             default: 1,

@@ -4,7 +4,7 @@ const Cart = require("../models/Cart");
 // ADD TO CART
 exports.addToCart = async (req, res) => {
   try {
-    const { productId } = req.body;
+    const { productId, variantSku, selectedAttributes } = req.body;
     const userId = req.user.id;
    
     if(!productId) {
@@ -15,53 +15,76 @@ exports.addToCart = async (req, res) => {
     if(!cart) {
       cart = new Cart({
          userId,
-         items: [{productId, quantity: 1}],
+         items: [{ productId, variantSku: variantSku || "", selectedAttributes: selectedAttributes || {}, quantity: 1 }],
         });
         await cart.save();
         return res.json({ message: "Product added to cart successfully" });
     }
-    const existingItem=cart.items.find(item=>item.productId.toString()===productId.toString());
+    const existingItem = cart.items.find(item => 
+      item.productId.toString() === productId.toString() && 
+      (item.variantSku || "") === (variantSku || "")
+    );
     if(existingItem){
-      existingItem.quantity+=1;
-     
+      existingItem.quantity += 1;
     }else{
-      cart.items.push({productId, quantity: 1});
+      cart.items.push({ productId, variantSku: variantSku || "", selectedAttributes: selectedAttributes || {}, quantity: 1 });
     }
     await cart.save();
     return res.json({ message: "Product added to cart successfully" ,cart});
-    }catch (err) {
-      console.log("addToCart error:", err.message);
-      res.status(500).json({ error: err.message });
-    }
-}
-// GET CART
+  } catch (err) {
+    console.log("addToCart error:", err.message);
+    res.status(500).json({ error: err.message });
+  }
+};
 
+// GET CART
 exports.getCart = async (req, res) => {
   try {
     const userId = req.user.id;
     const cart = await Cart.findOne({ userId }).populate("items.productId");
-    
 
     if (!cart || !cart.items || cart.items.length === 0){
       return res.json({ message: "Cart is empty",items:[] });
     }
-const formattedCart = cart.items
-  .filter(item => item.productId) // 🔥 remove null products
-  .map((item) => ({
-    _id: item._id,
-    quantity: item.quantity,
-    productId: item.productId._id,
-    name: item.productId.name,
-    price: item.productId.price,
-    image: item.productId.image,
-     stock: item.productId.stock,
-  }));
+    const formattedCart = cart.items
+      .filter(item => item.productId) // 🔥 remove null products
+      .map((item) => {
+        const variant = item.productId.variants?.find(v => v.sku === item.variantSku);
+        
+        let displayAttributes = "";
+        if (item.selectedAttributes && item.selectedAttributes instanceof Map) {
+          displayAttributes = Array.from(item.selectedAttributes.entries())
+            .map(([k, v]) => `${k}: ${v}`).join(", ");
+        } else if (item.selectedAttributes && typeof item.selectedAttributes === "object") {
+          displayAttributes = Object.entries(item.selectedAttributes)
+            .map(([k, v]) => `${k}: ${v}`).join(", ");
+        }
+
+        const name = variant && displayAttributes
+          ? `${item.productId.name} (${displayAttributes})`
+          : item.productId.name;
+        const price = variant?.price !== undefined ? variant.price : item.productId.price;
+        const image = variant?.image || item.productId.image;
+        const stock = variant?.stock !== undefined ? variant.stock : item.productId.stock;
+
+        return {
+          _id: item._id,
+          quantity: item.quantity,
+          productId: item.productId._id,
+          name,
+          price,
+          image,
+          stock,
+          variantSku: item.variantSku || "",
+          selectedAttributes: item.selectedAttributes || {}
+        };
+      });
     res.json({items:formattedCart});
   } catch (err) {
     console.log("getCart error:", err.message);
     res.status(500).json({ error: err.message });
   }
-}// INCREMENT
+};// INCREMENT
 exports.incrementItem = async (req, res) => {
   try {
     const userId = req.user.id;

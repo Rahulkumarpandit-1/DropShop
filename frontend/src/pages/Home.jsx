@@ -34,7 +34,7 @@ function Home({ selectedCategory, setSelectedCategory }) {
   useEffect(() => {
     document.title = "DropShop | Premium Curated Collection";
     fetchProducts();
-  }, [page, selectedCategory]);
+  }, [page, selectedCategory, searchQuery]);
 
   useEffect(() => {
     if (!images.length) return;
@@ -44,7 +44,7 @@ function Home({ selectedCategory, setSelectedCategory }) {
 
   const fetchProducts = async () => {
     try {
-      const data = await getProducts(page, selectedCategory);
+      const data = await getProducts(page, selectedCategory, searchQuery);
       setProducts(Array.isArray(data) ? data : data.products || []);
       setTotalPages(data.totalPages || 1);
     } catch { setProducts([]); }
@@ -74,11 +74,7 @@ function Home({ selectedCategory, setSelectedCategory }) {
     setTimeout(() => setAddedId(null), 1500);
   };
 
-  const filteredProducts = Array.isArray(products)
-    ? products
-      .filter(p => selectedCategory === "All" || p.category?.toLowerCase() === selectedCategory?.toLowerCase())
-      .filter(p => !searchQuery || p.name?.toLowerCase().includes(searchQuery.toLowerCase()))
-    : [];
+  const filteredProducts = Array.isArray(products) ? products : [];
   // Home.jsx — add this useEffect
   useEffect(() => {
     setPage(1);
@@ -437,32 +433,7 @@ function Home({ selectedCategory, setSelectedCategory }) {
         </div>
       </section>
 
-      {/* ── TESTIMONIALS SECTION ── */}
-      <section className="testimonials-section">
-        <div style={{ textAlign: "center" }}>
-          <p style={{ fontSize: "0.72rem", letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--grey)", marginBottom: "0.3rem" }}>What they say</p>
-          <h2 style={{ fontSize: "2rem", fontWeight: 600, color: "var(--white)", margin: 0, fontFamily: "Cormorant Garamond, serif" }}>Customer Reviews</h2>
-        </div>
-        <div className="testimonials-grid">
-          {[
-            { name: "Aarav Mehta", comment: "The build quality of the electronic items is premium. Ordering was seamless, and delivery took only two days. Customer support answered my query in minutes.", stars: 5, initial: "A", role: "Verified Buyer" },
-            { name: "Priya Sharma", comment: "Absolutely love the minimalist fashion collection! The fabrics feel luxurious and durable. Highly recommend this site for high-end curated finds.", stars: 5, initial: "P", role: "Loyal Customer" },
-            { name: "Rohan Das", comment: "DropShop has completely elevated my work-from-home desk setup with their accessories. The packaging was top-tier, and shipping was free as promised.", stars: 5, initial: "R", role: "Verified Buyer" }
-          ].map((t) => (
-            <div key={t.name} className="testimonial-card">
-              <div className="testimonial-stars">{"★".repeat(t.stars)}</div>
-              <p className="testimonial-comment">"{t.comment}"</p>
-              <div className="testimonial-user">
-                <div className="testimonial-avatar">{t.initial}</div>
-                <div className="testimonial-info">
-                  <h4>{t.name}</h4>
-                  <p>{t.role}</p>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
+
 
       {/* ── FAQ SECTION ── */}
       <section className="faq-section">

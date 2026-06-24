@@ -6,6 +6,7 @@ const Cart = require("../models/Cart");
 const Product = require("../models/Product");
 const User = require("../models/User");
 const { sendOrderConfirmation } = require("../utils/sendEmail");
+const { validateCouponHelper } = require("./couponController");
 
 const razorpay = process.env.RAZORPAY_KEY_ID ? new Razorpay({
   key_id: process.env.RAZORPAY_KEY_ID,
@@ -75,40 +76,74 @@ exports.verifyPayment = async (req, res) => {
 
     const items = cartItems
       .filter(item => item.productId)
-      .map(item => ({
-        productId: item.productId._id,
-        name: item.productId.name,
-        price: item.productId.price,
-        image: item.productId.image,
-        quantity: item.quantity,
-      }));
+      .map(item => {
+        const variant = item.productId.variants?.find(v => v.sku === item.variantSku);
+        
+        let displayAttributes = "";
+        if (item.selectedAttributes && item.selectedAttributes instanceof Map) {
+          displayAttributes = Array.from(item.selectedAttributes.entries())
+            .map(([k, v]) => `${k}: ${v}`).join(", ");
+        } else if (item.selectedAttributes && typeof item.selectedAttributes === "object") {
+          displayAttributes = Object.entries(item.selectedAttributes)
+            .map(([k, v]) => `${k}: ${v}`).join(", ");
+        }
+
+        const name = variant && displayAttributes
+          ? `${item.productId.name} (${displayAttributes})`
+          : item.productId.name;
+        const price = variant?.price !== undefined ? variant.price : item.productId.price;
+        const image = variant?.image || item.productId.image;
+
+        return {
+          productId: item.productId._id,
+          name,
+          price,
+          image,
+          quantity: item.quantity,
+          variantSku: item.variantSku || "",
+          selectedAttributes: item.selectedAttributes || {}
+        };
+      });
 
     // check stock
     for (const item of cartItems) {
       if (!item.productId) continue;
-      if (item.productId.stock < item.quantity) {
-        return res.status(400).json({ error: `Not enough stock for ${item.productId.name}` });
+      if (item.variantSku) {
+        const variant = item.productId.variants?.find(v => v.sku === item.variantSku);
+        if (!variant || variant.stock < item.quantity) {
+          return res.status(400).json({ error: `Not enough stock for ${item.productId.name} (${item.variantSku || "Variant"})` });
+        }
+      } else {
+        if (item.productId.stock < item.quantity) {
+          return res.status(400).json({ error: `Not enough stock for ${item.productId.name}` });
+        }
       }
     }
 
     // reduce stock
     for (const item of cartItems) {
       if (!item.productId) continue;
-      await Product.findByIdAndUpdate(
-        item.productId._id,
-        { $inc: { stock: -item.quantity } }
-      );
+      if (item.variantSku) {
+        await Product.updateOne(
+          { _id: item.productId._id, "variants.sku": item.variantSku },
+          { $inc: { "variants.$.stock": -item.quantity } }
+        );
+      } else {
+        await Product.findByIdAndUpdate(
+          item.productId._id,
+          { $inc: { stock: -item.quantity } }
+        );
+      }
     }
 
     let total = items.reduce((acc, item) => acc + item.price * item.quantity, 0);
     let discount = 0;
     if (couponCode) {
-      const code = couponCode.toUpperCase();
-      if (code === "DEAL20") {
-        discount = total * 0.2;
-      } else if (code === "WELCOME10") {
-        discount = total * 0.1;
+      const couponResult = await validateCouponHelper(couponCode, total);
+      if (couponResult.error) {
+        return res.status(400).json({ error: couponResult.error });
       }
+      discount = couponResult.discount;
       total = Math.max(0, total - discount);
     }
 

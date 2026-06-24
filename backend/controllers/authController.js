@@ -1,25 +1,68 @@
 const User = require("../models/User");
+const Otp = require("../models/Otp");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const { sendWelcomeEmail, sendPasswordResetEmail } = require("../utils/sendEmail");
 const crypto = require("crypto");
-exports.register = async (req, res) => {
-  try {
-    const { name, phone, password } = req.body;
 
-    // 🔥 check empty fields
-    if (!name || !phone || !password) {
-      return res.status(400).json({ message: "All fields required" });
+exports.sendOtp = async (req, res) => {
+  try {
+    const { phone } = req.body;
+    if (!phone) {
+      return res.status(400).json({ message: "Phone number is required" });
     }
 
-    // 🔥 check existing user
+    // Check if user exists
+    const userExists = await User.exists({ phone });
+
+    // Generate a random 6-digit OTP
+    const code = Math.floor(100000 + Math.random() * 900000).toString();
+
+    // Remove any previous OTPs for this phone number, then insert the new one
+    await Otp.deleteMany({ phone });
+    const newOtp = new Otp({ phone, code });
+    await newOtp.save();
+
+    console.log(`[OTP Verification] Generated OTP ${code} for phone ${phone} (User exists: ${!!userExists})`);
+
+    const isProd = process.env.NODE_ENV === "production";
+    res.json({
+      message: "OTP sent successfully",
+      exists: !!userExists,
+      ...(isProd ? {} : { code })
+    });
+  } catch (err) {
+    console.error("SEND OTP ERROR:", err.message);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+exports.register = async (req, res) => {
+  try {
+    const { name, phone, otp } = req.body;
+
+    if (!name || !phone || !otp) {
+      return res.status(400).json({ message: "Name, phone number, and OTP are required" });
+    }
+
+    // Verify OTP
+    const otpRecord = await Otp.findOne({ phone, code: otp });
+    if (!otpRecord) {
+      return res.status(400).json({ message: "Invalid or expired OTP" });
+    }
+
+    // Delete verified OTP
+    await Otp.deleteOne({ _id: otpRecord._id });
+
+    // Check existing user
     const existingUser = await User.findOne({ phone });
     if (existingUser) {
       return res.status(400).json({ message: "User with this phone number already exists" });
     }
 
-    // 🔥 hash password
-    const hashedPassword = await bcrypt.hash(password, 10);
+    // Auto-generate a secure random password to satisfy schema requirement
+    const randomPassword = crypto.randomBytes(16).toString("hex");
+    const hashedPassword = await bcrypt.hash(randomPassword, 10);
 
     const user = new User({
       name,
@@ -29,40 +72,58 @@ exports.register = async (req, res) => {
     });
 
     await user.save();
-    res.json({ message: "User registered successfully" });
+
+    // Log user in automatically on registration by returning JWT token
+    const token = jwt.sign(
+      { id: user._id },
+      process.env.JWT_SECRET || "dropshop_jwt_secret_123",
+      { expiresIn: "1d" }
+    );
+
+    res.json({ message: "User registered successfully", token });
 
   } catch (err) {
     console.log("REGISTER ERROR:", err.message);
     res.status(500).json({ message: "Server error" });
   }
 };
-exports.login = async (req,res)=>{
 
-  const {phone,password} = req.body;
+exports.login = async (req, res) => {
+  try {
+    const { phone, otp } = req.body;
 
-  const user = await User.findOne({phone});
+    if (!phone || !otp) {
+      return res.status(400).json({ message: "Phone number and OTP are required" });
+    }
 
-  if(!user ){
-    return res.json({message:"User not found"});
+    // Verify OTP
+    const otpRecord = await Otp.findOne({ phone, code: otp });
+    if (!otpRecord) {
+      return res.status(400).json({ message: "Invalid or expired OTP" });
+    }
+
+    // Delete verified OTP
+    await Otp.deleteOne({ _id: otpRecord._id });
+
+    const user = await User.findOne({ phone });
+    if (!user) {
+      return res.status(400).json({ message: "User not found. Please register first." });
+    }
+
+    const token = jwt.sign(
+      { id: user._id },
+      process.env.JWT_SECRET || "dropshop_jwt_secret_123",
+      { expiresIn: "1d" }
+    );
+
+    res.json({
+      message: "Login successful",
+      token
+    });
+  } catch (err) {
+    console.log("LOGIN ERROR:", err.message);
+    res.status(500).json({ message: "Server error" });
   }
-
-  const isMatch = await bcrypt.compare(password,user.password);
-
-  if(!isMatch){
-    return res.json({message:"Wrong password"});
-  }
-
-  const token = jwt.sign(
-   { id: user._id },
-   process.env.JWT_SECRET || "dropshop_jwt_secret_123",
-   { expiresIn: "1d" }
-  );
-
-  res.json({
-    message:"Login successful",
-    token
-  });
-
 };
 exports.googleCallback = async (req, res) => {
   try {

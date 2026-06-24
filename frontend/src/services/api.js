@@ -14,10 +14,16 @@ export const BASE_URL = (() => {
   return "http://localhost:3000/api";
 })();
 
-export const getProducts = async (page, category = "All") => {
+export const getProducts = async (page, category = "All", search = "") => {
   try {
-    const query = category && category !== "All" ? `&category=${encodeURIComponent(category)}` : "";
-    const res = await fetch(`${BASE_URL}/products?page=${page}${query}`);
+    let url = `${BASE_URL}/products?page=${page}`;
+    if (category && category !== "All") {
+      url += `&category=${encodeURIComponent(category)}`;
+    }
+    if (search) {
+      url += `&search=${encodeURIComponent(search)}`;
+    }
+    const res = await fetch(url);
     const data = await res.json();
     return data;
   } catch (err) {
@@ -37,7 +43,7 @@ export const getTrendingProducts = async (limit = 8) => {
   }
 };
 
-export const addToCart = async (productId) => {
+export const addToCart = async (productId, variantSku = "", selectedAttributes = {}) => {
   try {
     const token = localStorage.getItem("token");
     if (!token) {
@@ -49,7 +55,7 @@ export const addToCart = async (productId) => {
         "Content-Type": "application/json",
         "Authorization": `Bearer ${token}`
       },
-      body: JSON.stringify({ productId })
+      body: JSON.stringify({ productId, variantSku, selectedAttributes })
     });
     if (!res.ok) {
       throw new Error("Failed to add to cart");
@@ -92,6 +98,25 @@ export const updateCartItem = async (itemId, quantity) => {
     body: JSON.stringify({ quantity })
   });
   return res.json();
+};
+
+export const validateCoupon = async (code, cartTotal) => {
+  try {
+    const token = localStorage.getItem("token");
+    const res = await fetch(`${BASE_URL}/coupons/validate`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`
+      },
+      body: JSON.stringify({ code, cartTotal })
+    });
+    const data = await res.json();
+    return data;
+  } catch (err) {
+    console.error("validateCoupon API error:", err);
+    return { error: err.message };
+  }
 };
 
 export const placeOrder = async (address, itemId = null, couponCode = "") => {
@@ -394,4 +419,15 @@ export const updateUserRoleAdmin = async (userId, role) => {
     body: JSON.stringify({ role })
   });
   return res.json();
+};
+
+export const checkPincode = async (pincode) => {
+  try {
+    const res = await fetch(`${BASE_URL}/pincodes/check/${pincode}`);
+    const data = await res.json();
+    return data;
+  } catch (err) {
+    console.error("checkPincode API error:", err);
+    return { serviceable: false, error: err.message };
+  }
 };

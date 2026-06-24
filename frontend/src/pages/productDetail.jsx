@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { addToCart, getCart, addReview, getReviews, deleteReview, BASE_URL } from "../services/api";
+import { addToCart, getCart, addReview, getReviews, deleteReview, BASE_URL, checkPincode } from "../services/api";
 import toast from "react-hot-toast";
 
 
@@ -19,6 +19,36 @@ function ProductDetail() {
   const [comment, setComment] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [reviewMessage, setReviewMessage] = useState("");
+
+  const [selectedAttributes, setSelectedAttributes] = useState({});
+  const [activeImage, setActiveImage] = useState("");
+
+  const matchedVariant = product?.variants?.find(v => {
+    return Object.entries(selectedAttributes).every(([k, val]) => {
+      const attrVal = v.attributes && (v.attributes instanceof Map ? v.attributes.get(k) : v.attributes[k]);
+      return attrVal === val;
+    });
+  });
+
+  const displayPrice = matchedVariant?.price !== undefined ? matchedVariant.price : product?.price;
+  const displayStock = matchedVariant?.stock !== undefined ? matchedVariant.stock : product?.stock;
+
+  const attributeOptions = {};
+  if (product?.variants) {
+    product.variants.forEach(v => {
+      if (v.attributes) {
+        const attrs = typeof v.attributes.toJSON === "function" 
+          ? v.attributes.toJSON() 
+          : (v.attributes instanceof Map ? Object.fromEntries(v.attributes.entries()) : v.attributes);
+        Object.entries(attrs).forEach(([key, val]) => {
+          if (!attributeOptions[key]) {
+            attributeOptions[key] = new Set();
+          }
+          attributeOptions[key].add(val);
+        });
+      }
+    });
+  }
 
   // ── ALL EFFECTS ──
   useEffect(() => {
@@ -39,6 +69,22 @@ function ProductDetail() {
     const res = await fetch(`${BASE_URL}/products/${id}`);
     const data = await res.json();
     setProduct(data);
+    if (data.image) {
+      setActiveImage(data.image);
+    }
+    if (data.variants && data.variants.length > 0) {
+      const defaultAttrs = {};
+      const firstVar = data.variants[0];
+      if (firstVar.attributes) {
+        Object.keys(firstVar.attributes).forEach(k => {
+          defaultAttrs[k] = firstVar.attributes[k];
+        });
+      }
+      setSelectedAttributes(defaultAttrs);
+      if (firstVar.image) {
+        setActiveImage(firstVar.image);
+      }
+    }
     setLoading(false);
   };
 
@@ -56,7 +102,7 @@ function ProductDetail() {
       toast.error("Please sign in to add items to cart");
       return;
     }
-    await addToCart(product._id);
+    await addToCart(product._id, matchedVariant?.sku || "", selectedAttributes);
     setAdded(true);
     setTimeout(() => setAdded(false), 1500);
   };
@@ -69,11 +115,12 @@ function ProductDetail() {
     }
     try {
       setLoading(true);
-      await addToCart(product._id);
+      await addToCart(product._id, matchedVariant?.sku || "", selectedAttributes);
       const fetchedCart = await getCart();
       const items = fetchedCart.items || [];
       const cartItem = items.find(
-        item => item.productId.toString() === product._id.toString()
+        item => item.productId.toString() === product._id.toString() &&
+                item.variantSku === (matchedVariant?.sku || "")
       );
       setLoading(false);
       if (cartItem) {
@@ -155,21 +202,21 @@ function ProductDetail() {
               position: "relative"
             }}>
               <img
-                src={product.image}
+                src={activeImage || product.image}
                 alt={product.name}
                 style={{ width: "100%", maxHeight: "360px", objectFit: "contain" }}
               />
               {/* Stock badge on image */}
-              {product.stock !== undefined && product.stock <= 5 && product.stock > 0 && (
+              {displayStock !== undefined && displayStock <= 5 && displayStock > 0 && (
                 <span style={{
                   position: "absolute", top: "16px", right: "16px",
                   background: "#fff3e0", color: "#e65100",
                   border: "1px solid #ffcc80",
                   fontSize: "0.72rem", fontWeight: 600,
                   padding: "0.3rem 0.75rem", borderRadius: "980px"
-                }}>Only {product.stock} left!</span>
+                }}>Only {displayStock} left!</span>
               )}
-              {product.stock === 0 && (
+              {displayStock === 0 && (
                 <div style={{
                   position: "absolute", inset: 0,
                   background: "rgba(255,255,255,0.85)",
@@ -180,6 +227,33 @@ function ProductDetail() {
                 </div>
               )}
             </div>
+
+            {/* Gallery Thumbnails */}
+            {product.images && product.images.length > 1 && (
+              <div style={{ display: "flex", gap: "0.5rem", marginTop: "1rem", overflowX: "auto", paddingBottom: "0.25rem" }}>
+                {product.images.map((imgUrl, i) => (
+                  <div
+                    key={i}
+                    onClick={() => setActiveImage(imgUrl)}
+                    style={{
+                      width: "60px",
+                      height: "60px",
+                      borderRadius: "8px",
+                      border: `2px solid ${activeImage === imgUrl ? "var(--accent)" : "var(--border)"}`,
+                      background: "var(--card-bg)",
+                      cursor: "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      overflow: "hidden",
+                      flexShrink: 0
+                    }}
+                  >
+                    <img src={imgUrl} alt={`Thumbnail ${i + 1}`} style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain" }} />
+                  </div>
+                ))}
+              </div>
+            )}
 
             {/* Trust badges below image */}
             <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "0.75rem", marginTop: "1rem" }}>
@@ -226,10 +300,10 @@ function ProductDetail() {
             <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "1.25rem" }}>
               <div style={{
                 width: "8px", height: "8px", borderRadius: "50%",
-                background: product.stock > 0 ? "var(--success)" : "var(--error)"
+                background: displayStock > 0 ? "var(--success)" : "var(--error)"
               }} />
-              <p style={{ fontSize: "0.82rem", color: product.stock > 0 ? "var(--success)" : "var(--error)", fontWeight: 500, margin: 0 }}>
-                {product.stock > 5 ? "In Stock" : product.stock > 0 ? `Only ${product.stock} left` : "Out of Stock"}
+              <p style={{ fontSize: "0.82rem", color: displayStock > 0 ? "var(--success)" : "var(--error)", fontWeight: 500, margin: 0 }}>
+                {displayStock > 5 ? "In Stock" : displayStock > 0 ? `Only ${displayStock} left` : "Out of Stock"}
               </p>
             </div>
 
@@ -237,15 +311,15 @@ function ProductDetail() {
             <div style={{ marginBottom: "1.5rem" }}>
               <div style={{ display: "flex", alignItems: "baseline", gap: "1rem", flexWrap: "wrap" }}>
                 <p style={{ fontSize: "2.2rem", fontWeight: 700, color: "var(--accent)", margin: 0, lineHeight: 1 }}>
-                  ₹{product.price?.toLocaleString()}
+                  ₹{displayPrice?.toLocaleString()}
                 </p>
-                {product.originalPrice && product.originalPrice > product.price && (
+                {product.originalPrice && product.originalPrice > displayPrice && (
                   <>
                     <p style={{ fontSize: "1.2rem", color: "var(--grey)", textDecoration: "line-through", margin: 0 }}>
                       ₹{product.originalPrice?.toLocaleString()}
                     </p>
                     <p style={{ fontSize: "1rem", color: "var(--success)", fontWeight: 700, margin: 0 }}>
-                      ({Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)}% OFF)
+                      ({Math.round(((product.originalPrice - displayPrice) / product.originalPrice) * 100)}% OFF)
                     </p>
                   </>
                 )}
@@ -259,6 +333,58 @@ function ProductDetail() {
             <p style={{ fontSize: "0.9rem", color: "var(--grey)", lineHeight: 1.8, marginBottom: "2rem" }}>
               {product.description}
             </p>
+
+            {/* Variant Selectors */}
+            {Object.keys(attributeOptions).length > 0 && (
+              <div style={{ marginBottom: "2rem", display: "flex", flexDirection: "column", gap: "1.25rem" }}>
+                {Object.entries(attributeOptions).map(([key, valueSet]) => (
+                  <div key={key}>
+                    <p style={{ fontSize: "0.75rem", textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--grey)", marginBottom: "0.5rem", fontWeight: 600 }}>
+                      Select {key}
+                    </p>
+                    <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+                      {Array.from(valueSet).map(val => {
+                        const isSelected = selectedAttributes[key] === val;
+                        return (
+                          <button
+                            key={val}
+                            onClick={() => {
+                              setSelectedAttributes(prev => {
+                                const next = { ...prev, [key]: val };
+                                // Auto change main image if matching variant has specific image
+                                const match = product.variants.find(v => {
+                                  return Object.entries(next).every(([k, attrVal]) => {
+                                    const vAttrVal = v.attributes instanceof Map ? v.attributes.get(k) : v.attributes[k];
+                                    return vAttrVal === attrVal;
+                                  });
+                                });
+                                if (match && match.image) {
+                                  setActiveImage(match.image);
+                                }
+                                return next;
+                              });
+                            }}
+                            style={{
+                              background: isSelected ? "var(--accent)" : "rgba(255,255,255,0.03)",
+                              color: isSelected ? "var(--black)" : "var(--white)",
+                              border: `1px solid ${isSelected ? "var(--accent)" : "var(--border)"}`,
+                              borderRadius: "8px",
+                              padding: "0.5rem 1rem",
+                              fontSize: "0.82rem",
+                              fontWeight: 600,
+                              cursor: "pointer",
+                              transition: "all 0.2s"
+                            }}
+                          >
+                            {val}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
 
             {/* Divider */}
             <div style={{ height: "1px", background: "var(--border)", marginBottom: "1.75rem" }} />
@@ -296,15 +422,26 @@ function ProductDetail() {
                   }}
                 />
                 <button
-                  onClick={() => {
+                  onClick={async () => {
                     const pin = document.getElementById("pincode-input")?.value;
                     if (pin && pin.length === 6 && /^\d+$/.test(pin)) {
-                      const deliveryDate = new Date();
-                      deliveryDate.setDate(deliveryDate.getDate() + 3);
-                      const formattedDate = deliveryDate.toLocaleDateString("en-IN", { weekday: "long", month: "short", day: "numeric" });
-                      toast.success(`Express Delivery Available!`);
-                      document.getElementById("pincode-result").innerText = `🚚 Get it by ${formattedDate} (Express Shipping)`;
-                      document.getElementById("pincode-result").style.color = "var(--success)";
+                      try {
+                        const res = await checkPincode(pin);
+                        if (res.serviceable) {
+                          const deliveryDate = new Date();
+                          deliveryDate.setDate(deliveryDate.getDate() + res.estDays);
+                          const formattedDate = deliveryDate.toLocaleDateString("en-IN", { weekday: "long", month: "short", day: "numeric" });
+                          toast.success(`Delivery Serviceable!`);
+                          document.getElementById("pincode-result").innerText = `🚚 Get it by ${formattedDate} (Estimated ${res.estDays} days)`;
+                          document.getElementById("pincode-result").style.color = "var(--success)";
+                        } else {
+                          toast.error(res.message || "Location not serviceable");
+                          document.getElementById("pincode-result").innerText = `❌ ${res.message || "Not serviceable"}`;
+                          document.getElementById("pincode-result").style.color = "var(--error)";
+                        }
+                      } catch (err) {
+                        toast.error("Failed to check pincode serviceability");
+                      }
                     } else {
                       toast.error("Please enter a valid 6-digit Pincode");
                       document.getElementById("pincode-result").innerText = "❌ Invalid pincode";
@@ -528,8 +665,21 @@ function ProductDetail() {
                       {review.name?.charAt(0).toUpperCase()}
                     </div>
                     <div>
-                      <p style={{ margin: 0, fontSize: "0.9rem", fontWeight: 600, color: "var(--white)" }}>{review.name}</p>
-                      <p style={{ margin: 0, fontSize: "0.75rem", color: "var(--grey)" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                        <p style={{ margin: 0, fontSize: "0.9rem", fontWeight: 600, color: "var(--white)" }}>{review.name}</p>
+                        {review.isVerifiedPurchase && (
+                          <span style={{
+                            fontSize: "0.65rem",
+                            fontWeight: 600,
+                            color: "var(--success)",
+                            background: "rgba(46, 125, 50, 0.15)",
+                            border: "1px solid rgba(46, 125, 50, 0.25)",
+                            padding: "0.1rem 0.4rem",
+                            borderRadius: "4px"
+                          }}>✓ Verified Purchase</span>
+                        )}
+                      </div>
+                      <p style={{ margin: 0, fontSize: "0.75rem", color: "var(--grey)", marginTop: "2px" }}>
                         {new Date(review.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
                       </p>
                     </div>

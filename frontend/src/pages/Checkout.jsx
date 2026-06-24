@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import toast from "react-hot-toast";
-import { placeOrder, getProfile, getCart, createRazorpayOrder, verifyPayment, addAddress } from "../services/api";
+import { placeOrder, getProfile, getCart, createRazorpayOrder, verifyPayment, addAddress, validateCoupon } from "../services/api";
 function Checkout() {
   const location = useLocation();
 const itemId = location.state?.itemId || null;
@@ -93,20 +93,22 @@ const itemIdRef = useRef(location.state?.itemId || null);
     }
   };
 
-  const handleApplyCoupon = () => {
+  const handleApplyCoupon = async () => {
     const code = coupon.toUpperCase().trim();
-    if (code === "DEAL20") {
-      const disc = subtotal * 0.2;
-      setDiscountAmount(disc);
-      setAppliedCoupon("DEAL20");
-      toast.success("Coupon DEAL20 applied (20% OFF)!");
-    } else if (code === "WELCOME10") {
-      const disc = subtotal * 0.1;
-      setDiscountAmount(disc);
-      setAppliedCoupon("WELCOME10");
-      toast.success("Coupon WELCOME10 applied (10% OFF)!");
-    } else {
-      toast.error("Invalid coupon code");
+    if (!code) return toast.error("Please enter a coupon code");
+    
+    try {
+      const res = await validateCoupon(code, subtotal);
+      if (res.valid) {
+        setDiscountAmount(res.discount);
+        setAppliedCoupon(res.code);
+        toast.success(`Coupon ${res.code} applied successfully!`);
+      } else {
+        toast.error(res.error || "Invalid coupon code");
+      }
+    } catch (err) {
+      console.error("Apply coupon error:", err);
+      toast.error("Failed to apply coupon");
     }
   };
 

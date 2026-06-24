@@ -7,8 +7,16 @@ const productSchema = new mongoose.Schema({
   category: String,
   description: String,
   image: String,
-  stock: { type: Number, default:0, required: true },
+  images: [{ type: String }],
+  stock: { type: Number, default: 0, required: true },
   specs: { type: Map, of: String, default: {} },
+  variants: [{
+    sku: { type: String, required: true },
+    price: { type: Number },
+    stock: { type: Number, default: 0 },
+    image: { type: String },
+    attributes: { type: Map, of: String }
+  }]
 });
 
 module.exports = mongoose.models.Product || mongoose.model("Product", productSchema);

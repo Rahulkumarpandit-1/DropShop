@@ -14,13 +14,21 @@ exports.addReview = async (req, res) => {
     }
 
     const user = await User.findById(userId);
+    
+    const Order = require("../models/Order");
+    const hasPurchased = await Order.findOne({
+      userId,
+      "items.productId": productId,
+      status: { $ne: "Cancelled" }
+    });
 
     const review = new Review({
       productId,
       userId,
       name: user.name,
       rating,
-      comment
+      comment,
+      isVerifiedPurchase: !!hasPurchased
     });
 
     await review.save();

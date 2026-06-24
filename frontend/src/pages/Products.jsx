@@ -66,9 +66,12 @@ function Products() {
 
   // ── Fetch products & wishlist ──
   useEffect(() => {
-    fetchProducts();
     fetchWishlist();
   }, []);
+
+  useEffect(() => {
+    fetchProducts();
+  }, [selectedCategory, searchQuery]);
 
   const fetchWishlist = async () => {
     try {
@@ -81,7 +84,8 @@ function Products() {
 
   const fetchProducts = async () => {
     try {
-      const data = await getProducts();
+      setLoading(true);
+      const data = await getProducts(1, selectedCategory, searchQuery);
       setProducts(Array.isArray(data) ? data : data.products || []);
     } catch {
       setProducts([]);
@@ -131,28 +135,18 @@ function Products() {
     return products
       .filter(
         (p) =>
-          selectedCategory === "All" ||
-          p.category?.toLowerCase() === selectedCategory.toLowerCase()
-      )
-      .filter(
-        (p) =>
           selectedSubcategory === "All" ||
           p.subcategory?.toLowerCase() === selectedSubcategory.toLowerCase()
-      )
-      .filter(
-        (p) =>
-          !searchQuery ||
-          p.name?.toLowerCase().includes(searchQuery.toLowerCase())
       )
       .filter((p) => p.price >= priceRange.min && p.price <= priceRange.max)
       .sort((a, b) => {
         if (sortBy === "price-asc") return a.price - b.price;
-        if (sortBy === "price-desc") return a.price - b.price;
+        if (sortBy === "price-desc") return b.price - a.price;
         if (sortBy === "newest")
           return new Date(b.createdAt) - new Date(a.createdAt);
         return 0;
       });
-  }, [products, selectedCategory, selectedSubcategory, searchQuery, priceRange, sortBy]);
+  }, [products, selectedSubcategory, priceRange, sortBy]);
 
   // ── Reset all filters ──
   const resetFilters = () => {
