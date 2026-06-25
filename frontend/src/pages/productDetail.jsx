@@ -239,6 +239,40 @@ function ProductDetail() {
                 alt={product.name}
                 style={{ width: "100%", maxHeight: "360px", objectFit: "contain" }}
               />
+              
+              {/* Wishlist Button Overlay on Product Image Top Right */}
+              <button
+                onClick={handleToggleWishlist}
+                title={inWishlist ? "Remove from wishlist" : "Add to wishlist"}
+                style={{
+                  position: "absolute",
+                  top: "20px",
+                  right: "20px",
+                  background: inWishlist ? "rgba(255, 69, 58, 0.15)" : "rgba(255, 255, 255, 0.05)",
+                  border: `1px solid ${inWishlist ? "var(--accent)" : "var(--border)"}`,
+                  color: inWishlist ? "var(--accent)" : "var(--white)",
+                  borderRadius: "50%",
+                  width: "40px",
+                  height: "40px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: "1.1rem",
+                  cursor: "pointer",
+                  transition: "all 0.2s ease",
+                  zIndex: 10
+                }}
+                onMouseEnter={e => {
+                  e.currentTarget.style.borderColor = "var(--accent)";
+                  e.currentTarget.style.transform = "scale(1.05)";
+                }}
+                onMouseLeave={e => {
+                  e.currentTarget.style.borderColor = inWishlist ? "var(--accent)" : "var(--border)";
+                  e.currentTarget.style.transform = "none";
+                }}
+              >
+                {inWishlist ? "❤️" : "🤍"}
+              </button>
               {/* Stock badge on image */}
               {displayStock !== undefined && displayStock <= 5 && displayStock > 0 && (
                 <span style={{
@@ -521,7 +555,7 @@ function ProductDetail() {
             </div>
 
             {/* Buttons */}
-            <div style={{ display: "flex", gap: "0.75rem", marginBottom: "2rem", alignItems: "center" }}>
+            <div style={{ display: "flex", gap: "0.75rem", marginBottom: "2rem" }}>
               <button
                 onClick={handleAddToCart}
                 disabled={product.stock === 0}
@@ -555,35 +589,6 @@ function ProductDetail() {
                 onMouseLeave={e => { e.currentTarget.style.borderColor = "var(--border)"; e.currentTarget.style.color = "var(--white)"; }}
               >
                 Buy Now
-              </button>
-              <button
-                onClick={handleToggleWishlist}
-                title={inWishlist ? "Remove from wishlist" : "Add to wishlist"}
-                style={{
-                  width: "52px",
-                  height: "52px",
-                  borderRadius: "50%",
-                  background: "rgba(255,255,255,0.03)",
-                  border: `2px solid ${inWishlist ? "var(--accent)" : "var(--border)"}`,
-                  color: inWishlist ? "var(--accent)" : "var(--white)",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  fontSize: "1.2rem",
-                  cursor: "pointer",
-                  transition: "all 0.2s ease",
-                  flexShrink: 0
-                }}
-                onMouseEnter={e => {
-                  e.currentTarget.style.borderColor = "var(--accent)";
-                  e.currentTarget.style.transform = "scale(1.05)";
-                }}
-                onMouseLeave={e => {
-                  e.currentTarget.style.borderColor = inWishlist ? "var(--accent)" : "var(--border)";
-                  e.currentTarget.style.transform = "none";
-                }}
-              >
-                {inWishlist ? "❤️" : "🤍"}
               </button>
             </div>
 

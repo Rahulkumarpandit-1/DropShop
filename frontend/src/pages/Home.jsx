@@ -301,30 +301,6 @@ function Home({ selectedCategory, setSelectedCategory }) {
                 <div style={{ position: "relative", height: "180px", background: "rgba(255,255,255,0.01)", display: "flex", alignItems: "center", justifyContent: "center" }} className="premium-card__img-wrap">
                   <img src={p.image} alt={p.name} style={{ width: "100%", height: "100%", objectFit: "contain", padding: "1rem" }} className="premium-card__img" />
                   <span style={{ position: "absolute", top: "10px", left: "10px", background: "var(--error)", color: "#fff", fontSize: "0.65rem", fontWeight: 700, padding: "0.2rem 0.6rem", borderRadius: "980px" }}>🔥 HOT</span>
-                  <button
-                    onClick={(e) => handleToggleWishlist(e, p._id)}
-                    title={wishlist.includes(p._id) ? "Remove from wishlist" : "Add to wishlist"}
-                    style={{
-                      position: "absolute",
-                      top: "10px",
-                      right: "10px",
-                      background: wishlist.includes(p._id) ? "rgba(255, 69, 58, 0.15)" : "rgba(0, 0, 0, 0.4)",
-                      border: `1px solid ${wishlist.includes(p._id) ? "rgba(255, 69, 58, 0.3)" : "rgba(255, 255, 255, 0.15)"}`,
-                      borderRadius: "50%",
-                      width: "32px",
-                      height: "32px",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      cursor: "pointer",
-                      fontSize: "0.85rem",
-                      transition: "all 0.2s ease",
-                      zIndex: 2
-                    }}
-                    className="wish-btn-overlay"
-                  >
-                    {wishlist.includes(p._id) ? "❤️" : "🤍"}
-                  </button>
                 </div>
                 <div style={{ padding: "1rem" }} className="premium-card__body">
                   <h3 style={{ fontSize: "0.88rem", fontWeight: 600, color: "var(--white)", margin: "0 0 0.25rem", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }} className="premium-card__title">{p.name}</h3>
@@ -412,7 +388,7 @@ function Home({ selectedCategory, setSelectedCategory }) {
                 <div style={{ position: "relative", height: "220px", background: "rgba(255,255,255,0.01)", display: "flex", alignItems: "center", justifyContent: "center" }} className="premium-card__img-wrap">
                   <img src={p.image} alt={p.name} style={{ width: "100%", height: "100%", objectFit: "contain", padding: "1.25rem" }} className="premium-card__img" />
                   {p.stock !== undefined && p.stock <= 5 && p.stock > 0 && (
-                    <span style={{ position: "absolute", top: "10px", left: "10px", background: "rgba(226,184,127,0.1)", color: "var(--accent)", fontSize: "0.68rem", fontWeight: 600, padding: "0.2rem 0.6rem", borderRadius: "980px", border: "1px solid rgba(226,184,127,0.2)" }}>
+                    <span style={{ position: "absolute", top: "10px", right: "10px", background: "rgba(226,184,127,0.1)", color: "var(--accent)", fontSize: "0.68rem", fontWeight: 600, padding: "0.2rem 0.6rem", borderRadius: "980px", border: "1px solid rgba(226,184,127,0.2)" }}>
                       Only {p.stock} left!
                     </span>
                   )}
@@ -421,30 +397,6 @@ function Home({ selectedCategory, setSelectedCategory }) {
                       <span style={{ color: "var(--white)", fontSize: "0.85rem", fontWeight: 600, background: "rgba(0,0,0,0.05)", padding: "0.4rem 1rem", borderRadius: "980px" }}>Out of Stock</span>
                     </div>
                   )}
-                  <button
-                    onClick={(e) => handleToggleWishlist(e, p._id)}
-                    title={wishlist.includes(p._id) ? "Remove from wishlist" : "Add to wishlist"}
-                    style={{
-                      position: "absolute",
-                      top: "10px",
-                      right: "10px",
-                      background: wishlist.includes(p._id) ? "rgba(255, 69, 58, 0.15)" : "rgba(0, 0, 0, 0.4)",
-                      border: `1px solid ${wishlist.includes(p._id) ? "rgba(255, 69, 58, 0.3)" : "rgba(255, 255, 255, 0.15)"}`,
-                      borderRadius: "50%",
-                      width: "32px",
-                      height: "32px",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      cursor: "pointer",
-                      fontSize: "0.85rem",
-                      transition: "all 0.2s ease",
-                      zIndex: 2
-                    }}
-                    className="wish-btn-overlay"
-                  >
-                    {wishlist.includes(p._id) ? "❤️" : "🤍"}
-                  </button>
                 </div>
 
                 <div style={{ padding: "1.25rem" }} className="premium-card__body">
