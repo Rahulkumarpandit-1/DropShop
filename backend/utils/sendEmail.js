@@ -499,6 +499,99 @@ const sendOtpEmail = async (to, otp) => {
   }
 };
 
+const sendLoginNotificationEmail = async (to, userAgent, ipAddress) => {
+  const transporter = createTransporter();
+  const dateStr = new Date().toLocaleString("en-IN", { timeZone: "Asia/Kolkata" });
+
+  const mailOptions = {
+    from: `"DropShop Security" <${process.env.EMAIL_USER}>`,
+    to,
+    subject: `🚨 New Sign-in Alert — DropShop`,
+    html: `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+<body style="margin: 0; padding: 0; background: #f5f5f5; font-family: -apple-system, BlinkMacSystemFont, 'Inter', sans-serif;">
+  <div style="max-width: 500px; margin: 40px auto; background: #ffffff; border-radius: 24px; overflow: hidden; box-shadow: 0 4px 40px rgba(0,0,0,0.08);">
+    
+    <!-- Header -->
+    <div style="background: #111111; padding: 32px 40px; text-align: center;">
+      <h1 style="margin: 0; font-size: 28px; color: #ffffff; letter-spacing: -0.5px;">
+        DropShop<span style="color: #e8d5b7;">.</span>
+      </h1>
+      <p style="margin: 8px 0 0; font-size: 13px; color: #86868b; letter-spacing: 0.5px;">SECURITY ALERT</p>
+    </div>
+
+    <!-- Banner -->
+    <div style="background: linear-gradient(135deg, #1e1e24, #2a2b36); padding: 40px; text-align: center;">
+      <div style="width: 64px; height: 64px; background: rgba(255,159,10,0.15); border: 2px solid #ff9f0a; border-radius: 50%; margin: 0 auto 16px; line-height: 64px; text-align: center; font-size: 28px;">🔑</div>
+      <h2 style="margin: 0 0 8px; font-size: 22px; color: #ffffff; font-weight: 700;">New Account Sign-in</h2>
+      <p style="margin: 0; font-size: 13px; color: rgba(255,255,255,0.6); line-height: 1.6;">
+        A new sign-in was detected on your DropShop account.
+      </p>
+    </div>
+
+    <!-- Body -->
+    <div style="padding: 32px 40px;">
+      <p style="font-size: 14px; color: #333333; margin: 0 0 20px; line-height: 1.6;">
+        Hello,
+      </p>
+      <p style="font-size: 14px; color: #333333; margin: 0 0 24px; line-height: 1.6;">
+        Your DropShop account was signed in from a new device or browser session. Below are the details of this activity:
+      </p>
+
+      <div style="background: #f8f8f8; border-radius: 12px; padding: 20px; margin-bottom: 24px;">
+        <table width="100%" cellpadding="0" cellspacing="0" style="font-size: 13px; color: #555555;">
+          <tr>
+            <td style="padding-bottom: 10px; font-weight: 600; color: #888888;" width="35%">Time</td>
+            <td style="padding-bottom: 10px; color: #111111;">${dateStr} (IST)</td>
+          </tr>
+          <tr>
+            <td style="padding-bottom: 10px; font-weight: 600; color: #888888;">Device/Browser</td>
+            <td style="padding-bottom: 10px; color: #111111; word-break: break-all;">${userAgent || "Unknown"}</td>
+          </tr>
+          <tr>
+            <td style="font-weight: 600; color: #888888;">IP Address</td>
+            <td style="color: #111111;">${ipAddress || "Unknown"}</td>
+          </tr>
+        </table>
+      </div>
+
+      <p style="font-size: 12px; color: #999999; margin: 0 0 24px; line-height: 1.6;">
+        If this was you, you can safely ignore this email. If you do not recognize this activity, please change your password immediately in your account settings or contact support.
+      </p>
+
+      <div style="text-align: center;">
+        <a href="https://frontend-liard-nine-30.vercel.app/profile" 
+           style="display: inline-block; background: #111111; color: #ffffff; text-decoration: none; padding: 12px 24px; border-radius: 980px; font-size: 13px; font-weight: 600; transition: background 0.2s;">
+          Manage Your Account
+        </a>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div style="background: #f8f8f8; padding: 20px 40px; text-align: center; border-top: 1px solid #eeeeee;">
+      <p style="margin: 0; font-size: 11px; color: #999999;">
+        © ${new Date().getFullYear()} DropShop. All rights reserved.
+      </p>
+    </div>
+  </div>
+</body>
+</html>
+`
+  };
+
+  try {
+    await transporter.sendMail(mailOptions);
+    console.log("Sign-in alert email sent successfully to:", to);
+  } catch (err) {
+    console.error("Failed to send sign-in alert email:", err.message);
+  }
+};
+
 // Test SMTP connection on startup
 const verifyTransporter = async () => {
   try {
@@ -511,4 +604,11 @@ const verifyTransporter = async () => {
 };
 verifyTransporter();
 
-module.exports = { sendOrderConfirmation, sendWelcomeEmail, sendPasswordResetEmail, sendOrderStatusUpdateEmail, sendOtpEmail };
+module.exports = { 
+  sendOrderConfirmation, 
+  sendWelcomeEmail, 
+  sendPasswordResetEmail, 
+  sendOrderStatusUpdateEmail, 
+  sendOtpEmail,
+  sendLoginNotificationEmail
+};

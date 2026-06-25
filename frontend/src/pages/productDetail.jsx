@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { addToCart, getCart, addReview, getReviews, deleteReview, BASE_URL, checkPincode } from "../services/api";
+import { addToCart, getCart, addReview, getReviews, deleteReview, BASE_URL, checkPincode, getWishlist, toggleWishlist } from "../services/api";
 import toast from "react-hot-toast";
 
 
@@ -23,6 +23,7 @@ function ProductDetail() {
   const [selectedAttributes, setSelectedAttributes] = useState({});
   const [activeImage, setActiveImage] = useState("");
   const [isDescExpanded, setIsDescExpanded] = useState(false);
+  const [inWishlist, setInWishlist] = useState(false);
 
   const matchedVariant = product?.variants?.find(v => {
     return Object.entries(selectedAttributes).every(([k, val]) => {
@@ -86,6 +87,16 @@ function ProductDetail() {
         setActiveImage(firstVar.image);
       }
     }
+    const token = localStorage.getItem("token");
+    if (token) {
+      try {
+        const wishData = await getWishlist();
+        const wishIds = (wishData.wishlist || []).map(w => w._id || w);
+        setInWishlist(wishIds.includes(id));
+      } catch (err) {
+        console.error("Failed to load wishlist status", err);
+      }
+    }
     setLoading(false);
   };
 
@@ -106,6 +117,27 @@ function ProductDetail() {
     await addToCart(product._id, matchedVariant?.sku || "", selectedAttributes);
     setAdded(true);
     setTimeout(() => setAdded(false), 1500);
+  };
+
+  const handleToggleWishlist = async () => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      toast.error("Please sign in to add items to wishlist");
+      return;
+    }
+    try {
+      const data = await toggleWishlist(product._id);
+      const wishIds = (data.wishlist || []).map(w => w._id || w);
+      const nextStatus = wishIds.includes(product._id);
+      setInWishlist(nextStatus);
+      if (nextStatus) {
+        toast.success("Added to wishlist!");
+      } else {
+        toast.success("Removed from wishlist!");
+      }
+    } catch (err) {
+      toast.error("Could not update wishlist");
+    }
   };
 
   const handleBuyNow = async () => {
@@ -489,7 +521,7 @@ function ProductDetail() {
             </div>
 
             {/* Buttons */}
-            <div style={{ display: "flex", gap: "0.75rem", marginBottom: "2rem" }}>
+            <div style={{ display: "flex", gap: "0.75rem", marginBottom: "2rem", alignItems: "center" }}>
               <button
                 onClick={handleAddToCart}
                 disabled={product.stock === 0}
@@ -523,6 +555,35 @@ function ProductDetail() {
                 onMouseLeave={e => { e.currentTarget.style.borderColor = "var(--border)"; e.currentTarget.style.color = "var(--white)"; }}
               >
                 Buy Now
+              </button>
+              <button
+                onClick={handleToggleWishlist}
+                title={inWishlist ? "Remove from wishlist" : "Add to wishlist"}
+                style={{
+                  width: "52px",
+                  height: "52px",
+                  borderRadius: "50%",
+                  background: "rgba(255,255,255,0.03)",
+                  border: `2px solid ${inWishlist ? "var(--accent)" : "var(--border)"}`,
+                  color: inWishlist ? "var(--accent)" : "var(--white)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: "1.2rem",
+                  cursor: "pointer",
+                  transition: "all 0.2s ease",
+                  flexShrink: 0
+                }}
+                onMouseEnter={e => {
+                  e.currentTarget.style.borderColor = "var(--accent)";
+                  e.currentTarget.style.transform = "scale(1.05)";
+                }}
+                onMouseLeave={e => {
+                  e.currentTarget.style.borderColor = inWishlist ? "var(--accent)" : "var(--border)";
+                  e.currentTarget.style.transform = "none";
+                }}
+              >
+                {inWishlist ? "❤️" : "🤍"}
               </button>
             </div>
 

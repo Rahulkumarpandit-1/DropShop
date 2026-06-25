@@ -10,8 +10,9 @@ exports.checkPincode = async (req, res) => {
     const serviceable = await Pincode.findOne({ pincode });
     if (!serviceable) {
       return res.json({
-        serviceable: false,
-        message: "Delivery is currently unavailable for this location."
+        serviceable: true,
+        estDays: 5,
+        message: "Standard delivery available in 5 days."
       });
     }
 

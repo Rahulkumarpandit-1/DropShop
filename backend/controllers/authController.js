@@ -2,7 +2,7 @@ const User = require("../models/User");
 const Otp = require("../models/Otp");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
-const { sendWelcomeEmail, sendPasswordResetEmail, sendOtpEmail } = require("../utils/sendEmail");
+const { sendWelcomeEmail, sendPasswordResetEmail, sendOtpEmail, sendLoginNotificationEmail } = require("../utils/sendEmail");
 const crypto = require("crypto");
 
 const sanitizePhoneNumber = (phone) => {
@@ -281,6 +281,12 @@ exports.login = async (req, res) => {
       { expiresIn: "1d" }
     );
 
+    if (user.email) {
+      const userAgent = req.headers["user-agent"];
+      const ipAddress = req.headers["x-forwarded-for"] || req.socket.remoteAddress;
+      sendLoginNotificationEmail(user.email, userAgent, ipAddress).catch(err => console.error(err));
+    }
+
     return res.json({
       message: "Login successful",
       token
@@ -320,6 +326,10 @@ exports.verifyLoginOtp = async (req, res) => {
       { expiresIn: "1d" }
     );
 
+    const userAgent = req.headers["user-agent"];
+    const ipAddress = req.headers["x-forwarded-for"] || req.socket.remoteAddress;
+    sendLoginNotificationEmail(user.email, userAgent, ipAddress).catch(err => console.error(err));
+
     return res.json({
       success: true,
       message: "Login successful",
@@ -341,6 +351,12 @@ exports.googleCallback = async (req, res) => {
       process.env.JWT_SECRET || "dropshop_jwt_secret_123",
       { expiresIn: "1d" }
     );
+    
+    if (user.email) {
+      const userAgent = req.headers["user-agent"];
+      const ipAddress = req.headers["x-forwarded-for"] || req.socket.remoteAddress;
+      sendLoginNotificationEmail(user.email, userAgent, ipAddress).catch(err => console.error(err));
+    }
     
     const frontendUrl = (process.env.FRONTEND_URL || "http://localhost:5173").trim().replace(/\/$/, "");
     res.redirect(`${frontendUrl}/auth/callback?token=${token}`);
