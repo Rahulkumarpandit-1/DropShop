@@ -2,13 +2,31 @@ const Order = require("../models/Order");
 const Cart = require("../models/Cart");
 const User = require("../models/User");
 const Product = require("../models/Product");
-const { sendOrderConfirmation } = require("../utils/sendEmail");
+const { sendOrderConfirmation, sendOrderStatusUpdateEmail } = require("../utils/sendEmail");
 const { validateCouponHelper } = require("./couponController");
+const { validateAddressDetails } = require("./profileController");
 
 exports.placeOrder = async (req, res) => {
   try {
     const userId = req.user.id;
     const { address, itemId, couponCode } = req.body;
+
+    if (!address) {
+      return res.status(400).json({ error: "Address details are required." });
+    }
+    const validationError = validateAddressDetails(address, true);
+    if (validationError) {
+      return res.status(400).json({ error: validationError });
+    }
+
+    const sanitizedAddress = {
+      fullName: address.fullName.trim(),
+      phone: address.phone.trim(),
+      street: address.street.trim(),
+      city: address.city.trim(),
+      state: address.state.trim(),
+      pincode: address.pincode.trim().replace(/\s/g, "")
+    };
 
     const cart = await Cart.findOne({ userId }).populate("items.productId");
 
@@ -97,7 +115,7 @@ exports.placeOrder = async (req, res) => {
     const order = new Order({ 
       userId, 
       items, 
-      address, 
+      address: sanitizedAddress, 
       total, 
       couponCode: couponCode || "", 
       discount 
@@ -198,6 +216,18 @@ exports.AdminUpdateStatus = async (req, res) => {
     // 5. Check if order exists
     if (!order) return res.status(404).json({ message: "Order not found" });
 
+    // Send email notification asynchronously
+    try {
+      const user = await User.findById(order.userId);
+      if (user && user.email) {
+        sendOrderStatusUpdateEmail(user.email, order, status, message || `Your order status has been updated to ${status}.`).catch(emailErr => {
+          console.error("Failed to send order status update email:", emailErr.message);
+        });
+      }
+    } catch (emailErr) {
+      console.log("Failed to fetch user for email notification:", emailErr.message);
+    }
+
     res.json({ success: true, order });
   } catch (err) {
     res.status(500).json({ message: "Server error" });
@@ -248,6 +278,18 @@ exports.cancelOrder = async (req, res) => {
     });
 
     await order.save();
+
+    // Send email notification asynchronously
+    try {
+      const user = await User.findById(order.userId);
+      if (user && user.email) {
+        sendOrderStatusUpdateEmail(user.email, order, "Cancelled", "Your order has been successfully cancelled.").catch(emailErr => {
+          console.error("Failed to send order status update email for cancellation:", emailErr.message);
+        });
+      }
+    } catch (emailErr) {
+      console.log("Failed to fetch user for email notification on cancellation:", emailErr.message);
+    }
 
     res.json({ success: true, message: "Order cancelled successfully", order });
   } catch (err) {

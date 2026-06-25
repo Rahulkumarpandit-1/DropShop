@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { getProfile, updateProfile, updateAddress, getOrders, addAddress, updateAddressItem, deleteAddress, setDefaultAddress } from "../services/api";
+import { getProfile, updateProfile, updateAddress, getOrders, addAddress, updateAddressItem, deleteAddress, setDefaultAddress, sendPasswordOtp, changePasswordOtp } from "../services/api";
 
 const profileStyles = `
   .profile-layout {
@@ -246,6 +246,46 @@ const profileStyles = `
   }
 `;
 
+const compressImage = (file) => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = (event) => {
+      const img = new Image();
+      img.src = event.target.result;
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        const MAX_WIDTH = 400;
+        const MAX_HEIGHT = 400;
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height) {
+          if (width > MAX_WIDTH) {
+            height *= MAX_WIDTH / width;
+            width = MAX_WIDTH;
+          }
+        } else {
+          if (height > MAX_HEIGHT) {
+            width *= MAX_HEIGHT / height;
+            height = MAX_HEIGHT;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(img, 0, 0, width, height);
+
+        const compressedBase64 = canvas.toDataURL("image/jpeg", 0.7);
+        resolve(compressedBase64);
+      };
+      img.onerror = (err) => reject(err);
+    };
+    reader.onerror = (err) => reject(err);
+  });
+};
+
 function Profile() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -261,6 +301,11 @@ function Profile() {
   const [isSuccessMsg, setIsSuccessMsg] = useState(true);
   const [loading, setLoading] = useState(false);
   const [customerOrders, setCustomerOrders] = useState([]);
+
+  // Change password states
+  const [passwordStep, setPasswordStep] = useState(1);
+  const [passwordOtp, setPasswordOtp] = useState("");
+  const [newPassword, setNewPassword] = useState("");
 
   useEffect(() => {
     fetchProfile();
@@ -289,6 +334,26 @@ function Profile() {
     setTimeout(() => setMessage(""), 4000);
   };
 
+  const handleAvatarChange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    try {
+      const compressed = await compressImage(file);
+      setLoading(true);
+      const res = await updateProfile({ ...profileForm, profilePicture: compressed });
+      setLoading(false);
+      if (res.user) {
+        setUser(res.user);
+        showMessage("✓ Profile picture updated successfully", true);
+      } else {
+        showMessage(res.error || "✗ Failed to update profile picture", false);
+      }
+    } catch (err) {
+      setLoading(false);
+      showMessage("✗ Image processing failed", false);
+    }
+  };
+
   const handleProfileUpdate = async () => {
     setLoading(true);
     try {
@@ -306,25 +371,119 @@ function Profile() {
     }
   };
 
+  const handleSendPasswordOtp = async () => {
+    setLoading(true);
+    try {
+      const res = await sendPasswordOtp();
+      setLoading(false);
+      if (res.success) {
+        showMessage("✓ Verification code sent to your email", true);
+        setPasswordStep(2);
+      } else {
+        showMessage(res.error || res.message || "✗ Failed to send verification code", false);
+      }
+    } catch (err) {
+      setLoading(false);
+      showMessage("✗ An error occurred while sending verification code", false);
+    }
+  };
+
+  const handleChangePasswordOtp = async () => {
+    if (!passwordOtp || !newPassword) {
+      return showMessage("✗ Please fill all fields", false);
+    }
+    if (passwordOtp.length !== 6) {
+      return showMessage("✗ Please enter a valid 6-digit verification code", false);
+    }
+    if (newPassword.length < 6) {
+      return showMessage("✗ Password must be at least 6 characters long", false);
+    }
+
+    setLoading(true);
+    try {
+      const res = await changePasswordOtp(passwordOtp, newPassword);
+      setLoading(false);
+      if (res.success) {
+        showMessage("✓ Password updated successfully!", true);
+        setPasswordStep(1);
+        setPasswordOtp("");
+        setNewPassword("");
+      } else {
+        showMessage(res.error || res.message || "✗ Failed to update password", false);
+      }
+    } catch (err) {
+      setLoading(false);
+      showMessage("✗ An error occurred while updating password", false);
+    }
+  };
+
   const handleAddressSave = async () => {
     const { fullName, phone, street, city, state, pincode, label, isDefault } = addressForm;
     if (!fullName || !phone || !street || !city || !state || !pincode) {
       return showMessage("✗ Please fill all address fields", false);
     }
-    if (phone.length < 10) {
-      return showMessage("✗ Please enter a valid 10-digit phone number", false);
+    
+    const nameTrimmed = fullName.trim();
+    if (nameTrimmed.length < 3 || nameTrimmed.length > 50) {
+      return showMessage("✗ Full name must be between 3 and 50 characters", false);
     }
-    if (pincode.length < 6) {
-      return showMessage("✗ Please enter a valid 6-digit pincode", false);
+    if (!/^[a-zA-Z\s]+$/.test(nameTrimmed)) {
+      return showMessage("✗ Full name must only contain letters and spaces", false);
     }
+
+    const phoneTrimmed = phone.trim();
+    if (!/^\d{10}$/.test(phoneTrimmed)) {
+      return showMessage("✗ Phone number must be exactly 10 digits", false);
+    }
+
+    const streetTrimmed = street.trim();
+    if (streetTrimmed.length < 12) {
+      return showMessage("✗ Street address must be at least 12 characters long", false);
+    }
+    const words = streetTrimmed.split(/\s+/).filter(w => w.replace(/[^a-zA-Z0-9]/g, "").length >= 2);
+    const uniqueWords = new Set(words.map(w => w.toLowerCase()));
+    if (uniqueWords.size < 2) {
+      return showMessage("✗ Please enter a valid street address with at least 2 distinct words (e.g. '123 Main St')", false);
+    }
+
+    const cityTrimmed = city.trim();
+    if (cityTrimmed.length < 2 || cityTrimmed.length > 50) {
+      return showMessage("✗ City must be between 2 and 50 characters", false);
+    }
+    if (!/^[a-zA-Z\s]+$/.test(cityTrimmed)) {
+      return showMessage("✗ City must only contain letters and spaces", false);
+    }
+
+    const stateTrimmed = state.trim();
+    if (stateTrimmed.length < 2 || stateTrimmed.length > 50) {
+      return showMessage("✗ State must be between 2 and 50 characters", false);
+    }
+    if (!/^[a-zA-Z\s]+$/.test(stateTrimmed)) {
+      return showMessage("✗ State must only contain letters and spaces", false);
+    }
+
+    const pincodeTrimmed = pincode.trim().replace(/\s/g, "");
+    if (!/^\d{6}$/.test(pincodeTrimmed)) {
+      return showMessage("✗ Pincode must be exactly 6 digits", false);
+    }
+
+    const sanitizedAddressForm = {
+      ...addressForm,
+      fullName: nameTrimmed,
+      phone: phoneTrimmed,
+      street: streetTrimmed,
+      city: cityTrimmed,
+      state: stateTrimmed,
+      pincode: pincodeTrimmed
+    };
 
     setLoading(true);
     try {
       let res;
       if (addressMode === "add") {
-        res = await addAddress(addressForm);
+        res = await addAddress(sanitizedAddressForm);
       } else {
-        res = await updateAddressItem(editingAddressId, addressForm);
+        res = await updateAddressItem(editingAddressId, sanitizedAddressForm);
       }
       setLoading(false);
       if (res.user) {
@@ -417,7 +576,53 @@ function Profile() {
 
         {/* Profile Header Card */}
         <div className="profile-header-card">
-          <div className="profile-avatar">{initials}</div>
+          <div 
+            style={{ position: "relative", cursor: "pointer", width: "72px", height: "72px", flexShrink: 0 }} 
+            onClick={() => document.getElementById("profile-upload-input").click()}
+          >
+            {user?.profilePicture ? (
+              <img 
+                src={user.profilePicture} 
+                alt="Profile" 
+                style={{
+                  width: "72px",
+                  height: "72px",
+                  borderRadius: "50%",
+                  objectFit: "cover",
+                  border: "2px solid #e2b87f"
+                }}
+              />
+            ) : (
+              <div className="profile-avatar" style={{ margin: 0 }}>{initials}</div>
+            )}
+            <div 
+              style={{
+                position: "absolute",
+                bottom: "-2px",
+                right: "-2px",
+                background: "#e2b87f",
+                color: "#09090b",
+                borderRadius: "50%",
+                width: "24px",
+                height: "24px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontSize: "0.75rem",
+                border: "2.5px solid #18181b",
+                boxShadow: "0 2px 8px rgba(0,0,0,0.5)"
+              }}
+            >
+              📷
+            </div>
+            <input 
+              id="profile-upload-input" 
+              type="file" 
+              accept="image/*" 
+              style={{ display: "none" }} 
+              onChange={handleAvatarChange}
+            />
+          </div>
           <div style={{ flex: 1 }}>
             <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
               <h2 style={{ fontSize: "1.4rem", fontWeight: 700, color: "#f4f4f5", margin: 0, fontFamily: "Cormorant Garamond, serif" }}>
@@ -484,13 +689,14 @@ function Profile() {
                   />
                 </div>
                 <div>
-                  <label className="profile-label">Email Address</label>
+                  <label className="profile-label">Email Address (Read-only)</label>
                   <input
                     type="email"
                     className="profile-input"
                     placeholder="e.g. email@domain.com"
                     value={profileForm.email}
-                    onChange={e => setProfileForm({ ...profileForm, email: e.target.value })}
+                    disabled
+                    style={{ opacity: 0.6, cursor: "not-allowed" }}
                   />
                 </div>
               </div>
@@ -498,6 +704,61 @@ function Profile() {
               <button className="profile-btn" onClick={handleProfileUpdate} disabled={loading}>
                 {loading ? "Saving Changes..." : "Update Details"}
               </button>
+
+              {/* Change Password Block */}
+              <div style={{ marginTop: "3rem", borderTop: "1px solid #27272a", paddingTop: "2rem" }}>
+                <h3 style={{ fontSize: "1.05rem", fontWeight: 700, color: "#f4f4f5", margin: "0 0 0.3rem" }}>Security & Password</h3>
+                <p style={{ fontSize: "0.8rem", color: "#a1a1aa", margin: "0 0 1.5rem" }}>Update your password securely by verifying your email address</p>
+
+                {passwordStep === 1 ? (
+                  <div>
+                    <button 
+                      className="profile-btn" 
+                      onClick={handleSendPasswordOtp} 
+                      disabled={loading}
+                      style={{ background: "transparent", border: "1px solid #e2b87f", color: "#e2b87f" }}
+                    >
+                      {loading ? "Sending Code..." : "Send Verification Code to Email"}
+                    </button>
+                  </div>
+                ) : (
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: "0.5rem", maxWidth: "400px" }}>
+                    <div>
+                      <label className="profile-label">Verification Code (OTP)</label>
+                      <input
+                        type="text"
+                        className="profile-input"
+                        placeholder="6-digit code"
+                        maxLength={6}
+                        value={passwordOtp}
+                        onChange={e => setPasswordOtp(e.target.value.replace(/\D/g, ""))}
+                      />
+                    </div>
+                    <div>
+                      <label className="profile-label">New Password</label>
+                      <input
+                        type="password"
+                        className="profile-input"
+                        placeholder="Enter new password (min. 6 chars)"
+                        value={newPassword}
+                        onChange={e => setNewPassword(e.target.value)}
+                      />
+                    </div>
+                    <div style={{ display: "flex", gap: "1rem", marginTop: "0.5rem" }}>
+                      <button className="profile-btn" onClick={handleChangePasswordOtp} disabled={loading}>
+                        {loading ? "Updating..." : "Update Password"}
+                      </button>
+                      <button 
+                        className="profile-btn" 
+                        onClick={() => { setPasswordStep(1); setPasswordOtp(""); setNewPassword(""); }}
+                        style={{ background: "transparent", border: "1px solid #3f3f46", color: "#a1a1aa" }}
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           )}
 
@@ -565,22 +826,24 @@ function Profile() {
                 </div>
               ) : (
                 <div>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "1.5rem", flexWrap: "wrap", gap: "1rem" }}>
                     <div>
                       <h3 style={{ fontSize: "1.05rem", fontWeight: 700, color: "#f4f4f5", margin: "0 0 0.3rem" }}>
                         {addressMode === "add" ? "Add New Address" : "Edit Saved Address"}
                       </h3>
                       <p style={{ fontSize: "0.8rem", color: "#a1a1aa", margin: 0 }}>Please fill out the shipping address details below</p>
                     </div>
-                    <button 
-                      className="profile-tab-btn" 
-                      onClick={() => {
-                        setAddressMode("list");
-                        setEditingAddressId(null);
-                      }}
-                    >
-                      ← Back to List
-                    </button>
+                    <div style={{ display: "flex", gap: "0.75rem" }}>
+                      <button 
+                        className="profile-tab-btn" 
+                        onClick={() => {
+                          setAddressMode("list");
+                          setEditingAddressId(null);
+                        }}
+                      >
+                        ← Back to List
+                      </button>
+                    </div>
                   </div>
 
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.75rem", marginBottom: "1.5rem" }}>

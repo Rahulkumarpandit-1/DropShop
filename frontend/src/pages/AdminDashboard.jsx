@@ -13,6 +13,14 @@ import {
 } from "../services/api";
 import toast from "react-hot-toast";
 
+const categoryMap = {
+  All: [],
+  Electronic: ["Phones", "Laptops", "Audio", "Tools", "Accessories"],
+  Fashion: ["Shirts", "Jeans", "Shoes", "Dresses", "Ethnic"],
+  Accessories: ["Watches", "Bags", "Jewellery", "Sunglasses"],
+  Home: ["Furniture", "Kitchen", "Decor", "Lighting"],
+};
+
 const dashboardStyles = `
   .seller-layout {
     display: flex;
@@ -500,6 +508,7 @@ function AdminDashboard() {
   const [orderStatusFilter, setOrderStatusFilter] = useState("All");
   const [productSearchQuery, setProductSearchQuery] = useState("");
   const [productCategoryFilter, setProductCategoryFilter] = useState("All");
+  const [productSubcategoryFilter, setProductSubcategoryFilter] = useState("All");
   const [userSearchQuery, setUserSearchQuery] = useState("");
 
   // Orders state
@@ -510,9 +519,12 @@ function AdminDashboard() {
   const [newProduct, setNewProduct] = useState({
     name: "",
     price: "",
+    originalPrice: "",
     category: "Electronic",
+    subcategory: "Phones",
     description: "",
     image: "",
+    images: [],
     stock: ""
   });
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -522,9 +534,12 @@ function AdminDashboard() {
   const [editProduct, setEditProduct] = useState({
     name: "",
     price: "",
+    originalPrice: "",
     category: "Electronic",
+    subcategory: "",
     description: "",
     image: "",
+    images: [],
     stock: ""
   });
 
@@ -629,10 +644,100 @@ function AdminDashboard() {
     }
   };
 
+  const compressImage = (file, maxWidth = 800, maxHeight = 800, quality = 0.7) => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = (event) => {
+        const img = new Image();
+        img.src = event.target.result;
+        img.onload = () => {
+          const canvas = document.createElement("canvas");
+          let width = img.width;
+          let height = img.height;
+
+          if (width > height) {
+            if (width > maxWidth) {
+              height = Math.round((height * maxWidth) / width);
+              width = maxWidth;
+            }
+          } else {
+            if (height > maxHeight) {
+              width = Math.round((width * maxHeight) / height);
+              height = maxHeight;
+            }
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext("2d");
+          ctx.drawImage(img, 0, 0, width, height);
+          resolve(canvas.toDataURL("image/jpeg", quality));
+        };
+        img.onerror = (err) => reject(err);
+      };
+      reader.onerror = (err) => reject(err);
+    });
+  };
+
+  const handleNewProductImageUpload = async (e) => {
+    const files = Array.from(e.target.files);
+    if (!files.length) return;
+
+    const compressed = [];
+    const toastId = toast.loading("Uploading and compressing images...");
+    try {
+      for (const file of files) {
+        const base64 = await compressImage(file);
+        compressed.push(base64);
+      }
+      
+      const updatedImages = [...(newProduct.images || []), ...compressed];
+      const updatedMainImage = newProduct.image || compressed[0] || "";
+
+      setNewProduct(prev => ({
+        ...prev,
+        images: updatedImages,
+        image: updatedMainImage
+      }));
+      toast.success("Images uploaded successfully!", { id: toastId });
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to upload images", { id: toastId });
+    }
+  };
+
+  const handleEditProductImageUpload = async (e) => {
+    const files = Array.from(e.target.files);
+    if (!files.length) return;
+
+    const compressed = [];
+    const toastId = toast.loading("Uploading and compressing images...");
+    try {
+      for (const file of files) {
+        const base64 = await compressImage(file);
+        compressed.push(base64);
+      }
+      
+      const updatedImages = [...(editProduct.images || []), ...compressed];
+      const updatedMainImage = editProduct.image || compressed[0] || "";
+
+      setEditProduct(prev => ({
+        ...prev,
+        images: updatedImages,
+        image: updatedMainImage
+      }));
+      toast.success("Images uploaded successfully!", { id: toastId });
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to upload images", { id: toastId });
+    }
+  };
+
   const handleAddProductSubmit = async (e) => {
     e.preventDefault();
-    const { name, price, category, description, image, stock } = newProduct;
-    if (!name || !price || !category || !description || !image || stock === "") {
+    const { name, price, originalPrice, category, subcategory, description, image, images, stock } = newProduct;
+    if (!name || !price || !category || !subcategory || !description || !image || stock === "") {
       return toast.error("Please fill all product fields");
     }
 
@@ -640,9 +745,12 @@ function AdminDashboard() {
       const res = await addProductAdmin({
         name,
         price: Number(price),
+        originalPrice: originalPrice ? Number(originalPrice) : undefined,
         category,
+        subcategory,
         description,
         image,
+        images: images && images.length > 0 ? images : [image],
         stock: Number(stock)
       });
       if (res.message && res.message.includes("successfully")) {
@@ -650,9 +758,12 @@ function AdminDashboard() {
         setNewProduct({
           name: "",
           price: "",
+          originalPrice: "",
           category: "Electronic",
+          subcategory: "Phones",
           description: "",
           image: "",
+          images: [],
           stock: ""
         });
         setIsAddModalOpen(false);
@@ -671,9 +782,12 @@ function AdminDashboard() {
     setEditProduct({
       name: product.name || "",
       price: product.price || "",
+      originalPrice: product.originalPrice || "",
       category: product.category || "Electronic",
+      subcategory: product.subcategory || "",
       description: product.description || "",
       image: product.image || "",
+      images: product.images || (product.image ? [product.image] : []),
       stock: product.stock !== undefined ? product.stock : ""
     });
   };
@@ -684,6 +798,8 @@ function AdminDashboard() {
       const res = await updateProductAdmin(id, {
         ...editProduct,
         price: Number(editProduct.price),
+        originalPrice: editProduct.originalPrice ? Number(editProduct.originalPrice) : null,
+        images: editProduct.images && editProduct.images.length > 0 ? editProduct.images : [editProduct.image],
         stock: Number(editProduct.stock)
       });
       if (res.message && res.message.includes("successfully")) {
@@ -740,11 +856,12 @@ function AdminDashboard() {
 
   const filteredProducts = products.filter(p => {
     const matchesCategory = productCategoryFilter === "All" || p.category === productCategoryFilter;
+    const matchesSubcategory = productSubcategoryFilter === "All" || p.subcategory === productSubcategoryFilter;
     const lowerSearch = productSearchQuery.toLowerCase();
     const matchesSearch = 
       p.name.toLowerCase().includes(lowerSearch) ||
       (p.description || "").toLowerCase().includes(lowerSearch);
-    return matchesCategory && matchesSearch;
+    return matchesCategory && matchesSubcategory && matchesSearch;
   });
 
   const filteredUsers = users.filter(u => {
@@ -1268,7 +1385,10 @@ function AdminDashboard() {
                     <span style={{ fontSize: "0.78rem", color: "#a1a1aa", fontWeight: 600, textTransform: "uppercase" }}>Category</span>
                     <select 
                       value={productCategoryFilter}
-                      onChange={(e) => setProductCategoryFilter(e.target.value)}
+                      onChange={(e) => {
+                        setProductCategoryFilter(e.target.value);
+                        setProductSubcategoryFilter("All");
+                      }}
                       style={{
                         background: "#09090b", color: "#f4f4f5", border: "1px solid #27272a", borderRadius: "10px", padding: "0.65rem 1rem", fontSize: "0.84rem", outline: "none", cursor: "pointer"
                       }}
@@ -1280,6 +1400,25 @@ function AdminDashboard() {
                       <option value="Home">Home</option>
                     </select>
                   </div>
+
+                  {/* Subcategory Filter */}
+                  {productCategoryFilter !== "All" && (
+                    <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                      <span style={{ fontSize: "0.78rem", color: "#a1a1aa", fontWeight: 600, textTransform: "uppercase" }}>Subcategory</span>
+                      <select 
+                        value={productSubcategoryFilter}
+                        onChange={(e) => setProductSubcategoryFilter(e.target.value)}
+                        style={{
+                          background: "#09090b", color: "#f4f4f5", border: "1px solid #27272a", borderRadius: "10px", padding: "0.65rem 1rem", fontSize: "0.84rem", outline: "none", cursor: "pointer"
+                        }}
+                      >
+                        <option value="All">All Subcategories</option>
+                        {(categoryMap[productCategoryFilter] || []).map(sub => (
+                          <option key={sub} value={sub}>{sub}</option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
 
                 </div>
               </div>
@@ -1320,15 +1459,29 @@ function AdminDashboard() {
 
                           return (
                             <tr key={product._id} className="table-row">
-                              <td style={{ width: "80px" }}>
-                                <img src={product.image} alt={product.name} style={{ width: "44px", height: "44px", objectFit: "contain", background: "#09090b", borderRadius: "8px", padding: "0.2rem", border: "1px solid #27272a" }} />
-                              </td>
-                              <td>
-                                <div style={{ fontWeight: 600, color: "#f4f4f5" }}>{product.name}</div>
-                                <div style={{ fontSize: "0.72rem", color: "#a1a1aa", marginTop: "0.15rem", maxWidth: "250px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{product.description}</div>
-                              </td>
-                              <td style={{ color: "#e2b87f", fontWeight: 600 }}>₹{product.price?.toLocaleString()}</td>
-                              <td><span style={{ fontSize: "0.8rem", background: "rgba(255,255,255,0.04)", border: "1px solid #27272a", padding: "0.2rem 0.5rem", borderRadius: "4px", textTransform: "capitalize" }}>{product.category}</span></td>
+                            <td style={{ width: "80px" }}>
+                              <img src={product.image} alt={product.name} style={{ width: "44px", height: "44px", objectFit: "contain", background: "#09090b", borderRadius: "8px", padding: "0.2rem", border: "1px solid #27272a" }} />
+                            </td>
+                            <td>
+                              <div style={{ fontWeight: 600, color: "#f4f4f5" }}>{product.name}</div>
+                              <div style={{ fontSize: "0.72rem", color: "#a1a1aa", marginTop: "0.15rem", maxWidth: "250px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{product.description}</div>
+                            </td>
+                            <td style={{ color: "#e2b87f", fontWeight: 600 }}>
+                              <div>₹{product.price?.toLocaleString()}</div>
+                              {product.originalPrice && product.originalPrice > product.price && (
+                                <div style={{ fontSize: "0.72rem", color: "#71717a", textDecoration: "line-through", fontWeight: 400 }}>
+                                  ₹{product.originalPrice?.toLocaleString()}
+                                </div>
+                              )}
+                            </td>
+                            <td>
+                              <div style={{ display: "flex", flexDirection: "column", gap: "0.25rem" }}>
+                                <span style={{ fontSize: "0.8rem", background: "rgba(255,255,255,0.04)", border: "1px solid #27272a", padding: "0.2rem 0.5rem", borderRadius: "4px", textTransform: "capitalize", width: "fit-content" }}>{product.category}</span>
+                                {product.subcategory && (
+                                  <span style={{ fontSize: "0.72rem", color: "#a1a1aa" }}>{product.subcategory}</span>
+                                )}
+                              </div>
+                            </td>
                               <td>
                                 <span className={`stock-pill ${stockClass}`}>
                                   {stockLabel}
@@ -1459,7 +1612,7 @@ function AdminDashboard() {
               <h3>Add Product to Catalog</h3>
               <button className="modal-close-btn" onClick={() => setIsAddModalOpen(false)}>✕</button>
             </div>
-            <form onSubmit={handleAddProductSubmit}>
+            <form onSubmit={handleAddProductSubmit} style={{ display: "flex", flexDirection: "column", flex: 1, overflow: "hidden" }}>
               <div className="modal-content">
                 <div className="form-group">
                   <label className="form-label">Product Title</label>
@@ -1471,19 +1624,29 @@ function AdminDashboard() {
                     placeholder="e.g. Vintage Leather Messenger Bag"
                   />
                 </div>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "1rem" }}>
                   <div className="form-group">
-                    <label className="form-label">Price (₹)</label>
+                    <label className="form-label">Selling Price (₹)</label>
                     <input 
                       type="number"
                       className="form-input"
                       value={newProduct.price}
                       onChange={(e) => setNewProduct({ ...newProduct, price: e.target.value })}
-                      placeholder="1899"
+                      placeholder="999"
                     />
                   </div>
                   <div className="form-group">
-                    <label className="form-label">Stock Quantity</label>
+                    <label className="form-label">Original Price (₹ - Optional)</label>
+                    <input 
+                      type="number"
+                      className="form-input"
+                      value={newProduct.originalPrice}
+                      onChange={(e) => setNewProduct({ ...newProduct, originalPrice: e.target.value })}
+                      placeholder="1999"
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Stock Units</label>
                     <input 
                       type="number"
                       className="form-input"
@@ -1493,29 +1656,186 @@ function AdminDashboard() {
                     />
                   </div>
                 </div>
-                <div className="form-group">
-                  <label className="form-label">Category</label>
-                  <select 
-                    className="form-input"
-                    value={newProduct.category}
-                    onChange={(e) => setNewProduct({ ...newProduct, category: e.target.value })}
-                    style={{ cursor: "pointer" }}
-                  >
-                    <option value="Electronic">Electronic</option>
-                    <option value="Fashion">Fashion</option>
-                    <option value="Accessories">Accessories</option>
-                    <option value="Home">Home</option>
-                  </select>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
+                  <div className="form-group">
+                    <label className="form-label">Category</label>
+                    <select 
+                      className="form-input"
+                      value={newProduct.category}
+                      onChange={(e) => {
+                        const cat = e.target.value;
+                        const subcats = categoryMap[cat] || [];
+                        setNewProduct({
+                          ...newProduct,
+                          category: cat,
+                          subcategory: subcats[0] || ""
+                        });
+                      }}
+                      style={{ cursor: "pointer" }}
+                    >
+                      <option value="Electronic">Electronic</option>
+                      <option value="Fashion">Fashion</option>
+                      <option value="Accessories">Accessories</option>
+                      <option value="Home">Home</option>
+                    </select>
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Subcategory</label>
+                    <select 
+                      className="form-input"
+                      value={newProduct.subcategory}
+                      onChange={(e) => setNewProduct({ ...newProduct, subcategory: e.target.value })}
+                      style={{ cursor: "pointer" }}
+                    >
+                      {(categoryMap[newProduct.category] || []).map(sub => (
+                        <option key={sub} value={sub}>{sub}</option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
-                <div className="form-group">
-                  <label className="form-label">Image URL</label>
-                  <input 
-                    type="text"
-                    className="form-input"
-                    value={newProduct.image}
-                    onChange={(e) => setNewProduct({ ...newProduct, image: e.target.value })}
-                    placeholder="https://images.unsplash.com/..."
-                  />
+                <div className="form-group" style={{ gridColumn: "1 / -1" }}>
+                  <label className="form-label" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <span>Product Images</span>
+                    <span style={{ fontSize: "0.72rem", color: "#a1a1aa", fontWeight: 400 }}>(Add by URL or upload multiple from device)</span>
+                  </label>
+                  <div style={{ display: "flex", gap: "0.5rem", marginBottom: "0.75rem" }}>
+                    <input 
+                      type="text"
+                      className="form-input"
+                      id="new-product-url-input"
+                      placeholder="Paste image URL (e.g. https://...)"
+                      style={{ flex: 1 }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const input = document.getElementById("new-product-url-input");
+                        const val = input.value.trim();
+                        if (val) {
+                          const updatedImages = [...(newProduct.images || []), val];
+                          const updatedMain = newProduct.image || val;
+                          setNewProduct(prev => ({
+                            ...prev,
+                            images: updatedImages,
+                            image: updatedMain
+                          }));
+                          input.value = "";
+                        }
+                      }}
+                      style={{
+                        background: "rgba(255,255,255,0.06)",
+                        border: "1px solid #27272a",
+                        color: "#f4f4f5",
+                        borderRadius: "8px",
+                        padding: "0 1rem",
+                        fontSize: "0.85rem",
+                        cursor: "pointer"
+                      }}
+                    >
+                      Add URL
+                    </button>
+                  </div>
+                  <div style={{ marginBottom: "1rem" }}>
+                    <label 
+                      htmlFor="new-product-file-upload"
+                      style={{
+                        display: "flex",
+                        flexDirection: "column",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        padding: "1.5rem",
+                        border: "2px dashed #27272a",
+                        borderRadius: "12px",
+                        cursor: "pointer",
+                        background: "rgba(255,255,255,0.01)",
+                        transition: "all 0.2s"
+                      }}
+                      onMouseEnter={e => e.currentTarget.style.borderColor = "var(--accent)"}
+                      onMouseLeave={e => e.currentTarget.style.borderColor = "#27272a"}
+                    >
+                      <span style={{ fontSize: "1.5rem", marginBottom: "0.5rem" }}>📁</span>
+                      <span style={{ fontSize: "0.8rem", color: "#f4f4f5", fontWeight: 600 }}>Upload images from device</span>
+                      <span style={{ fontSize: "0.72rem", color: "#a1a1aa", marginTop: "0.25rem" }}>Supports PNG, JPG, WEBP (Auto-compressed)</span>
+                    </label>
+                    <input 
+                      type="file"
+                      id="new-product-file-upload"
+                      multiple
+                      accept="image/*"
+                      onChange={handleNewProductImageUpload}
+                      style={{ display: "none" }}
+                    />
+                  </div>
+                  {newProduct.images && newProduct.images.length > 0 && (
+                    <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap", background: "rgba(0,0,0,0.2)", padding: "0.75rem", borderRadius: "12px", border: "1px solid #27272a" }}>
+                      {newProduct.images.map((imgUrl, idx) => {
+                        const isCover = newProduct.image === imgUrl;
+                        return (
+                          <div key={idx} style={{ position: "relative", width: "80px", height: "80px", borderRadius: "8px", border: `2px solid ${isCover ? "var(--accent)" : "#27272a"}`, overflow: "hidden", background: "#09090b" }}>
+                            <img src={imgUrl} alt="gallery" style={{ width: "100%", height: "100%", objectFit: "contain" }} />
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const updatedImages = newProduct.images.filter((_, i) => i !== idx);
+                                let updatedMain = newProduct.image;
+                                if (isCover) {
+                                  updatedMain = updatedImages[0] || "";
+                                }
+                                setNewProduct(prev => ({
+                                  ...prev,
+                                  images: updatedImages,
+                                  image: updatedMain
+                                }));
+                              }}
+                              style={{
+                                position: "absolute",
+                                top: "2px",
+                                right: "2px",
+                                background: "rgba(255, 59, 48, 0.8)",
+                                color: "#fff",
+                                border: "none",
+                                borderRadius: "50%",
+                                width: "18px",
+                                height: "18px",
+                                fontSize: "0.7rem",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                cursor: "pointer"
+                              }}
+                            >
+                              ×
+                            </button>
+                            {isCover ? (
+                              <span style={{ position: "absolute", bottom: 0, left: 0, right: 0, background: "var(--accent)", color: "#000", fontSize: "0.62rem", fontWeight: 700, textAlign: "center", padding: "1px 0" }}>
+                                COVER
+                              </span>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() => setNewProduct(prev => ({ ...prev, image: imgUrl }))}
+                                style={{
+                                  position: "absolute",
+                                  bottom: 0,
+                                  left: 0,
+                                  right: 0,
+                                  background: "rgba(0,0,0,0.6)",
+                                  color: "#fff",
+                                  border: "none",
+                                  fontSize: "0.6rem",
+                                  textAlign: "center",
+                                  padding: "2px 0",
+                                  cursor: "pointer"
+                                }}
+                              >
+                                Set Cover
+                              </button>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
                 <div className="form-group">
                   <label className="form-label">Description</label>
@@ -1557,7 +1877,7 @@ function AdminDashboard() {
               <h3>Edit Catalog Listing</h3>
               <button className="modal-close-btn" onClick={() => setEditingProductId(null)}>✕</button>
             </div>
-            <form onSubmit={(e) => handleUpdateProductSubmit(e, editingProductId)}>
+            <form onSubmit={(e) => handleUpdateProductSubmit(e, editingProductId)} style={{ display: "flex", flexDirection: "column", flex: 1, overflow: "hidden" }}>
               <div className="modal-content">
                 <div className="form-group">
                   <label className="form-label">Product Title</label>
@@ -1568,7 +1888,7 @@ function AdminDashboard() {
                     onChange={(e) => setEditProduct({ ...editProduct, name: e.target.value })}
                   />
                 </div>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "1rem" }}>
                   <div className="form-group">
                     <label className="form-label">Price (₹)</label>
                     <input 
@@ -1576,6 +1896,16 @@ function AdminDashboard() {
                       className="form-input"
                       value={editProduct.price}
                       onChange={(e) => setEditProduct({ ...editProduct, price: e.target.value })}
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Original Price (₹ - Optional)</label>
+                    <input 
+                      type="number"
+                      className="form-input"
+                      value={editProduct.originalPrice}
+                      onChange={(e) => setEditProduct({ ...editProduct, originalPrice: e.target.value })}
+                      placeholder="e.g. 1999"
                     />
                   </div>
                   <div className="form-group">
@@ -1588,27 +1918,186 @@ function AdminDashboard() {
                     />
                   </div>
                 </div>
-                <div className="form-group">
-                  <label className="form-label">Category</label>
-                  <select 
-                    className="form-input"
-                    value={editProduct.category}
-                    onChange={(e) => setEditProduct({ ...editProduct, category: e.target.value })}
-                  >
-                    <option value="Electronic">Electronic</option>
-                    <option value="Fashion">Fashion</option>
-                    <option value="Accessories">Accessories</option>
-                    <option value="Home">Home</option>
-                  </select>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
+                  <div className="form-group">
+                    <label className="form-label">Category</label>
+                    <select 
+                      className="form-input"
+                      value={editProduct.category}
+                      onChange={(e) => {
+                        const cat = e.target.value;
+                        const subcats = categoryMap[cat] || [];
+                        setEditProduct({
+                          ...editProduct,
+                          category: cat,
+                          subcategory: subcats[0] || ""
+                        });
+                      }}
+                      style={{ cursor: "pointer" }}
+                    >
+                      <option value="Electronic">Electronic</option>
+                      <option value="Fashion">Fashion</option>
+                      <option value="Accessories">Accessories</option>
+                      <option value="Home">Home</option>
+                    </select>
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Subcategory</label>
+                    <select 
+                      className="form-input"
+                      value={editProduct.subcategory}
+                      onChange={(e) => setEditProduct({ ...editProduct, subcategory: e.target.value })}
+                      style={{ cursor: "pointer" }}
+                    >
+                      {(categoryMap[editProduct.category] || []).map(sub => (
+                        <option key={sub} value={sub}>{sub}</option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
                 <div className="form-group">
-                  <label className="form-label">Image URL</label>
-                  <input 
-                    type="text"
-                    className="form-input"
-                    value={editProduct.image}
-                    onChange={(e) => setEditProduct({ ...editProduct, image: e.target.value })}
-                  />
+                  <label className="form-label" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <span>Product Images</span>
+                    <span style={{ fontSize: "0.72rem", color: "#a1a1aa", fontWeight: 400 }}>(Add by URL or upload multiple from device)</span>
+                  </label>
+                  <div style={{ display: "flex", gap: "0.5rem", marginBottom: "0.75rem" }}>
+                    <input 
+                      type="text"
+                      className="form-input"
+                      id="edit-product-url-input"
+                      placeholder="Paste image URL (e.g. https://...)"
+                      style={{ flex: 1 }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const input = document.getElementById("edit-product-url-input");
+                        const val = input.value.trim();
+                        if (val) {
+                          const updatedImages = [...(editProduct.images || []), val];
+                          const updatedMain = editProduct.image || val;
+                          setEditProduct(prev => ({
+                            ...prev,
+                            images: updatedImages,
+                            image: updatedMain
+                          }));
+                          input.value = "";
+                        }
+                      }}
+                      style={{
+                        background: "rgba(255,255,255,0.06)",
+                        border: "1px solid #27272a",
+                        color: "#f4f4f5",
+                        borderRadius: "8px",
+                        padding: "0 1rem",
+                        fontSize: "0.85rem",
+                        cursor: "pointer"
+                      }}
+                    >
+                      Add URL
+                    </button>
+                  </div>
+                  <div style={{ marginBottom: "1rem" }}>
+                    <label 
+                      htmlFor="edit-product-file-upload"
+                      style={{
+                        display: "flex",
+                        flexDirection: "column",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        padding: "1.5rem",
+                        border: "2px dashed #27272a",
+                        borderRadius: "12px",
+                        cursor: "pointer",
+                        background: "rgba(255,255,255,0.01)",
+                        transition: "all 0.2s"
+                      }}
+                      onMouseEnter={e => e.currentTarget.style.borderColor = "var(--accent)"}
+                      onMouseLeave={e => e.currentTarget.style.borderColor = "#27272a"}
+                    >
+                      <span style={{ fontSize: "1.5rem", marginBottom: "0.5rem" }}>📁</span>
+                      <span style={{ fontSize: "0.8rem", color: "#f4f4f5", fontWeight: 600 }}>Upload images from device</span>
+                      <span style={{ fontSize: "0.72rem", color: "#a1a1aa", marginTop: "0.25rem" }}>Supports PNG, JPG, WEBP (Auto-compressed)</span>
+                    </label>
+                    <input 
+                      type="file"
+                      id="edit-product-file-upload"
+                      multiple
+                      accept="image/*"
+                      onChange={handleEditProductImageUpload}
+                      style={{ display: "none" }}
+                    />
+                  </div>
+                  {editProduct.images && editProduct.images.length > 0 && (
+                    <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap", background: "rgba(0,0,0,0.2)", padding: "0.75rem", borderRadius: "12px", border: "1px solid #27272a" }}>
+                      {editProduct.images.map((imgUrl, idx) => {
+                        const isCover = editProduct.image === imgUrl;
+                        return (
+                          <div key={idx} style={{ position: "relative", width: "80px", height: "80px", borderRadius: "8px", border: `2px solid ${isCover ? "var(--accent)" : "#27272a"}`, overflow: "hidden", background: "#09090b" }}>
+                            <img src={imgUrl} alt="gallery" style={{ width: "100%", height: "100%", objectFit: "contain" }} />
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const updatedImages = editProduct.images.filter((_, i) => i !== idx);
+                                let updatedMain = editProduct.image;
+                                if (isCover) {
+                                  updatedMain = updatedImages[0] || "";
+                                }
+                                setEditProduct(prev => ({
+                                  ...prev,
+                                  images: updatedImages,
+                                  image: updatedMain
+                                }));
+                              }}
+                              style={{
+                                position: "absolute",
+                                top: "2px",
+                                right: "2px",
+                                background: "rgba(255, 59, 48, 0.8)",
+                                color: "#fff",
+                                border: "none",
+                                borderRadius: "50%",
+                                width: "18px",
+                                height: "18px",
+                                fontSize: "0.7rem",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                cursor: "pointer"
+                              }}
+                            >
+                              ×
+                            </button>
+                            {isCover ? (
+                              <span style={{ position: "absolute", bottom: 0, left: 0, right: 0, background: "var(--accent)", color: "#000", fontSize: "0.62rem", fontWeight: 700, textAlign: "center", padding: "1px 0" }}>
+                                COVER
+                              </span>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() => setEditProduct(prev => ({ ...prev, image: imgUrl }))}
+                                style={{
+                                  position: "absolute",
+                                  bottom: 0,
+                                  left: 0,
+                                  right: 0,
+                                  background: "rgba(0,0,0,0.6)",
+                                  color: "#fff",
+                                  border: "none",
+                                  fontSize: "0.6rem",
+                                  textAlign: "center",
+                                  padding: "2px 0",
+                                  cursor: "pointer"
+                                }}
+                              >
+                                Set Cover
+                              </button>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
                 <div className="form-group">
                   <label className="form-label">Description</label>

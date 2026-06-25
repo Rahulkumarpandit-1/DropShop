@@ -25,6 +25,7 @@ function Products() {
   );
   const searchQuery = searchParams.get("search") || "";
   const categoryFromUrl = searchParams.get("category") || "All";
+  const subcategoryFromUrl = searchParams.get("subcategory") || "All";
 
   const categoryMap = {
     All: [],
@@ -43,10 +44,33 @@ function Products() {
 
   const categories = ["All", "Electronic", "Fashion", "Accessories", "Home"];
 
-  // ── Sync category from URL ──
+  // ── Sync category & subcategory from URL ──
   useEffect(() => {
     setSelectedCategory(categoryFromUrl);
-  }, [categoryFromUrl]);
+    setSelectedSubcategory(subcategoryFromUrl);
+  }, [categoryFromUrl, subcategoryFromUrl]);
+
+  // ── URL Navigation Handlers ──
+  const handleCategorySelect = (cat) => {
+    const params = new URLSearchParams(location.search);
+    if (cat && cat !== "All") {
+      params.set("category", cat);
+    } else {
+      params.delete("category");
+    }
+    params.delete("subcategory");
+    navigate(`/products?${params.toString()}`);
+  };
+
+  const handleSubcategorySelect = (sub) => {
+    const params = new URLSearchParams(location.search);
+    if (sub && sub !== "All") {
+      params.set("subcategory", sub);
+    } else {
+      params.delete("subcategory");
+    }
+    navigate(`/products?${params.toString()}`);
+  };
 
   useEffect(() => {
     const titleCategory = selectedCategory && selectedCategory !== "All" ? selectedCategory : "Discover";
@@ -59,11 +83,6 @@ function Products() {
     setCatalogSearch(searchQuery);
   }, [searchQuery]);
 
-  // ── Reset subcategory on category change ──
-  useEffect(() => {
-    setSelectedSubcategory("All");
-  }, [selectedCategory]);
-
   // ── Fetch products & wishlist ──
   useEffect(() => {
     fetchWishlist();
@@ -71,7 +90,7 @@ function Products() {
 
   useEffect(() => {
     fetchProducts();
-  }, [selectedCategory, searchQuery]);
+  }, [selectedCategory, searchQuery, selectedSubcategory]);
 
   const fetchWishlist = async () => {
     try {
@@ -85,7 +104,7 @@ function Products() {
   const fetchProducts = async () => {
     try {
       setLoading(true);
-      const data = await getProducts(1, selectedCategory, searchQuery);
+      const data = await getProducts(1, selectedCategory, searchQuery, selectedSubcategory);
       setProducts(Array.isArray(data) ? data : data.products || []);
     } catch {
       setProducts([]);
@@ -336,13 +355,28 @@ function Products() {
                 Home
               </span>
               <span style={{ color: "var(--grey)", opacity: 0.5 }}>/</span>
-              <span style={styles.breadcrumbCurrent}>
-                {searchQuery
-                  ? "Search"
-                  : selectedCategory === "All"
-                    ? "All Products"
-                    : selectedCategory}
+              <span
+                style={selectedCategory !== "All" ? styles.breadcrumbLink : styles.breadcrumbCurrent}
+                onClick={() => {
+                  if (selectedCategory !== "All") {
+                    handleCategorySelect(selectedCategory);
+                  }
+                }}
+                onMouseEnter={(e) => {
+                  if (selectedCategory !== "All") e.currentTarget.style.color = "var(--accent)";
+                }}
+                onMouseLeave={(e) => {
+                  if (selectedCategory !== "All") e.currentTarget.style.color = "var(--grey)";
+                }}
+              >
+                {selectedCategory === "All" ? "All Products" : selectedCategory}
               </span>
+              {selectedCategory !== "All" && selectedSubcategory !== "All" && (
+                <>
+                  <span style={{ color: "var(--grey)", opacity: 0.5 }}>/</span>
+                  <span style={styles.breadcrumbCurrent}>{selectedSubcategory}</span>
+                </>
+              )}
             </div>
 
             <h1 className="catalog-title">
@@ -418,6 +452,56 @@ function Products() {
           </div>
         </div>
 
+        {/* ── SUBCATEGORY QUICK-LINKS ROW ── */}
+        {selectedCategory !== "All" && categoryMap[selectedCategory]?.length > 0 && (
+          <div style={{
+            display: "flex",
+            gap: "0.75rem",
+            overflowX: "auto",
+            padding: "0.25rem 0 1.25rem",
+            marginBottom: "1rem",
+            scrollbarWidth: "none",
+            msOverflowStyle: "none"
+          }} className="subcategory-scroll-container">
+            {["All", ...categoryMap[selectedCategory]].map((sub) => {
+              const active = selectedSubcategory === sub;
+              return (
+                <button
+                  key={sub}
+                  onClick={() => handleSubcategorySelect(sub)}
+                  style={{
+                    background: active ? "var(--accent)" : "var(--card-bg)",
+                    color: active ? "var(--black)" : "var(--white)",
+                    border: active ? "1px solid var(--accent)" : "1px solid var(--border)",
+                    borderRadius: "980px",
+                    padding: "0.5rem 1.25rem",
+                    fontSize: "0.8rem",
+                    fontWeight: 500,
+                    cursor: "pointer",
+                    whiteSpace: "nowrap",
+                    transition: "all 0.25s ease",
+                    boxShadow: active ? "0 4px 15px rgba(226, 184, 127, 0.2)" : "none"
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!active) {
+                      e.currentTarget.style.borderColor = "rgba(255, 255, 255, 0.25)";
+                      e.currentTarget.style.background = "rgba(255, 255, 255, 0.04)";
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!active) {
+                      e.currentTarget.style.borderColor = "var(--border)";
+                      e.currentTarget.style.background = "var(--card-bg)";
+                    }
+                  }}
+                >
+                  {sub}
+                </button>
+              );
+            })}
+          </div>
+        )}
+
         {/* ── LAYOUT WRAPPER (PC Sidebar / Mobile Drawer) ── */}
         <div className="catalog-layout-wrapper">
 
@@ -443,10 +527,7 @@ function Products() {
                     return (
                       <div
                         key={cat}
-                        onClick={() => {
-                          setSelectedCategory(cat);
-                          navigate(`/products${cat !== "All" ? `?category=${cat}` : ""}`);
-                        }}
+                        onClick={() => handleCategorySelect(cat)}
                         className={`filter-option-row ${active ? "active" : ""}`}
                       >
                         <span>{cat}</span>
@@ -476,7 +557,7 @@ function Products() {
                         return (
                           <div
                             key={sub}
-                            onClick={() => setSelectedSubcategory(sub)}
+                            onClick={() => handleSubcategorySelect(sub)}
                             className={`filter-option-row ${active ? "active" : ""}`}
                           >
                             <span>{sub}</span>
@@ -602,8 +683,8 @@ function Products() {
                   className="premium-card"
                 >
                   {/* Image */}
-                  <div style={styles.imgWrap}>
-                    <img src={p.image} alt={p.name} style={styles.img} />
+                  <div style={styles.imgWrap} className="premium-card__img-wrap">
+                    <img src={p.image} alt={p.name} style={styles.img} className="premium-card__img" />
 
                     {/* Wishlist button */}
                     <button
@@ -638,16 +719,29 @@ function Products() {
                   </div>
 
                   {/* Card body */}
-                  <div style={styles.cardBody}>
-                    <h3 style={styles.cardName}>{p.name}</h3>
-                    <p style={styles.cardDesc}>{p.description}</p>
-                    <div style={styles.cardBottom}>
-                      <div style={{ display: "flex", flexDirection: "column" }}>
-                        <p style={styles.price}>
+                  <div style={styles.cardBody} className="premium-card__body">
+                    <div style={{ display: "flex", gap: "0.4rem", alignItems: "center", marginBottom: "0.4rem" }} className="premium-card__badges">
+                      <span style={{ fontSize: "0.68rem", color: "var(--accent)", textTransform: "uppercase", letterSpacing: "0.05em", fontWeight: 600 }}>
+                        {p.category}
+                      </span>
+                      {p.subcategory && (
+                        <>
+                          <span style={{ fontSize: "0.68rem", color: "var(--grey)", opacity: 0.6 }}>•</span>
+                          <span style={{ fontSize: "0.68rem", color: "var(--grey)", textTransform: "uppercase", letterSpacing: "0.05em", fontWeight: 500 }}>
+                            {p.subcategory}
+                          </span>
+                        </>
+                      )}
+                    </div>
+                    <h3 style={styles.cardName} className="premium-card__title">{p.name}</h3>
+                    <p style={styles.cardDesc} className="premium-card__desc">{p.description}</p>
+                    <div style={styles.cardBottom} className="premium-card__bottom">
+                      <div style={{ display: "flex", flexDirection: "column" }} className="premium-card__price-container">
+                        <p style={styles.price} className="premium-card__price">
                           ₹{p.price?.toLocaleString("en-IN")}
                         </p>
                         {p.originalPrice && p.originalPrice > p.price && (
-                          <div style={{ display: "flex", alignItems: "center", gap: "0.3rem" }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: "0.3rem" }} className="premium-card__discount">
                             <span style={{ fontSize: "0.72rem", color: "var(--grey)", textDecoration: "line-through" }}>₹{p.originalPrice.toLocaleString()}</span>
                             <span style={{ fontSize: "0.7rem", color: "var(--success)", fontWeight: 600 }}>{Math.round(((p.originalPrice - p.price) / p.originalPrice) * 100)}% OFF</span>
                           </div>
@@ -660,6 +754,7 @@ function Products() {
                           addedId === p._id,
                           p.stock === 0
                         )}
+                        className="premium-card__btn"
                       >
                         {addedId === p._id ? "✓ Added" : "+ Cart"}
                       </button>

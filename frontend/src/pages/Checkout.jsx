@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import toast from "react-hot-toast";
-import { placeOrder, getProfile, getCart, createRazorpayOrder, verifyPayment, addAddress, validateCoupon } from "../services/api";
+import { placeOrder, getProfile, getCart, createRazorpayOrder, verifyPayment, addAddress, validateCoupon, checkPincode } from "../services/api";
 function Checkout() {
   const location = useLocation();
 const itemId = location.state?.itemId || null;
@@ -117,89 +117,185 @@ const itemIdRef = useRef(location.state?.itemId || null);
     setSelectedAddressId(null);
   };
 
+  const validateAddressForm = (addr) => {
+    const { fullName, phone, street, city, state, pincode } = addr;
+    if (!fullName || !phone || !street || !city || !state || !pincode) {
+      toast.error("Please fill all fields");
+      return null;
+    }
+    
+    const nameTrimmed = fullName.trim();
+    if (nameTrimmed.length < 3 || nameTrimmed.length > 50) {
+      toast.error("Full name must be between 3 and 50 characters");
+      return null;
+    }
+    if (!/^[a-zA-Z\s]+$/.test(nameTrimmed)) {
+      toast.error("Full name must only contain letters and spaces");
+      return null;
+    }
+
+    const phoneTrimmed = phone.trim();
+    if (!/^\d{10}$/.test(phoneTrimmed)) {
+      toast.error("Phone number must be exactly 10 digits");
+      return null;
+    }
+
+    const streetTrimmed = street.trim();
+    if (streetTrimmed.length < 12) {
+      toast.error("Street address must be at least 12 characters long");
+      return null;
+    }
+    const words = streetTrimmed.split(/\s+/).filter(w => w.replace(/[^a-zA-Z0-9]/g, "").length >= 2);
+    const uniqueWords = new Set(words.map(w => w.toLowerCase()));
+    if (uniqueWords.size < 2) {
+      toast.error("Please enter a valid street address with at least 2 distinct words (e.g. '123 Main St')");
+      return null;
+    }
+
+    const cityTrimmed = city.trim();
+    if (cityTrimmed.length < 2 || cityTrimmed.length > 50) {
+      toast.error("City must be between 2 and 50 characters");
+      return null;
+    }
+    if (!/^[a-zA-Z\s]+$/.test(cityTrimmed)) {
+      toast.error("City must only contain letters and spaces");
+      return null;
+    }
+
+    const stateTrimmed = state.trim();
+    if (stateTrimmed.length < 2 || stateTrimmed.length > 50) {
+      toast.error("State must be between 2 and 50 characters");
+      return null;
+    }
+    if (!/^[a-zA-Z\s]+$/.test(stateTrimmed)) {
+      toast.error("State must only contain letters and spaces");
+      return null;
+    }
+
+    const pincodeTrimmed = pincode.trim().replace(/\s/g, "");
+    if (!/^\d{6}$/.test(pincodeTrimmed)) {
+      toast.error("Pincode must be exactly 6 digits");
+      return null;
+    }
+
+    return {
+      fullName: nameTrimmed,
+      phone: phoneTrimmed,
+      street: streetTrimmed,
+      city: cityTrimmed,
+      state: stateTrimmed,
+      pincode: pincodeTrimmed
+    };
+  };
+
   const handlePlaceOrder = async () => {
     console.log("itemId being sent:", itemId);
-    const { fullName, phone, street, city, state, pincode } = address;
-    if (!fullName || !phone || !street || !city || !state || !pincode)
-      return toast.error("Please fill all fields");
+    const validatedAddr = validateAddressForm(address);
+    if (!validatedAddr) return;
 
     setLoading(true);
 
-    if (saveToProfile && !selectedAddressId) {
-      try {
-        await addAddress({
-          fullName, phone, street, city, state, pincode, label: "Home", isDefault: savedAddresses.length === 0
-        });
-      } catch (err) {
-        console.error("Failed to auto-save address:", err);
+    try {
+      // Check serviceability
+      const pinCheck = await checkPincode(validatedAddr.pincode);
+      if (!pinCheck || !pinCheck.serviceable) {
+        setLoading(false);
+        return toast.error(pinCheck?.message || "Delivery is not available for this pincode.");
       }
-    }
+      if (saveToProfile && !selectedAddressId) {
+        try {
+          await addAddress({
+            ...validatedAddr, label: "Home", isDefault: savedAddresses.length === 0
+          });
+        } catch (err) {
+          console.error("Failed to auto-save address:", err);
+        }
+      }
 
-    const res = await placeOrder(address, itemId, appliedCoupon);
-    setLoading(false);
+      const res = await placeOrder(validatedAddr, itemId, appliedCoupon);
+      setLoading(false);
 
-    if (res.order) {
-      toast.success("Order placed successfully!");
-      navigate("/orders");
-    } else {
-      toast.error(res.message || "Something went wrong");
+      if (res && res.order) {
+        toast.success("Order placed successfully!");
+        navigate(`/orders/${res.order._id}/tracking`);
+      } else {
+        toast.error(res?.message || res?.error || "Something went wrong");
+      }
+    } catch (err) {
+      console.error("handlePlaceOrder error:", err);
+      setLoading(false);
+      toast.error("Failed to place order. Please try again.");
     }
   };
 
   const handleRazorpayPayment = async () => {
-    const { fullName, phone, street, city, state, pincode } = address;
-    if (!fullName || !phone || !street || !city || !state || !pincode)
-      return toast.error("Please fill all fields");
+    const validatedAddr = validateAddressForm(address);
+    if (!validatedAddr) return;
 
-    if (saveToProfile && !selectedAddressId) {
-      try {
-        await addAddress({
-          fullName, phone, street, city, state, pincode, label: "Home", isDefault: savedAddresses.length === 0
-        });
-      } catch (err) {
-        console.error("Failed to auto-save address:", err);
-      }
-    }
-
-    const total = Math.max(0, subtotal - discountAmount);
-
-    // create razorpay order
-    const order = await createRazorpayOrder(total);
-
-    const options = {
-      key: import.meta.env.VITE_RAZORPAY_KEY_ID, // 👈 from .env
-      amount: order.amount,
-      currency: order.currency,
-      name: "DropShop",
-      description: "Order Payment",
-      order_id: order.orderId,
-      handler: async (response) => {
-        // verify payment
-        const res = await verifyPayment({
-          razorpay_order_id: response.razorpay_order_id,
-          razorpay_payment_id: response.razorpay_payment_id,
-          razorpay_signature: response.razorpay_signature,
-          address,
-          itemId,
-          couponCode: appliedCoupon
-        });
-
-        if (res.order) {
-          toast.success("Payment successful! Order placed.");
-          navigate("/orders");
-        } else {
-          toast.error(res.error || "Payment failed");
+    setLoading(true);
+    try {
+      if (saveToProfile && !selectedAddressId) {
+        try {
+          await addAddress({
+            ...validatedAddr, label: "Home", isDefault: savedAddresses.length === 0
+          });
+        } catch (err) {
+          console.error("Failed to auto-save address:", err);
         }
-      },
-      prefill: {
-        name: address.fullName,
-        contact: address.phone,
-      },
-      theme: { color: "#f5f5f7" }
-    };
+      }
 
-    const rzp = new window.Razorpay(options);
-    rzp.open();
+      const total = Math.max(0, subtotal - discountAmount);
+
+      // create razorpay order
+      const order = await createRazorpayOrder(total);
+
+      const options = {
+        key: import.meta.env.VITE_RAZORPAY_KEY_ID, // 👈 from .env
+        amount: order.amount,
+        currency: order.currency,
+        name: "DropShop",
+        description: "Order Payment",
+        order_id: order.orderId,
+        handler: async (response) => {
+          setLoading(true);
+          try {
+            // verify payment
+            const res = await verifyPayment({
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature: response.razorpay_signature,
+              address: validatedAddr,
+              itemId,
+              couponCode: appliedCoupon
+            });
+
+            setLoading(false);
+            if (res && res.order) {
+              toast.success("Payment successful! Order placed.");
+              navigate(`/orders/${res.order._id}/tracking`);
+            } else {
+              toast.error(res?.error || "Payment verification failed");
+            }
+          } catch (verifyErr) {
+            console.error("Payment verification error:", verifyErr);
+            setLoading(false);
+            toast.error("Failed to verify payment");
+          }
+        },
+        prefill: {
+          name: validatedAddr.fullName,
+          contact: validatedAddr.phone,
+        },
+        theme: { color: "#f5f5f7" }
+      };
+
+      const rzp = new window.Razorpay(options);
+      rzp.open();
+    } catch (err) {
+      console.error("Razorpay order creation error:", err);
+      setLoading(false);
+      toast.error("Failed to initiate online payment");
+    }
   };
 
   return (
@@ -273,9 +369,11 @@ const itemIdRef = useRef(location.state?.itemId || null);
             </div>
           )}
 
-          <p style={{ fontSize: "0.72rem", letterSpacing: "0.15em", textTransform: "uppercase", color: "var(--grey)", marginBottom: "1rem", fontWeight: 600 }}>
-            {savedAddresses.length > 0 ? "Or Enter Shipping Details" : "Delivery Address"}
-          </p>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem", flexWrap: "wrap", gap: "0.5rem" }}>
+            <p style={{ fontSize: "0.72rem", letterSpacing: "0.15em", textTransform: "uppercase", color: "var(--grey)", margin: 0, fontWeight: 600 }}>
+              {savedAddresses.length > 0 ? "Or Enter Shipping Details" : "Delivery Address"}
+            </p>
+          </div>
 
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.75rem", marginBottom: "2rem" }}>
             {[

@@ -1228,6 +1228,13 @@ body {
   }
 }
 
+/* ── TESTIMONIAL CARD HOVERS ── */
+.testimonial-card:hover {
+  transform: translateY(-5px);
+  border-color: var(--accent) !important;
+  box-shadow: 0 10px 30px rgba(226, 184, 127, 0.1);
+}
+
 /* ── INTERACTIVE FAQ ACCORDION ── */
 .faq-section {
   max-width: 800px;
@@ -1915,82 +1922,90 @@ body {
   .premium-product-grid,
   .catalog-grid-full {
     grid-template-columns: repeat(2, 1fr) !important;
-    gap: 0.75rem !important;
+    gap: 0.9rem !important;
   }
 
   /* Make catalog section padding smaller */
   [class*="page"], .catalog-toolbar {
-    padding-left: 0.75rem !important;
-    padding-right: 0.75rem !important;
+    padding-left: 0.6rem !important;
+    padding-right: 0.6rem !important;
   }
 
   .catalog-toolbar {
     margin-bottom: 1.25rem !important;
-    padding-bottom: 1rem !important;
+    padding-bottom: 0.75rem !important;
   }
 
   .catalog-title {
-    font-size: 1.6rem !important;
+    font-size: 1.45rem !important;
   }
 
   /* Polish cards for mobile screen size */
   .premium-card {
-    border-radius: 12px !important;
+    border-radius: 14px !important;
   }
 
-  /* Scale down product image wrappers dynamically */
-  .premium-card [style*="height:"] {
-    height: 130px !important;
-  }
-  
-  .premium-card img {
-    padding: 0.6rem !important;
+  /* Shrink image wrapper to 135px to give breathing room */
+  .premium-card__img-wrap {
+    height: 135px !important;
   }
 
-  /* Reduce body text padding inside cards */
-  .premium-card [style*="padding: 1.25rem"],
-  .premium-card [style*="padding: 1.25rem"],
-  .premium-card [style*="padding:1.25rem"],
-  .premium-card [style*="padding: 1rem"],
-  .premium-card [style*="padding:1rem"] {
-    padding: 0.6rem 0.75rem 0.75rem !important;
+  .premium-card__img {
+    padding: 0.5rem !important;
   }
 
-  /* Refine Typography */
-  .premium-card h3 {
-    font-size: 0.8rem !important;
-    margin-bottom: 0.25rem !important;
+  /* Reduce body text padding inside cards and reduce bottom spacing */
+  .premium-card__body {
+    padding: 0.8rem 0.85rem 0.85rem !important;
   }
 
-  /* Hide description or clip to 1 line to save vertical space */
-  .premium-card p[style*="display: -webkit-box"],
-  .premium-card [style*="min-height:"] {
-    font-size: 0.7rem !important;
-    margin-bottom: 0.5rem !important;
-    min-height: auto !important;
-    -webkit-line-clamp: 1 !important;
+  /* Keep badges visible but small and remove margins */
+  .premium-card__badges {
+    margin-bottom: 0.3rem !important;
+  }
+  .premium-card__badges span {
+    font-size: 0.65rem !important;
+  }
+
+  /* Refine Typography & title margin */
+  .premium-card__title {
+    font-size: 0.82rem !important;
+    margin-top: 0px !important;
+    margin-bottom: 0.3rem !important;
+    line-height: 1.3 !important;
+    white-space: nowrap !important;
+  }
+
+  /* Description: visible but small, tight line height, and very small margin */
+  .premium-card__desc {
+    font-size: 0.72rem !important;
+    line-height: 1.35 !important;
+    margin-bottom: 0.6rem !important;
+    min-height: 2rem !important;
+    display: -webkit-box !important;
+    -webkit-line-clamp: 2 !important;
+    -webkit-box-orient: vertical !important;
+    overflow: hidden !important;
   }
 
   /* Scale down price and button layout */
-  .premium-card p[style*="font-size: 1.05rem"],
-  .premium-card p[style*="font-size: 0.95rem"],
-  .premium-card [style*="color: var(--accent)"] {
-    font-size: 0.88rem !important;
+  .premium-card__price {
+    font-size: 0.9rem !important;
+    margin: 0 !important;
   }
 
-  .premium-card span[style*="text-decoration: line-through"] {
+  .premium-card__discount span {
     font-size: 0.68rem !important;
   }
-
-  .premium-card span[style*="color: var(--success)"] {
-    font-size: 0.65rem !important;
-    display: block !important;
-    margin-top: 0.1rem;
+  .premium-card__discount span[style*="color: var(--success)"] {
+    display: inline-block !important;
+    margin-top: 0.05rem !important;
+    margin-left: 0.2rem !important;
   }
 
-  .premium-card button {
-    padding: 0.35rem 0.7rem !important;
-    font-size: 0.7rem !important;
+  .premium-card__btn {
+    padding: 0.35rem 0.75rem !important;
+    font-size: 0.72rem !important;
   }
 }
 

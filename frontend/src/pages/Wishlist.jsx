@@ -119,8 +119,8 @@ function Wishlist() {
                     ✕
                   </button>
 
-                  <div style={{ position: "relative", height: "200px", background: "rgba(255, 255, 255, 0.01)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                    <img src={item.image} alt={item.name} style={{ width: "100%", height: "100%", objectFit: "contain", padding: "1rem" }} />
+                  <div style={{ position: "relative", height: "200px", background: "rgba(255, 255, 255, 0.01)", display: "flex", alignItems: "center", justifyContent: "center" }} className="premium-card__img-wrap">
+                    <img src={item.image} alt={item.name} style={{ width: "100%", height: "100%", objectFit: "contain", padding: "1rem" }} className="premium-card__img" />
                     {item.stock === 0 && (
                       <div style={{ position: "absolute", inset: 0, background: "rgba(9, 9, 11, 0.85)", display: "flex", alignItems: "center", justifyContent: "center" }}>
                         <span style={{ color: "var(--grey)", fontWeight: 600, fontSize: "0.82rem", background: "rgba(255, 255, 255, 0.05)", padding: "0.3rem 0.85rem", borderRadius: "980px" }}>Out of Stock</span>
@@ -128,21 +128,21 @@ function Wishlist() {
                     )}
                   </div>
 
-                  <div style={{ padding: "1.25rem" }}>
-                    <h3 style={{ fontSize: "0.88rem", fontWeight: 600, color: "var(--white)", marginBottom: "0.25rem", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                  <div style={{ padding: "1.25rem" }} className="premium-card__body">
+                    <h3 style={{ fontSize: "0.88rem", fontWeight: 600, color: "var(--white)", marginBottom: "0.25rem", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }} className="premium-card__title">
                       {item.name}
                     </h3>
-                    <p style={{ fontSize: "0.75rem", color: "var(--grey)", marginBottom: "1rem", lineHeight: 1.5, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden", minHeight: "2.2rem" }}>
+                    <p style={{ fontSize: "0.75rem", color: "var(--grey)", marginBottom: "1rem", lineHeight: 1.5, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden", minHeight: "2.2rem" }} className="premium-card__desc">
                       {item.description}
                     </p>
 
-                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                      <div style={{ display: "flex", flexDirection: "column" }}>
-                        <p style={{ fontSize: "1.05rem", fontWeight: 700, color: "var(--accent)", margin: 0 }}>
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }} className="premium-card__bottom">
+                      <div style={{ display: "flex", flexDirection: "column" }} className="premium-card__price-container">
+                        <p style={{ fontSize: "1.05rem", fontWeight: 700, color: "var(--accent)", margin: 0 }} className="premium-card__price">
                           ₹{item.price?.toLocaleString()}
                         </p>
                         {discountPercent > 0 && (
-                          <div style={{ display: "flex", alignItems: "center", gap: "0.3rem" }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: "0.3rem" }} className="premium-card__discount">
                             <span style={{ fontSize: "0.72rem", color: "var(--grey)", textDecoration: "line-through" }}>₹{item.originalPrice.toLocaleString()}</span>
                             <span style={{ fontSize: "0.7rem", color: "var(--success)", fontWeight: 600 }}>{discountPercent}% OFF</span>
                           </div>
@@ -160,6 +160,7 @@ function Wishlist() {
                           transition: "all 0.2s ease",
                           opacity: item.stock === 0 ? 0.4 : 1
                         }}
+                        className="premium-card__btn"
                       >
                         + Cart
                       </button>

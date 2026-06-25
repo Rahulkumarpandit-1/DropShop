@@ -9,12 +9,16 @@ const {
   addAddress,
   updateAddressItem,
   deleteAddressItem,
-  setDefaultAddress
+  setDefaultAddress,
+  sendPasswordOtp,
+  changePasswordOtp
 } = require("../controllers/profileController");
 
 router.get("/", auth, getProfile);
 router.put("/update", auth, updateProfile);
 router.put("/change-password", auth, changePassword);
+router.post("/send-password-otp", auth, sendPasswordOtp);
+router.put("/change-password-otp", auth, changePasswordOtp);
 router.put("/address", auth, updateAddress);
 
 // Multi-address routes

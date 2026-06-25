@@ -156,6 +156,8 @@ function Home({ selectedCategory, setSelectedCategory }) {
         </div>
       </div>
 
+
+
       {/* ── CATEGORIES ── */}
       <div className="home-section">
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem" }}>
@@ -263,23 +265,23 @@ function Home({ selectedCategory, setSelectedCategory }) {
                 className="premium-card"
                 style={{ cursor: "pointer" }}
               >
-                <div style={{ position: "relative", height: "180px", background: "rgba(255,255,255,0.01)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  <img src={p.image} alt={p.name} style={{ width: "100%", height: "100%", objectFit: "contain", padding: "1rem" }} />
+                <div style={{ position: "relative", height: "180px", background: "rgba(255,255,255,0.01)", display: "flex", alignItems: "center", justifyContent: "center" }} className="premium-card__img-wrap">
+                  <img src={p.image} alt={p.name} style={{ width: "100%", height: "100%", objectFit: "contain", padding: "1rem" }} className="premium-card__img" />
                   <span style={{ position: "absolute", top: "10px", left: "10px", background: "var(--error)", color: "#fff", fontSize: "0.65rem", fontWeight: 700, padding: "0.2rem 0.6rem", borderRadius: "980px" }}>🔥 HOT</span>
                 </div>
-                <div style={{ padding: "1rem" }}>
-                  <h3 style={{ fontSize: "0.88rem", fontWeight: 600, color: "var(--white)", margin: "0 0 0.25rem", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.name}</h3>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "0.75rem" }}>
-                    <div style={{ display: "flex", flexDirection: "column" }}>
-                      <p style={{ fontSize: "0.95rem", fontWeight: 700, color: "var(--accent)", margin: 0 }}>₹{p.price?.toLocaleString()}</p>
+                <div style={{ padding: "1rem" }} className="premium-card__body">
+                  <h3 style={{ fontSize: "0.88rem", fontWeight: 600, color: "var(--white)", margin: "0 0 0.25rem", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }} className="premium-card__title">{p.name}</h3>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "0.75rem" }} className="premium-card__bottom">
+                    <div style={{ display: "flex", flexDirection: "column" }} className="premium-card__price-container">
+                      <p style={{ fontSize: "0.95rem", fontWeight: 700, color: "var(--accent)", margin: 0 }} className="premium-card__price">₹{p.price?.toLocaleString()}</p>
                       {p.originalPrice && p.originalPrice > p.price && (
-                        <div style={{ display: "flex", alignItems: "center", gap: "0.3rem" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: "0.3rem" }} className="premium-card__discount">
                           <span style={{ fontSize: "0.72rem", color: "var(--grey)", textDecoration: "line-through" }}>₹{p.originalPrice.toLocaleString()}</span>
                           <span style={{ fontSize: "0.7rem", color: "var(--success)", fontWeight: 600 }}>{Math.round(((p.originalPrice - p.price) / p.originalPrice) * 100)}% OFF</span>
                         </div>
                       )}
                     </div>
-                    <button onClick={(e) => handleAddToCart(e, p._id)} style={{ background: addedId === p._id ? "var(--success)" : "rgba(0, 0, 0, 0.05)", color: addedId === p._id ? "#fff" : "var(--white)", border: "none", borderRadius: "980px", padding: "0.4rem 1rem", fontSize: "0.75rem", fontWeight: 600, cursor: "pointer", transition: "all 0.2s" }}>
+                    <button onClick={(e) => handleAddToCart(e, p._id)} style={{ background: addedId === p._id ? "var(--success)" : "rgba(0, 0, 0, 0.05)", color: addedId === p._id ? "#fff" : "var(--white)", border: "none", borderRadius: "980px", padding: "0.4rem 1rem", fontSize: "0.75rem", fontWeight: 600, cursor: "pointer", transition: "all 0.2s" }} className="premium-card__btn">
                       {addedId === p._id ? "✓" : "+ Cart"}
                     </button>
                   </div>
@@ -350,8 +352,8 @@ function Home({ selectedCategory, setSelectedCategory }) {
                 className="premium-card"
                 style={{ cursor: "pointer" }}
               >
-                <div style={{ position: "relative", height: "220px", background: "rgba(255,255,255,0.01)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  <img src={p.image} alt={p.name} style={{ width: "100%", height: "100%", objectFit: "contain", padding: "1.25rem" }} />
+                <div style={{ position: "relative", height: "220px", background: "rgba(255,255,255,0.01)", display: "flex", alignItems: "center", justifyContent: "center" }} className="premium-card__img-wrap">
+                  <img src={p.image} alt={p.name} style={{ width: "100%", height: "100%", objectFit: "contain", padding: "1.25rem" }} className="premium-card__img" />
                   {p.stock !== undefined && p.stock <= 5 && p.stock > 0 && (
                     <span style={{ position: "absolute", top: "10px", right: "10px", background: "rgba(226,184,127,0.1)", color: "var(--accent)", fontSize: "0.68rem", fontWeight: 600, padding: "0.2rem 0.6rem", borderRadius: "980px", border: "1px solid rgba(226,184,127,0.2)" }}>
                       Only {p.stock} left!
@@ -364,20 +366,20 @@ function Home({ selectedCategory, setSelectedCategory }) {
                   )}
                 </div>
 
-                <div style={{ padding: "1.25rem" }}>
-                  <h3 style={{ fontSize: "0.92rem", fontWeight: 600, color: "var(--white)", marginBottom: "0.3rem", lineHeight: 1.4, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                <div style={{ padding: "1.25rem" }} className="premium-card__body">
+                  <h3 style={{ fontSize: "0.92rem", fontWeight: 600, color: "var(--white)", marginBottom: "0.3rem", lineHeight: 1.4, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }} className="premium-card__title">
                     {p.name}
                   </h3>
-                  <p style={{ fontSize: "0.78rem", color: "var(--grey)", marginBottom: "1rem", lineHeight: 1.5, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden", minHeight: "2.4rem" }}>
+                  <p style={{ fontSize: "0.78rem", color: "var(--grey)", marginBottom: "1rem", lineHeight: 1.5, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden", minHeight: "2.4rem" }} className="premium-card__desc">
                     {p.description}
                   </p>
-                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                    <div style={{ display: "flex", flexDirection: "column" }}>
-                      <p style={{ fontSize: "1.05rem", fontWeight: 700, color: "var(--accent)", margin: 0 }}>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }} className="premium-card__bottom">
+                    <div style={{ display: "flex", flexDirection: "column" }} className="premium-card__price-container">
+                      <p style={{ fontSize: "1.05rem", fontWeight: 700, color: "var(--accent)", margin: 0 }} className="premium-card__price">
                         ₹{p.price?.toLocaleString()}
                       </p>
                       {p.originalPrice && p.originalPrice > p.price && (
-                        <div style={{ display: "flex", alignItems: "center", gap: "0.3rem" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: "0.3rem" }} className="premium-card__discount">
                           <span style={{ fontSize: "0.75rem", color: "var(--grey)", textDecoration: "line-through" }}>₹{p.originalPrice.toLocaleString()}</span>
                           <span style={{ fontSize: "0.72rem", color: "var(--success)", fontWeight: 600 }}>{Math.round(((p.originalPrice - p.price) / p.originalPrice) * 100)}% OFF</span>
                         </div>
@@ -396,6 +398,7 @@ function Home({ selectedCategory, setSelectedCategory }) {
                         transition: "all 0.2s ease",
                         opacity: p.stock === 0 ? 0.4 : 1
                       }}
+                      className="premium-card__btn"
                     >
                       {addedId === p._id ? "✓ Added" : "+ Cart"}
                     </button>
@@ -418,18 +421,110 @@ function Home({ selectedCategory, setSelectedCategory }) {
         )}
       </div>
 
-      {/* ── LOOKBOOK SECTION ── */}
-      <section className="lookbook-section">
-        <div className="lookbook-content">
-          <span style={{ fontSize: "0.72rem", letterSpacing: "0.15em", textTransform: "uppercase", color: "var(--accent)", marginBottom: "0.5rem", display: "block" }}>Crafted Elegance</span>
-          <h2 style={{ fontSize: "2.2rem", fontWeight: 600, color: "var(--white)", margin: "0 0 1.25rem", fontFamily: "Cormorant Garamond, serif" }}>The Art of Premium Living</h2>
-          <p style={{ color: "var(--grey)", fontSize: "0.95rem", lineHeight: 1.7, marginBottom: "2rem" }}>
-            Every product in our collection is handpicked by our expert design team, ensuring that your home and lifestyle reflect visual excellence and durability. Experience premium aesthetics.
+      {/* ── DESIGNER COLLECTIONS SPOTLIGHT ── */}
+      <section style={{ maxWidth: "1200px", margin: "5rem auto 0", padding: "0 1rem" }}>
+        <div style={{ textAlign: "center", marginBottom: "3rem" }}>
+          <span style={{ fontSize: "0.72rem", letterSpacing: "0.15em", textTransform: "uppercase", color: "var(--accent)", marginBottom: "0.5rem", display: "block" }}>
+            Curated Luxury
+          </span>
+          <h2 style={{ fontSize: "2.2rem", fontWeight: 600, color: "var(--white)", margin: 0, fontFamily: "Cormorant Garamond, serif" }}>
+            The Designer Collections
+          </h2>
+          <p style={{ color: "var(--grey)", fontSize: "0.9rem", marginTop: "0.5rem", maxWidth: "500px", marginLeft: "auto", marginRight: "auto", lineHeight: 1.6 }}>
+            Handpicked milestones of design and functionality, curated specifically for premium tastes.
           </p>
-          <button onClick={() => navigate("/products")} className="premium-btn-primary">Explore Collection</button>
         </div>
-        <div className="lookbook-image">
-          <img src="https://images.unsplash.com/photo-1513519245088-0e12902e5a38?auto=format&fit=crop&w=600&q=80" alt="Lookbook" style={{ width: "100%", height: "100%", display: "block" }} />
+
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: "2rem" }}>
+          {[
+            {
+              title: "Elite Soundscapes",
+              desc: "Immersive acoustics and advanced noise cancellation from premium audio developers.",
+              img: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=500&q=80",
+              category: "Electronic",
+              subcategory: "Audio",
+              link: "/products?category=Electronic&subcategory=Audio"
+            },
+            {
+              title: "Architectural Lighting",
+              desc: "Sculptural forms that project warm ambience, redefining your interior spaces.",
+              img: "https://images.unsplash.com/photo-1507473885765-e6ed057f782c?auto=format&fit=crop&w=500&q=80",
+              category: "Home",
+              subcategory: "Lighting",
+              link: "/products?category=Home&subcategory=Lighting"
+            },
+            {
+              title: "Timeless Horology",
+              desc: "Uncompromising precision and style engineered for the modern aesthetic.",
+              img: "https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&w=500&q=80",
+              category: "Accessories",
+              subcategory: "Watches",
+              link: "/products?category=Accessories&subcategory=Watches"
+            }
+          ].map((item, idx) => (
+            <div
+              key={idx}
+              className="lookbook-card-item"
+              onClick={() => navigate(item.link)}
+              style={{
+                background: "var(--card-bg)",
+                border: "1px solid var(--border)",
+                borderRadius: "24px",
+                overflow: "hidden",
+                cursor: "pointer",
+                transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+                display: "flex",
+                flexDirection: "column"
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = "translateY(-6px)";
+                e.currentTarget.style.borderColor = "var(--accent)";
+                e.currentTarget.querySelector(".curated-img").style.transform = "scale(1.06)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = "none";
+                e.currentTarget.style.borderColor = "var(--border)";
+                e.currentTarget.querySelector(".curated-img").style.transform = "scale(1)";
+              }}
+            >
+              <div style={{ height: "240px", overflow: "hidden", position: "relative" }}>
+                <img
+                  className="curated-img"
+                  src={item.img}
+                  alt={item.title}
+                  style={{
+                    width: "100%",
+                    height: "100%",
+                    objectFit: "cover",
+                    transition: "transform 0.5s ease"
+                  }}
+                />
+                <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(0,0,0,0.6) 0%, transparent 70%)" }} />
+              </div>
+              <div style={{ padding: "1.75rem", flex: 1, display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
+                <div>
+                  <div style={{ display: "flex", alignItems: "center", gap: "0.4rem", marginBottom: "0.5rem" }}>
+                    <span style={{ fontSize: "0.68rem", color: "var(--accent)", textTransform: "uppercase", letterSpacing: "0.08em", fontWeight: 700 }}>
+                      {item.category}
+                    </span>
+                    <span style={{ fontSize: "0.68rem", color: "var(--grey)", opacity: 0.5 }}>•</span>
+                    <span style={{ fontSize: "0.68rem", color: "var(--grey)", textTransform: "uppercase", letterSpacing: "0.08em", fontWeight: 500 }}>
+                      {item.subcategory}
+                    </span>
+                  </div>
+                  <h3 style={{ fontSize: "1.2rem", fontWeight: 600, color: "var(--white)", margin: "0 0 0.5rem" }}>
+                    {item.title}
+                  </h3>
+                  <p style={{ color: "var(--grey)", fontSize: "0.82rem", lineHeight: 1.6, margin: "0 0 1.5rem" }}>
+                    {item.desc}
+                  </p>
+                </div>
+                <span style={{ fontSize: "0.82rem", color: "var(--accent)", fontWeight: 600, display: "flex", alignItems: "center", gap: "0.3rem" }}>
+                  Explore {item.subcategory} →
+                </span>
+              </div>
+            </div>
+          ))}
         </div>
       </section>
 

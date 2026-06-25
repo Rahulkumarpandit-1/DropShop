@@ -4,7 +4,9 @@ import { BASE_URL } from "../services/api";
 function AuthModal({ isOpen, onClose, onSuccess }) {
   const [isLogin, setIsLogin] = useState(true);
   const [isForgot, setIsForgot] = useState(false);
-  const [form, setForm] = useState({ name: "", phone: "", password: "", email: "" });
+  const [otpMode, setOtpMode] = useState(""); // "", "register", "login"
+  const [otp, setOtp] = useState("");
+  const [form, setForm] = useState({ name: "", password: "", email: "" });
   const [loading, setLoading] = useState(false);
 
   if (!isOpen) return null;
@@ -14,23 +16,129 @@ function AuthModal({ isOpen, onClose, onSuccess }) {
   const handleClose = () => {
     setIsForgot(false);
     setIsLogin(true);
-    setForm({ name: "", phone: "", password: "", email: "" });
+    setOtpMode("");
+    setOtp("");
+    setForm({ name: "", password: "", email: "" });
     onClose();
   };
 
-  const handleSubmit = async () => {
-    // 1. Sign In Mode
-    if (isLogin) {
-      if (!form.phone || !form.password) {
-        alert("Phone number and Password are required");
-        return;
-      }
-      setLoading(true);
-      try {
+  const handleResendOtp = async () => {
+    setLoading(true);
+    try {
+      if (otpMode === "register") {
+        const res = await fetch(`${BASE_URL}/auth/send-email-otp`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: form.email, type: "register" })
+        });
+        const data = await res.json();
+        setLoading(false);
+        alert(data.message || "Verification code resent!");
+      } else if (otpMode === "login") {
         const res = await fetch(`${BASE_URL}/auth/login`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ phone: form.phone, password: form.password })
+          body: JSON.stringify({ email: form.email, password: form.password })
+        });
+        const data = await res.json();
+        setLoading(false);
+        alert(data.message || "Verification code resent!");
+      }
+    } catch (err) {
+      setLoading(false);
+      alert("Failed to resend code");
+    }
+  };
+
+  const handleSubmit = async () => {
+    // A. OTP verification submission
+    if (otpMode) {
+      if (otp.length !== 6) {
+        alert("Please enter a valid 6-digit verification code");
+        return;
+      }
+
+      setLoading(true);
+      try {
+        if (otpMode === "register") {
+          const payload = {
+            name: form.name,
+            email: form.email,
+            password: form.password,
+            otp: otp
+          };
+
+          const res = await fetch(`${BASE_URL}/auth/register`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+          });
+          const data = await res.json();
+          setLoading(false);
+
+          if (!res.ok) {
+            alert(data.message || "Registration failed");
+            return;
+          }
+
+          if (data.token) {
+            localStorage.setItem("token", data.token);
+            onSuccess?.();
+            handleClose();
+          } else {
+            alert("Registration successful! Please sign in.");
+            handleClose();
+          }
+        } else if (otpMode === "login") {
+          const payload = {
+            email: form.email,
+            password: form.password,
+            otp: otp
+          };
+
+          const res = await fetch(`${BASE_URL}/auth/verify-login-otp`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+          });
+          const data = await res.json();
+          setLoading(false);
+
+          if (!res.ok) {
+            alert(data.message || "Verification failed");
+            return;
+          }
+
+          if (data.token) {
+            localStorage.setItem("token", data.token);
+            onSuccess?.();
+            handleClose();
+          } else {
+            alert("Login failed");
+          }
+        }
+      } catch (err) {
+        setLoading(false);
+        alert("Something went wrong during verification");
+      }
+      return;
+    }
+
+    // 1. Sign In Mode
+    if (isLogin) {
+      if (!form.email || !form.password) {
+        alert("Email and Password are required");
+        return;
+      }
+
+      setLoading(true);
+      try {
+        const payload = { email: form.email, password: form.password };
+
+        const res = await fetch(`${BASE_URL}/auth/login`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
         });
         const data = await res.json();
         setLoading(false);
@@ -40,12 +148,18 @@ function AuthModal({ isOpen, onClose, onSuccess }) {
           return;
         }
 
+        if (data.otpRequired) {
+          setOtpMode("login");
+          setOtp("");
+          return;
+        }
+
         if (data.token) {
           localStorage.setItem("token", data.token);
           onSuccess?.();
           handleClose();
         } else {
-          alert(data.message || "Done");
+          alert(data.message || "Login failed");
         }
       } catch (err) {
         setLoading(false);
@@ -56,41 +170,31 @@ function AuthModal({ isOpen, onClose, onSuccess }) {
 
     // 2. Register Mode
     if (!isLogin) {
-      if (!form.name || !form.phone || !form.password) {
-        alert("Name, phone number, and password are required");
+      if (!form.name || !form.email || !form.password) {
+        alert("Name, email, and password are required");
         return;
       }
 
       setLoading(true);
       try {
-        const res = await fetch(`${BASE_URL}/auth/register`, {
+        const otpRes = await fetch(`${BASE_URL}/auth/send-email-otp`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            name: form.name,
-            phone: form.phone,
-            password: form.password
-          })
+          body: JSON.stringify({ email: form.email, type: "register" })
         });
-        const data = await res.json();
+        const otpData = await otpRes.json();
         setLoading(false);
 
-        if (!res.ok) {
-          alert(data.message || "Registration failed");
+        if (!otpRes.ok) {
+          alert(otpData.message || "Failed to send verification email");
           return;
         }
 
-        if (data.token) {
-          localStorage.setItem("token", data.token);
-          onSuccess?.();
-          handleClose();
-        } else {
-          alert(data.message || "Registration successful! Please sign in.");
-          handleClose();
-        }
+        setOtpMode("register");
+        setOtp("");
       } catch (err) {
         setLoading(false);
-        alert("Something went wrong");
+        alert("Something went wrong sending verification code");
       }
       return;
     }
@@ -98,7 +202,7 @@ function AuthModal({ isOpen, onClose, onSuccess }) {
 
   const handleForgotPasswordSubmit = async () => {
     if (!form.email) {
-      alert("Please enter your email");
+      alert("Please enter your email address");
       return;
     }
     setLoading(true);
@@ -178,15 +282,21 @@ function AuthModal({ isOpen, onClose, onSuccess }) {
             color: "#f5f5f7", margin: "0.5rem 0 0.3rem",
             letterSpacing: "-0.02em"
           }}>
-            {isForgot ? "Forgot Password." : isLogin ? "Welcome back." : "Create account."}
+            {otpMode ? "Verify Email." : isForgot ? "Forgot Password." : isLogin ? "Welcome back." : "Create account."}
           </h2>
           <p style={{ fontSize: "0.85rem", color: "#86868b", margin: 0 }}>
-            {isForgot ? "Enter your email to receive a reset link." : isLogin ? "Sign in to continue shopping." : "Join DropShop today."}
+            {otpMode 
+              ? `Enter the 6-digit code sent to ${form.email}.`
+              : isForgot 
+                ? "Enter your email to receive a reset link." 
+                : isLogin 
+                  ? "Sign in to continue shopping." 
+                  : "Join DropShop today."}
           </p>
         </div>
 
-        {/* Toggle tabs */}
-        {!isForgot && (
+        {/* Tab Toggle for Sign In / Register (if not forgot and not OTP mode) */}
+        {!isForgot && !otpMode && (
           <div style={{
             display: "grid", gridTemplateColumns: "1fr 1fr",
             background: "rgba(255,255,255,0.04)",
@@ -199,7 +309,7 @@ function AuthModal({ isOpen, onClose, onSuccess }) {
                 onClick={() => {
                   const toLogin = tab === "Sign In";
                   setIsLogin(toLogin);
-                  setForm({ name: "", phone: "", password: "", email: "" });
+                  setForm({ name: "", password: "", email: "" });
                 }}
                 style={{
                   background: (isLogin && tab === "Sign In") || (!isLogin && tab === "Register")
@@ -221,9 +331,45 @@ function AuthModal({ isOpen, onClose, onSuccess }) {
 
         {/* Inputs */}
         <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem", marginBottom: "1.25rem" }}>
-          {isForgot ? (
+          {otpMode ? (
+            <>
+              <input
+                type="text"
+                name="otp"
+                placeholder="6-Digit Verification Code"
+                value={otp}
+                maxLength={6}
+                onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))}
+                style={{
+                  background: "rgba(255,255,255,0.05)",
+                  border: "1px solid rgba(255,255,255,0.08)",
+                  borderRadius: "12px", padding: "0.85rem 1rem",
+                  fontSize: "1.1rem", color: "#f5f5f7",
+                  outline: "none", fontFamily: "monospace",
+                  textAlign: "center", letterSpacing: "4px",
+                  transition: "border-color 0.2s ease"
+                }}
+                onFocus={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.3)"}
+                onBlur={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)"}
+              />
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "0.25rem" }}>
+                <span
+                  onClick={() => setOtpMode("")}
+                  style={{ fontSize: "0.78rem", color: "#86868b", cursor: "pointer", textDecoration: "underline", textUnderlineOffset: "2px" }}
+                >
+                  ← Edit Details
+                </span>
+                <span
+                  onClick={handleResendOtp}
+                  style={{ fontSize: "0.78rem", color: "#e8d5b7", cursor: "pointer", textDecoration: "underline", textUnderlineOffset: "2px" }}
+                >
+                  Resend Code
+                </span>
+              </div>
+            </>
+          ) : isForgot ? (
             <input
-              type="email" name="email" placeholder="Email"
+              type="email" name="email" placeholder="Email Address"
               value={form.email}
               onChange={handleChange}
               style={{
@@ -238,11 +384,11 @@ function AuthModal({ isOpen, onClose, onSuccess }) {
               onBlur={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)"}
             />
           ) : isLogin ? (
-            // 1. SIGN IN TAB
+            // Sign In
             <>
               <input
-                type="tel" name="phone" placeholder="Phone Number"
-                value={form.phone}
+                type="email" name="email" placeholder="Email Address"
+                value={form.email}
                 onChange={handleChange}
                 style={{
                   background: "rgba(255,255,255,0.05)",
@@ -270,17 +416,9 @@ function AuthModal({ isOpen, onClose, onSuccess }) {
                 onFocus={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.3)"}
                 onBlur={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)"}
               />
-              <div style={{ display: "flex", justifyContent: "flex-end", marginTop: "-0.25rem" }}>
-                <span
-                  onClick={() => setIsForgot(true)}
-                  style={{ fontSize: "0.78rem", color: "#e8d5b7", cursor: "pointer", textDecoration: "underline", textUnderlineOffset: "2px" }}
-                >
-                  Forgot Password?
-                </span>
-              </div>
             </>
           ) : (
-            // 2. REGISTER TAB
+            // Register
             <>
               <input
                 type="text" name="name" placeholder="Full Name"
@@ -298,8 +436,8 @@ function AuthModal({ isOpen, onClose, onSuccess }) {
                 onBlur={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)"}
               />
               <input
-                type="tel" name="phone" placeholder="Phone Number"
-                value={form.phone}
+                type="email" name="email" placeholder="Email Address"
+                value={form.email}
                 onChange={handleChange}
                 style={{
                   background: "rgba(255,255,255,0.05)",
@@ -328,6 +466,16 @@ function AuthModal({ isOpen, onClose, onSuccess }) {
                 onBlur={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)"}
               />
             </>
+          )}
+          {!isForgot && isLogin && !otpMode && (
+            <div style={{ display: "flex", justifyContent: "flex-end", marginTop: "-0.25rem" }}>
+              <span
+                onClick={() => setIsForgot(true)}
+                style={{ fontSize: "0.78rem", color: "#e8d5b7", cursor: "pointer", textDecoration: "underline", textUnderlineOffset: "2px" }}
+              >
+                Forgot Password?
+              </span>
+            </div>
           )}
         </div>
 
@@ -354,54 +502,60 @@ function AuthModal({ isOpen, onClose, onSuccess }) {
             ? "Please wait..." 
             : isForgot 
               ? "Send Reset Link" 
-              : isLogin 
-                ? "Sign In" 
-                : "Create Account"}
+              : otpMode 
+                ? otpMode === "register" 
+                  ? "Verify & Create Account" 
+                  : "Verify & Sign In"
+                : isLogin 
+                  ? "Sign In" 
+                  : "Create Account"}
         </button>
 
         {/* Footer */}
-        <p style={{ textAlign: "center", fontSize: "0.78rem", color: "#86868b", margin: "0.5rem 0 1.5rem" }}>
-          {isForgot ? (
-            <>
-              Remembered your password?{" "}
-              <span
-                onClick={() => { setIsForgot(false); setIsLogin(true); }}
-                style={{ color: "#e8d5b7", cursor: "pointer", textDecoration: "underline", textUnderlineOffset: "3px" }}
-              >
-                Sign In
-              </span>
-            </>
-          ) : isLogin ? (
-            <>
-              Don't have an account?{" "}
-              <span
-                onClick={() => {
-                  setIsLogin(false);
-                  setForm({ name: "", phone: "", password: "", email: "" });
-                }}
-                style={{ color: "#e8d5b7", cursor: "pointer", textDecoration: "underline", textUnderlineOffset: "3px" }}
-              >
-                Register
-              </span>
-            </>
-          ) : (
-            <>
-              Already have an account?{" "}
-              <span
-                onClick={() => {
-                  setIsLogin(true);
-                  setForm({ name: "", phone: "", password: "", email: "" });
-                }}
-                style={{ color: "#e8d5b7", cursor: "pointer", textDecoration: "underline", textUnderlineOffset: "3px" }}
-              >
-                Sign In
-              </span>
-            </>
-          )}
-        </p>
+        {!otpMode && (
+          <p style={{ textAlign: "center", fontSize: "0.78rem", color: "#86868b", margin: "0.5rem 0 1.5rem" }}>
+            {isForgot ? (
+              <>
+                Remembered your password?{" "}
+                <span
+                  onClick={() => { setIsForgot(false); setIsLogin(true); }}
+                  style={{ color: "#e8d5b7", cursor: "pointer", textDecoration: "underline", textUnderlineOffset: "3px" }}
+                >
+                  Sign In
+                </span>
+              </>
+            ) : isLogin ? (
+              <>
+                Don't have an account?{" "}
+                <span
+                  onClick={() => {
+                    setIsLogin(false);
+                    setForm({ name: "", password: "", email: "" });
+                  }}
+                  style={{ color: "#e8d5b7", cursor: "pointer", textDecoration: "underline", textUnderlineOffset: "3px" }}
+                >
+                  Register
+                </span>
+              </>
+            ) : (
+              <>
+                Already have an account?{" "}
+                <span
+                  onClick={() => {
+                    setIsLogin(true);
+                    setForm({ name: "", password: "", email: "" });
+                  }}
+                  style={{ color: "#e8d5b7", cursor: "pointer", textDecoration: "underline", textUnderlineOffset: "3px" }}
+                >
+                  Sign In
+                </span>
+              </>
+            )}
+          </p>
+        )}
 
-        {/* Circular Google sign in at the very bottom (only if not forgot password) */}
-        {!isForgot && (
+        {/* Circular Google sign in at the very bottom (only if not forgot password and not OTP mode) */}
+        {!isForgot && !otpMode && (
           <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "0.75rem" }}>
             {/* Divider */}
             <div style={{ display: "flex", alignItems: "center", width: "100%", gap: "0.75rem" }}>

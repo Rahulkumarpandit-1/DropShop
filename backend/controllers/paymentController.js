@@ -7,6 +7,7 @@ const Product = require("../models/Product");
 const User = require("../models/User");
 const { sendOrderConfirmation } = require("../utils/sendEmail");
 const { validateCouponHelper } = require("./couponController");
+const { validateAddressDetails } = require("./profileController");
 
 const razorpay = process.env.RAZORPAY_KEY_ID ? new Razorpay({
   key_id: process.env.RAZORPAY_KEY_ID,
@@ -63,6 +64,23 @@ exports.verifyPayment = async (req, res) => {
     if (expectedSignature !== razorpay_signature) {
       return res.status(400).json({ error: "Payment verification failed" });
     }
+
+    if (!address) {
+      return res.status(400).json({ error: "Address details are required." });
+    }
+    const validationError = validateAddressDetails(address, true);
+    if (validationError) {
+      return res.status(400).json({ error: validationError });
+    }
+
+    const sanitizedAddress = {
+      fullName: address.fullName.trim(),
+      phone: address.phone.trim(),
+      street: address.street.trim(),
+      city: address.city.trim(),
+      state: address.state.trim(),
+      pincode: address.pincode.trim().replace(/\s/g, "")
+    };
 
     // get cart
     const cart = await Cart.findOne({ userId }).populate("items.productId");
@@ -149,7 +167,7 @@ exports.verifyPayment = async (req, res) => {
 
     // save order
     const order = new Order({
-      userId, items, address, total,
+      userId, items, address: sanitizedAddress, total,
       paymentMethod: "Razorpay",
       paymentId: razorpay_payment_id,
       status: "Placed",

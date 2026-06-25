@@ -11,6 +11,9 @@ const getProducts = async (req, res) => {
     if (req.query.category && req.query.category !== "All") {
       query.category = { $regex: new RegExp("^" + req.query.category + "$", "i") };
     }
+    if (req.query.subcategory && req.query.subcategory !== "All") {
+      query.subcategory = { $regex: new RegExp("^" + req.query.subcategory + "$", "i") };
+    }
     if (req.query.search) {
       query.name = { $regex: req.query.search, $options: "i" };
     }

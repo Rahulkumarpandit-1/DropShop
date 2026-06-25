@@ -9,7 +9,7 @@ router.get("/admin/orders", authMiddleware, isAdmin, getAllOrdersAdmin);
 router.patch("/admin/:orderId/tracking", authMiddleware, isAdmin, AdminUpdateStatus);
 
 // ✅ specific routes
-router.get("/:orderId/tracking", authMiddleware, trackOrder);
+router.get("/:orderId/tracking", trackOrder);
 router.post("/:orderId/cancel", authMiddleware, cancelOrder);
 
 // generic routes AFTER

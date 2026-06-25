@@ -95,6 +95,17 @@ function Navbar({ selectedCategory, setSelectedCategory, setPage }) {
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
+  useEffect(() => {
+    if (!menuOpen) return; // Only listen when the menu dropdown is actually open
+    const handleOutsideClick = (e) => {
+      // If the clicked element is NOT part of the dropdown and NOT the toggle menu button
+      if (!e.target.closest(".navbar__dropdown") && !e.target.closest(".navbar__menu-btn")) {
+        setMenuOpen(false); // Close the dropdown
+      }
+    };
+    document.addEventListener("click", handleOutsideClick);
+    return () => document.removeEventListener("click", handleOutsideClick);
+  }, [menuOpen]);
 
   return (
     <>

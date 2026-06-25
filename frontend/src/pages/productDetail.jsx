@@ -22,6 +22,7 @@ function ProductDetail() {
 
   const [selectedAttributes, setSelectedAttributes] = useState({});
   const [activeImage, setActiveImage] = useState("");
+  const [isDescExpanded, setIsDescExpanded] = useState(false);
 
   const matchedVariant = product?.variants?.find(v => {
     return Object.entries(selectedAttributes).every(([k, val]) => {
@@ -330,9 +331,34 @@ function ProductDetail() {
             </div>
 
             {/* Description */}
-            <p style={{ fontSize: "0.9rem", color: "var(--grey)", lineHeight: 1.8, marginBottom: "2rem" }}>
-              {product.description}
-            </p>
+            <div style={{ marginBottom: "2rem" }}>
+              <p style={{ fontSize: "0.9rem", color: "var(--grey)", lineHeight: 1.8, margin: 0, whiteSpace: "pre-line" }}>
+                {product.description && product.description.length > 250 && !isDescExpanded
+                  ? `${product.description.slice(0, 250)}...`
+                  : product.description}
+              </p>
+              {product.description && product.description.length > 250 && (
+                <button
+                  type="button"
+                  onClick={() => setIsDescExpanded(!isDescExpanded)}
+                  style={{
+                    background: "none",
+                    border: "none",
+                    color: "var(--accent)",
+                    fontWeight: 600,
+                    fontSize: "0.85rem",
+                    padding: "0.25rem 0",
+                    cursor: "pointer",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "0.25rem",
+                    marginTop: "0.25rem"
+                  }}
+                >
+                  {isDescExpanded ? "Read Less ▴" : "Read More ▾"}
+                </button>
+              )}
+            </div>
 
             {/* Variant Selectors */}
             {Object.keys(attributeOptions).length > 0 && (

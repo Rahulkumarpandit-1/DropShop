@@ -341,4 +341,174 @@ const sendPasswordResetEmail = async (to, token) => {
   }
 };
 
-module.exports = { sendOrderConfirmation, sendWelcomeEmail, sendPasswordResetEmail };
+const sendOrderStatusUpdateEmail = async (to, order, status, message) => {
+  const transporter = createTransporter();
+
+  const statusColors = {
+    Placed: "#3b82f6",
+    Confirmed: "#8b5cf6",
+    Shipped: "#f59e0b",
+    "Out for Delivery": "#f97316",
+    Delivered: "#22c55e",
+    Cancelled: "#ef4444",
+  };
+  const color = statusColors[status] || "#111111";
+
+  const mailOptions = {
+    from: `"DropShop" <${process.env.EMAIL_USER}>`,
+    to,
+    subject: `🔔 Order Status Update #${order._id.toString().slice(-6).toUpperCase()}: ${status} — DropShop`,
+    html: `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+<body style="margin: 0; padding: 0; background: #f5f5f5; font-family: -apple-system, BlinkMacSystemFont, 'Inter', sans-serif;">
+  <div style="max-width: 600px; margin: 40px auto; background: #ffffff; border-radius: 24px; overflow: hidden; box-shadow: 0 4px 40px rgba(0,0,0,0.08);">
+
+    <!-- Header -->
+    <div style="background: #111111; padding: 32px 40px; text-align: center;">
+      <h1 style="margin: 0; font-size: 28px; color: #ffffff; letter-spacing: -0.5px;">
+        DropShop<span style="color: #e8d5b7;">.</span>
+      </h1>
+      <p style="margin: 8px 0 0; font-size: 13px; color: #86868b; letter-spacing: 0.5px;">PREMIUM SHOPPING</p>
+    </div>
+
+    <!-- Status Banner -->
+    <div style="background: linear-gradient(135deg, #1a1a2e, #0f3460); padding: 40px; text-align: center;">
+      <div style="display: inline-block; background: ${color}20; border: 2px solid ${color}; color: #ffffff; font-size: 13px; font-weight: 700; padding: 6px 16px; border-radius: 980px; margin-bottom: 16px;">
+        ${status.toUpperCase()}
+      </div>
+      <h2 style="margin: 0 0 8px; font-size: 24px; color: #ffffff; font-weight: 700;">Order Status Updated</h2>
+      <p style="margin: 0; font-size: 14px; color: rgba(255,255,255,0.7); line-height: 1.6;">
+        ${message || `Your order status has been updated to ${status}.`}
+      </p>
+    </div>
+
+    <!-- Body -->
+    <div style="padding: 32px 40px;">
+
+      <!-- Order ID + Status -->
+      <div style="background: #f8f8f8; border-radius: 12px; padding: 16px 20px; margin-bottom: 24px;">
+        <table width="100%" cellpadding="0" cellspacing="0">
+          <tr>
+            <td>
+              <p style="margin: 0; font-size: 11px; color: #999; text-transform: uppercase; letter-spacing: 1px;">Order ID</p>
+              <p style="margin: 4px 0 0; font-size: 14px; font-weight: 600; color: #111; font-family: monospace;">
+                #${order._id.toString().toUpperCase()}
+              </p>
+            </td>
+            <td style="text-align: right;">
+              <p style="margin: 0; font-size: 11px; color: #999; text-transform: uppercase; letter-spacing: 1px;">Estimated Delivery</p>
+              <p style="margin: 4px 0 0; font-size: 14px; font-weight: 600; color: #22c55e;">
+                ${order.estimatedDelivery ? new Date(order.estimatedDelivery).toLocaleDateString("en-IN", { weekday: "short", day: "numeric", month: "short" }) : "TBD"}
+              </p>
+            </td>
+          </tr>
+        </table>
+      </div>
+
+      <!-- CTA Button -->
+      <div style="text-align: center; margin-bottom: 32px; margin-top: 32px;">
+        <a href="http://localhost:5173/orders/${order._id}/tracking"
+          style="display: inline-block; background: #111; color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 980px; font-size: 14px; font-weight: 600;">
+          Track Live Order Status →
+        </a>
+      </div>
+
+    </div>
+
+    <!-- Footer -->
+    <div style="background: #111; padding: 24px 40px; text-align: center;">
+      <p style="margin: 0 0 8px; font-size: 18px; color: #fff;">DropShop<span style="color: #e8d5b7;">.</span></p>
+      <p style="margin: 0 0 16px; font-size: 12px; color: #86868b;">Premium products delivered to your door</p>
+      <div style="margin-bottom: 16px;">
+        <a href="http://localhost:5173" style="color: #86868b; text-decoration: none; font-size: 12px; margin: 0 8px;">Home</a>
+        <a href="http://localhost:5173/orders" style="color: #86868b; text-decoration: none; font-size: 12px; margin: 0 8px;">Orders</a>
+        <a href="http://localhost:5173/profile" style="color: #86868b; text-decoration: none; font-size: 12px; margin: 0 8px;">Profile</a>
+      </div>
+      <p style="margin: 0; font-size: 11px; color: #444;">© 2026 DropShop. All rights reserved.</p>
+    </div>
+
+  </div>
+</body>
+</html>
+    `
+  };
+
+  try {
+    await transporter.sendMail(mailOptions);
+    console.log(`Order status update email sent to ${to} (Status: ${status})`);
+  } catch (err) {
+    console.error("sendOrderStatusUpdateEmail error:", err.message);
+  }
+};
+
+const sendOtpEmail = async (to, otp) => {
+  const transporter = createTransporter();
+
+  const mailOptions = {
+    from: `"DropShop" <${process.env.EMAIL_USER}>`,
+    to,
+    subject: `🔐 Your Verification Code is ${otp} — DropShop`,
+    html: `
+<!DOCTYPE html>
+<html>
+<body style="margin: 0; padding: 0; background: #f5f5f5; font-family: -apple-system, BlinkMacSystemFont, 'Inter', sans-serif;">
+  <div style="max-width: 500px; margin: 40px auto; background: #ffffff; border-radius: 24px; overflow: hidden; box-shadow: 0 4px 40px rgba(0,0,0,0.08);">
+    <!-- Header -->
+    <div style="background: #111111; padding: 32px 40px; text-align: center;">
+      <h1 style="margin: 0; font-size: 28px; color: #ffffff;">DropShop<span style="color: #e8d5b7;">.</span></h1>
+      <p style="margin: 8px 0 0; font-size: 13px; color: #86868b; letter-spacing: 0.5px;">SECURE ACCESS</p>
+    </div>
+    <!-- Banner -->
+    <div style="background: linear-gradient(135deg, #1a1a2e, #0f3460); padding: 40px; text-align: center;">
+      <div style="width: 64px; height: 64px; background: rgba(232,213,183,0.15); border: 2px solid #e8d5b7; border-radius: 50%; margin: 0 auto 16px; line-height: 64px; font-size: 28px; text-align: center;">🔐</div>
+      <h2 style="margin: 0 0 8px; font-size: 24px; color: #ffffff; font-weight: 700;">Verification Code</h2>
+      <p style="margin: 0; font-size: 14px; color: rgba(255,255,255,0.6); line-height: 1.6;">
+        Please use the verification code below to verify your identity.
+      </p>
+    </div>
+    <!-- Body -->
+    <div style="padding: 32px 40px; text-align: center;">
+      <div style="display: inline-block; background: #f8f8f8; border: 1px dashed #e2e8f0; border-radius: 12px; padding: 16px 32px; margin: 8px 0 24px;">
+        <span style="font-size: 32px; font-weight: 800; letter-spacing: 6px; color: #111111; font-family: monospace;">${otp}</span>
+      </div>
+      <p style="margin: 0 0 24px; font-size: 14px; color: #555; line-height: 1.6;">
+        This code is valid for <strong>5 minutes</strong>. If you did not request this verification, please ignore this email.
+      </p>
+    </div>
+    <!-- Footer -->
+    <div style="background: #111; padding: 24px 40px; text-align: center;">
+      <p style="margin: 0 0 8px; font-size: 18px; color: #fff;">DropShop<span style="color: #e8d5b7;">.</span></p>
+      <p style="margin: 0; font-size: 11px; color: #444;">© 2026 DropShop. All rights reserved.</p>
+    </div>
+  </div>
+</body>
+</html>
+    `
+  };
+
+  try {
+    await transporter.sendMail(mailOptions);
+    console.log("OTP email sent to:", to);
+  } catch (err) {
+    console.log("OTP email error:", err.message);
+  }
+};
+
+// Test SMTP connection on startup
+const verifyTransporter = async () => {
+  try {
+    const transporter = createTransporter();
+    await transporter.verify();
+    console.log("SMTP Connection verified - Ready to send emails!");
+  } catch (err) {
+    console.log("SMTP Warning (Verification failed):", err.message);
+  }
+};
+verifyTransporter();
+
+module.exports = { sendOrderConfirmation, sendWelcomeEmail, sendPasswordResetEmail, sendOrderStatusUpdateEmail, sendOtpEmail };

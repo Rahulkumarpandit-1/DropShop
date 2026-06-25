@@ -28,24 +28,78 @@ export default function OrderTracking() {
   const [error, setError] = useState(null);
   const [animIn, setAnimIn] = useState(false);
 
-useEffect(() => {
-  const token = localStorage.getItem("token");
-  
-  axios
-    .get(`${BASE_URL}/orders/${orderId}/tracking`, {
-      headers: { Authorization: `Bearer ${token}` }
-    })
-    .then((res) => {
-      setTracking({
-        ...res.data,
-        history: res.data.history ?? [],
-        currentStatus: res.data.currentStatus ?? "Placed",
+  // Guest phone verification state
+  const [verifiedPhone, setVerifiedPhone] = useState("");
+  const [phoneInput, setPhoneInput] = useState("");
+  const [verifyingPhone, setVerifyingPhone] = useState(false);
+  const [verifyError, setVerifyError] = useState("");
+
+  const fetchTrackingInfo = (phoneNum = "") => {
+    setLoading(true);
+    const token = localStorage.getItem("token");
+    let url = `${BASE_URL}/orders/${orderId}/tracking`;
+    if (phoneNum) {
+      url += `?phone=${encodeURIComponent(phoneNum)}`;
+    }
+
+    const headers = {};
+    if (token) {
+      headers.Authorization = `Bearer ${token}`;
+    }
+
+    axios
+      .get(url, { headers })
+      .then((res) => {
+        setTracking({
+          ...res.data,
+          history: res.data.history ?? [],
+          currentStatus: res.data.currentStatus ?? "Placed",
+        });
+        if (phoneNum) {
+          if (res.data.isGuestVerified) {
+            setVerifiedPhone(phoneNum);
+            setVerifyError("");
+          } else {
+            setVerifyError("Incorrect phone number. Please try again.");
+          }
+        }
+        setTimeout(() => setAnimIn(true), 100);
+      })
+      .catch(() => setError("Could not load tracking info."))
+      .finally(() => {
+        setLoading(false);
+        setVerifyingPhone(false);
       });
-      setTimeout(() => setAnimIn(true), 100);
-    })
-    .catch(() => setError("Could not load tracking info."))
-    .finally(() => setLoading(false));
-}, [orderId]);
+  };
+
+  useEffect(() => {
+    fetchTrackingInfo();
+  }, [orderId]);
+
+  const handleCancelOrder = async () => {
+    if (!window.confirm("Are you sure you want to cancel this order?")) return;
+    setLoading(true);
+    const token = localStorage.getItem("token");
+    try {
+      // Direct call to cancel endpoint
+      const headers = {};
+      if (token) {
+        headers.Authorization = `Bearer ${token}`;
+      }
+      const res = await axios.post(`${BASE_URL}/orders/${orderId}/cancel`, {}, { headers });
+      if (res.data.success || res.data.message === "Order cancelled successfully") {
+        alert("Order cancelled successfully!");
+        fetchTrackingInfo(verifiedPhone);
+      } else {
+        alert(res.data.error || "Failed to cancel order");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Failed to cancel order. Please verify authorization.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const currentIndex =
     tracking?.currentStatus === "Cancelled"
@@ -76,16 +130,95 @@ useEffect(() => {
     );
   }
 
+  // ── Guest Verification Overlay ──
+  if (tracking?.requireVerification && !verifiedPhone) {
+    return (
+      <div style={s.page}>
+        <style>{`
+          @import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700&family=DM+Sans:wght@400;500;600&display=swap');
+        `}</style>
+        <div style={{ ...s.card, maxWidth: "450px", textAlign: "center", padding: "3rem 2rem" }}>
+          <div style={{ fontSize: "3rem", marginBottom: "1.25rem" }}>🔒</div>
+          <h3 style={{ fontSize: "1.5rem", fontWeight: 600, color: "var(--white)", marginBottom: "0.5rem", fontFamily: "Cormorant Garamond, serif" }}>
+            Guest Order Tracking
+          </h3>
+          <p style={{ color: "var(--grey)", fontSize: "0.85rem", marginBottom: "2rem", lineHeight: 1.5 }}>
+            To protect personal data, please enter the 10-digit phone number associated with this order to unlock details.
+          </p>
+
+          {verifyError && (
+            <div style={{ background: "rgba(255, 69, 58, 0.1)", border: "1px solid rgba(255, 69, 58, 0.2)", borderRadius: "10px", padding: "0.75rem 1rem", fontSize: "0.8rem", color: "#ff453a", marginBottom: "1.25rem" }}>
+              {verifyError}
+            </div>
+          )}
+
+          <input
+            type="tel"
+            placeholder="Enter 10-Digit Phone Number"
+            maxLength={10}
+            value={phoneInput}
+            onChange={(e) => setPhoneInput(e.target.value.replace(/\D/g, ""))}
+            style={{
+              width: "100%",
+              background: "var(--black)",
+              border: "1px solid var(--border)",
+              borderRadius: "12px",
+              padding: "0.85rem 1rem",
+              fontSize: "0.9rem",
+              color: "var(--white)",
+              textAlign: "center",
+              outline: "none",
+              fontFamily: "Inter, sans-serif",
+              marginBottom: "1.25rem",
+              boxSizing: "border-box"
+            }}
+          />
+
+          <button
+            onClick={() => {
+              if (phoneInput.length !== 10) {
+                setVerifyError("Please enter a valid 10-digit phone number");
+                return;
+              }
+              setVerifyingPhone(true);
+              fetchTrackingInfo(phoneInput);
+            }}
+            disabled={verifyingPhone}
+            style={{
+              width: "100%",
+              padding: "0.9rem",
+              background: verifyingPhone ? "var(--grey)" : "var(--accent)",
+              color: "#fff",
+              border: "none",
+              borderRadius: "980px",
+              fontSize: "0.88rem",
+              fontWeight: 600,
+              cursor: verifyingPhone ? "not-allowed" : "pointer",
+              fontFamily: "Inter, sans-serif",
+              transition: "background 0.2s ease"
+            }}
+          >
+            {verifyingPhone ? "Verifying..." : "Verify & Unlock"}
+          </button>
+
+          <button style={{ ...s.backBtn, marginTop: "1.5rem", display: "inline-block", textDecoration: "underline" }} onClick={() => navigate("/")}>
+            Go back to Homepage
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   // ── Error ──
   if (error || !tracking) {
     return (
       <div style={s.page}>
         <div style={{ ...s.card, textAlign: "center", padding: "3rem 2rem" }}>
           <p style={{ fontSize: "2.5rem", marginBottom: "1rem" }}>😕</p>
-          <h3 style={{ fontFamily: "'Sora', sans-serif", color: "#111", marginBottom: "0.5rem" }}>
+          <h3 style={{ fontFamily: "'Cormorant Garamond', serif", color: "var(--white)", marginBottom: "0.5rem" }}>
             Order not found
           </h3>
-          <p style={{ color: "#999", fontSize: "0.85rem", marginBottom: "1.5rem" }}>
+          <p style={{ color: "var(--grey)", fontSize: "0.85rem", marginBottom: "1.5rem" }}>
             {error || "We couldn't find this order."}
           </p>
           <button style={s.backBtn} onClick={() => navigate("/orders")}>
@@ -95,9 +228,9 @@ useEffect(() => {
       </div>
     );
   }
-if (!tracking.history) {
-  tracking.history = [];
-}
+  if (!tracking.history) {
+    tracking.history = [];
+  }
   const isCancelled = tracking.currentStatus === "Cancelled";
 
   return (
@@ -122,6 +255,24 @@ if (!tracking.history) {
             ← Orders
           </button>
           <div style={s.headerRight}>
+            {["Placed", "Confirmed"].includes(tracking.currentStatus) && (
+              <button
+                onClick={handleCancelOrder}
+                style={{
+                  background: "transparent", color: "var(--error)",
+                  border: "1px solid var(--border)", borderRadius: "980px",
+                  padding: "0.55rem 1.4rem", fontSize: "0.82rem",
+                  fontWeight: 600, cursor: "pointer",
+                  marginRight: "0.75rem",
+                  fontFamily: "Inter, sans-serif",
+                  transition: "all 0.25s cubic-bezier(0.4, 0, 0.2, 1)"
+                }}
+                onMouseEnter={e => { e.currentTarget.style.background = "var(--error)"; e.currentTarget.style.borderColor = "var(--error)"; e.currentTarget.style.color = "#fff"; }}
+                onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.borderColor = "var(--border)"; e.currentTarget.style.color = "var(--error)"; }}
+              >
+                Cancel Order ✕
+              </button>
+            )}
             <span
               style={{
                 ...s.statusPill,
@@ -192,12 +343,12 @@ if (!tracking.history) {
                         ...s.stepDot,
                         background: done
                           ? STATUS_COLOR[tracking.currentStatus]
-                          : "#f0f0f0",
+                          : "var(--black)",
                         border: active
                           ? `3px solid ${STATUS_COLOR[tracking.currentStatus]}`
                           : done
-                          ? "none"
-                          : "2px solid #e5e5e5",
+                            ? "none"
+                            : "2px solid var(--border)",
                         boxShadow: active
                           ? `0 0 0 4px ${STATUS_COLOR[tracking.currentStatus]}22`
                           : "none",
@@ -212,7 +363,7 @@ if (!tracking.history) {
                     <span
                       style={{
                         ...s.stepLabel,
-                        color: done ? "#111" : "#bbb",
+                        color: done ? "var(--white)" : "var(--grey)",
                         fontWeight: active ? 700 : done ? 500 : 400,
                       }}
                     >
@@ -231,7 +382,7 @@ if (!tracking.history) {
         {/* ── Shipment & Address details ── */}
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem", margin: "1.5rem 0" }}>
           {/* Delivery Address */}
-          <div style={{ background: "rgba(255,255,255,0.02)", border: "1px solid var(--border)", padding: "1.25rem", borderRadius: "14px" }}>
+          <div style={{ background: "rgba(0,0,0,0.02)", border: "1px solid var(--border)", padding: "1.25rem", borderRadius: "14px" }}>
             <h4 style={{ fontSize: "0.72rem", color: "var(--grey)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "0.75rem", fontWeight: 600 }}>
               Delivery Address
             </h4>
@@ -254,18 +405,18 @@ if (!tracking.history) {
           </div>
 
           {/* How it will be delivered */}
-          <div style={{ background: "rgba(255,255,255,0.02)", border: "1px solid var(--border)", padding: "1.25rem", borderRadius: "14px" }}>
+          <div style={{ background: "rgba(0,0,0,0.02)", border: "1px solid var(--border)", padding: "1.25rem", borderRadius: "14px" }}>
             <h4 style={{ fontSize: "0.72rem", color: "var(--grey)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "0.75rem", fontWeight: 600 }}>
               Shipment Details
             </h4>
             <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
               <div>
                 <span style={{ fontSize: "0.65rem", color: "var(--grey)", display: "block" }}>CARRIER</span>
-                <span style={{ fontSize: "0.78rem", fontWeight: 600, color: "var(--white)" }}>DropShop Express Courier</span>
+                <span style={{ fontSize: "0.78rem", fontWeight: 600, color: "var(--grey)" }}>DropShop Express Courier</span>
               </div>
               <div>
                 <span style={{ fontSize: "0.65rem", color: "var(--grey)", display: "block" }}>TRACKING ID</span>
-                <span style={{ fontSize: "0.78rem", fontWeight: 600, color: "var(--accent)" }}>
+                <span style={{ fontSize: "0.78rem", fontWeight: 600, color: "var(--grey)" }}>
                   DS-{String(tracking.orderId).slice(-6).toUpperCase()}-IN
                 </span>
               </div>
@@ -275,355 +426,355 @@ if (!tracking.history) {
               </div>
             </div>
           </div>
-        </div>
-
-        {/* Package Items */}
-        {tracking.items && tracking.items.length > 0 && (
-          <div style={{ margin: "1.5rem 0", background: "rgba(255,255,255,0.01)", border: "1px solid var(--border)", padding: "1.25rem", borderRadius: "14px" }}>
-            <h4 style={{ fontSize: "0.72rem", color: "var(--grey)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "0.75rem", fontWeight: 600 }}>
-              Package Items ({tracking.items.length})
-            </h4>
-            <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem", maxHeight: "180px", overflowY: "auto", paddingRight: "0.25rem" }}>
-              {tracking.items.map((item, index) => (
-                <div key={index} style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
-                  {item.image && (
-                    <img 
-                      src={item.image} 
-                      alt={item.name} 
-                      style={{ width: "36px", height: "36px", objectFit: "contain", borderRadius: "6px", background: "rgba(255,255,255,0.02)" }} 
-                    />
-                  )}
-                  <div style={{ flex: 1, overflow: "hidden" }}>
-                    <p style={{ fontSize: "0.78rem", fontWeight: 500, color: "var(--white)", margin: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                      {item.name}
-                    </p>
-                    <p style={{ fontSize: "0.7rem", color: "var(--grey)", margin: 0 }}>Qty: {item.quantity}</p>
-                  </div>
-                  <p style={{ fontSize: "0.78rem", fontWeight: 600, color: "var(--white)", margin: 0 }}>
-                    ₹{(item.price * item.quantity).toLocaleString()}
-                  </p>
-                </div>
-              ))}
-            </div>
-            <div style={{ height: "1px", background: "var(--border)", margin: "0.75rem 0" }} />
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "0.82rem" }}>
-              <span style={{ color: "var(--grey)" }}>Total Amount ({tracking.paymentMethod || "COD"})</span>
-              <span style={{ fontWeight: 700, color: "var(--accent)" }}>₹{tracking.total?.toLocaleString()}</span>
-            </div>
           </div>
-        )}
 
-        {/* ── Divider ── */}
-        <div style={s.divider} />
-
-        {/* ── History ── */}
-        <div>
-          <h3 style={s.sectionTitle}>Activity Log</h3>
-          {tracking.history.length === 0 ? (
-            <p style={{ color: "#bbb", fontSize: "0.85rem" }}>No activity yet.</p>
-          ) : (
-            <div style={s.historyList}>
-              {[...tracking.history].reverse().map((h, i) => (
-                <div
-                  key={i}
-                  style={{
-                    ...s.historyItem,
-                    opacity: animIn ? 1 : 0,
-                    transform: animIn ? "translateX(0)" : "translateX(-10px)",
-                    transition: `opacity 0.35s ease ${0.2 + i * 0.07}s, transform 0.35s ease ${0.2 + i * 0.07}s`,
-                  }}
-                >
-                  {/* Timeline dot */}
-                  <div style={s.timelineCol}>
-                    <div
-                      style={{
-                        ...s.timelineDot,
-                        background:
-                          i === 0
-                            ? STATUS_COLOR[h.status] || "#111"
-                            : "#e5e5e5",
-                      }}
-                    />
-                    {i < tracking.history.length - 1 && (
-                      <div style={s.timelineLine} />
+          {/* Package Items */}
+          {tracking.items && tracking.items.length > 0 && (
+            <div style={{ margin: "1.5rem 0", background: "rgba(0,0,0,0.02)", border: "1px solid var(--border)", padding: "1.25rem", borderRadius: "14px" }}>
+              <h4 style={{ fontSize: "0.72rem", color: "var(--grey)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "0.75rem", fontWeight: 600 }}>
+                Package Items ({tracking.items.length})
+              </h4>
+              <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem", maxHeight: "180px", overflowY: "auto", paddingRight: "0.25rem" }}>
+                {tracking.items.map((item, index) => (
+                  <div key={index} style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+                    {item.image && (
+                      <img
+                        src={item.image}
+                        alt={item.name}
+                        style={{ width: "36px", height: "36px", objectFit: "contain", borderRadius: "6px", background: "rgba(255,255,255,0.02)" }}
+                      />
                     )}
-                  </div>
-
-                  {/* Content */}
-                  <div style={s.historyContent}>
-                    <div style={s.historyTop}>
-                      <span
-                        style={{
-                          ...s.historyStatus,
-                          color: STATUS_COLOR[h.status] || "#111",
-                        }}
-                      >
-                        {h.status}
-                      </span>
-                      <span style={s.historyTime}>
-                        {new Date(h.timestamp).toLocaleString("en-IN", {
-                          day: "numeric", month: "short",
-                          hour: "2-digit", minute: "2-digit",
-                        })}
-                      </span>
+                    <div style={{ flex: 1, overflow: "hidden" }}>
+                      <p style={{ fontSize: "0.78rem", fontWeight: 500, color: "var(--white)", margin: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                        {item.name}
+                      </p>
+                      <p style={{ fontSize: "0.7rem", color: "var(--grey)", margin: 0 }}>Qty: {item.quantity}</p>
                     </div>
-                    <p style={s.historyMsg}>{h.message}</p>
+                    <p style={{ fontSize: "0.78rem", fontWeight: 600, color: "var(--white)", margin: 0 }}>
+                      ₹{(item.price * item.quantity).toLocaleString()}
+                    </p>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
+              <div style={{ height: "1px", background: "var(--border)", margin: "0.75rem 0" }} />
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "0.82rem" }}>
+                <span style={{ color: "var(--grey)" }}>Total Amount ({tracking.paymentMethod || "COD"})</span>
+                <span style={{ fontWeight: 700, color: "var(--accent)" }}>₹{tracking.total?.toLocaleString()}</span>
+              </div>
             </div>
           )}
-        </div>
 
-        {/* ── Help Footer ── */}
-        <div style={s.helpFooter}>
-          <span style={{ fontSize: "0.82rem", color: "#999" }}>
-            Need help?{" "}
-            <span
-              style={{ color: "#111", fontWeight: 600, cursor: "pointer", textDecoration: "underline" }}
-              onClick={() => navigate("/support")}
-            >
-              Contact Support
+          {/* ── Divider ── */}
+          <div style={s.divider} />
+
+          {/* ── History ── */}
+          <div>
+            <h3 style={s.sectionTitle}>Activity Log</h3>
+            {tracking.history.length === 0 ? (
+              <p style={{ color: "var(--grey)", fontSize: "0.85rem" }}>No activity yet.</p>
+            ) : (
+              <div style={s.historyList}>
+                {[...tracking.history].reverse().map((h, i) => (
+                  <div
+                    key={i}
+                    style={{
+                      ...s.historyItem,
+                      opacity: animIn ? 1 : 0,
+                      transform: animIn ? "translateX(0)" : "translateX(-10px)",
+                      transition: `opacity 0.35s ease ${0.2 + i * 0.07}s, transform 0.35s ease ${0.2 + i * 0.07}s`,
+                    }}
+                  >
+                    {/* Timeline dot */}
+                    <div style={s.timelineCol}>
+                      <div
+                        style={{
+                          ...s.timelineDot,
+                          background:
+                            i === 0
+                              ? STATUS_COLOR[h.status] || "var(--accent)"
+                              : "var(--border)",
+                        }}
+                      />
+                      {i < tracking.history.length - 1 && (
+                        <div style={s.timelineLine} />
+                      )}
+                    </div>
+
+                    {/* Content */}
+                    <div style={s.historyContent}>
+                      <div style={s.historyTop}>
+                        <span
+                          style={{
+                            ...s.historyStatus,
+                            color: STATUS_COLOR[h.status] || "var(--white)",
+                          }}
+                        >
+                          {h.status}
+                        </span>
+                        <span style={s.historyTime}>
+                          {new Date(h.timestamp).toLocaleString("en-IN", {
+                            day: "numeric", month: "short",
+                            hour: "2-digit", minute: "2-digit",
+                          })}
+                        </span>
+                      </div>
+                      <p style={s.historyMsg}>{h.message}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* ── Help Footer ── */}
+          <div style={s.helpFooter}>
+            <span style={{ fontSize: "0.82rem", color: "var(--grey)" }}>
+              Need help?{" "}
+              <span
+                style={{ color: "var(--white)", fontWeight: 600, cursor: "pointer", textDecoration: "underline" }}
+                onClick={() => navigate("/support")}
+              >
+                Contact Support
+              </span>
             </span>
-          </span>
+          </div>
         </div>
       </div>
-    </div>
-  );
+      );
 }
 
-// ─── Styles ───────────────────────────────────────────
-const s = {
-  page: {
-    minHeight: "100vh",
-    background: "#09090b",
-    padding: "100px 1.5rem 4rem",
-    fontFamily: "'Inter', sans-serif",
-    color: "#f4f4f5",
+      // ─── Styles ───────────────────────────────────────────
+      const s = {
+        page: {
+        minHeight: "100vh",
+      background: "var(--black)",
+      padding: "100px 1.5rem 4rem",
+      fontFamily: "'Inter', sans-serif",
+      color: "var(--white)",
   },
-  card: {
-    maxWidth: "680px",
-    margin: "0 auto",
-    background: "#18181b",
-    borderRadius: "24px",
-    padding: "2rem",
-    boxShadow: "0 8px 32px rgba(0,0,0,0.5)",
-    border: "1px solid #27272a",
-  },
-
-  // Header
-  header: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: "1.5rem",
-  },
-  backBtn: {
-    background: "transparent",
-    border: "none",
-    cursor: "pointer",
-    fontSize: "0.82rem",
-    color: "#a1a1aa",
-    fontFamily: "'Inter', sans-serif",
-    padding: 0,
-    fontWeight: 500,
-    transition: "color 0.2s ease",
-  },
-  headerRight: { display: "flex", alignItems: "center", gap: "0.5rem" },
-  statusPill: {
-    fontSize: "0.78rem",
-    fontWeight: 600,
-    padding: "0.35rem 0.95rem",
-    borderRadius: "980px",
-    fontFamily: "'Inter', sans-serif",
+      card: {
+        maxWidth: "680px",
+      margin: "0 auto",
+      background: "var(--card-bg)",
+      borderRadius: "24px",
+      padding: "2rem",
+      boxShadow: "0 15px 35px rgba(0,0,0,0.04)",
+      border: "1px solid var(--border)",
   },
 
-  // Meta
-  metaRow: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "flex-end",
-    marginBottom: "1.5rem",
+      // Header
+      header: {
+        display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center",
+      marginBottom: "1.5rem",
   },
-  metaLabel: {
-    fontSize: "0.72rem",
-    color: "#a1a1aa",
-    textTransform: "uppercase",
-    letterSpacing: "0.07em",
-    margin: "0 0 0.2rem",
-    fontWeight: 600,
+      backBtn: {
+        background: "transparent",
+      border: "none",
+      cursor: "pointer",
+      fontSize: "0.82rem",
+      color: "var(--grey)",
+      fontFamily: "'Inter', sans-serif",
+      padding: 0,
+      fontWeight: 500,
+      transition: "color 0.2s ease",
   },
-  metaValue: {
-    fontSize: "1rem",
-    fontWeight: 700,
-    color: "#f4f4f5",
-    margin: 0,
-    fontFamily: "'Cormorant Garamond', serif",
-  },
-
-  // Cancelled
-  cancelBanner: {
-    display: "flex",
-    alignItems: "center",
-    gap: "0.85rem",
-    background: "rgba(255, 69, 58, 0.1)",
-    border: "1px solid rgba(255, 69, 58, 0.2)",
-    borderRadius: "14px",
-    padding: "1rem 1.25rem",
-    marginBottom: "1.5rem",
+      headerRight: {display: "flex", alignItems: "center", gap: "0.5rem" },
+      statusPill: {
+        fontSize: "0.78rem",
+      fontWeight: 600,
+      padding: "0.35rem 0.95rem",
+      borderRadius: "980px",
+      fontFamily: "'Inter', sans-serif",
   },
 
-  // Progress
-  progressSection: { marginBottom: "2rem", position: "relative" },
-  trackLine: {
-    position: "absolute",
-    top: "20px",
-    left: "10%",
-    right: "10%",
-    height: "3px",
-    background: "#27272a",
-    borderRadius: "4px",
-    zIndex: 0,
+      // Meta
+      metaRow: {
+        display: "flex",
+      justifyContent: "space-between",
+      alignItems: "flex-end",
+      marginBottom: "1.5rem",
   },
-  trackFill: {
-    height: "100%",
-    background: "linear-gradient(90deg, #e2b87f, #30d158)",
-    borderRadius: "4px",
-    zIndex: 1,
+      metaLabel: {
+        fontSize: "0.72rem",
+      color: "var(--grey)",
+      textTransform: "uppercase",
+      letterSpacing: "0.07em",
+      margin: "0 0 0.2rem",
+      fontWeight: 600,
   },
-  stepsRow: {
-    display: "flex",
-    justifyContent: "space-between",
-    position: "relative",
-    zIndex: 2,
-    paddingTop: "0",
-  },
-  stepCol: {
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    flex: 1,
-    gap: "0.4rem",
-  },
-  stepDot: {
-    width: "40px",
-    height: "40px",
-    borderRadius: "50%",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    fontSize: "0.9rem",
-    color: "#09090b",
-  },
-  stepLabel: {
-    fontSize: "0.68rem",
-    textAlign: "center",
-    fontFamily: "'Inter', sans-serif",
-    lineHeight: 1.3,
-  },
-  stepDesc: {
-    fontSize: "0.6rem",
-    color: "#a1a1aa",
-    textAlign: "center",
-    fontStyle: "italic",
+      metaValue: {
+        fontSize: "1rem",
+      fontWeight: 700,
+      color: "var(--white)",
+      margin: 0,
+      fontFamily: "'Cormorant Garamond', serif",
   },
 
-  // Divider
-  divider: {
-    height: "1px",
-    background: "#27272a",
-    margin: "1.5rem 0",
+      // Cancelled
+      cancelBanner: {
+        display: "flex",
+      alignItems: "center",
+      gap: "0.85rem",
+      background: "rgba(255, 69, 58, 0.06)",
+      border: "1px solid rgba(255, 69, 58, 0.15)",
+      borderRadius: "14px",
+      padding: "1rem 1.25rem",
+      marginBottom: "1.5rem",
   },
 
-  // History
-  sectionTitle: {
-    fontFamily: "'Cormorant Garamond', serif",
-    fontSize: "1.1rem",
-    fontWeight: 700,
-    textTransform: "uppercase",
-    letterSpacing: "0.08em",
-    color: "#e2b87f",
-    margin: "0 0 1.25rem",
+      // Progress
+      progressSection: {marginBottom: "2rem", position: "relative" },
+      trackLine: {
+        position: "absolute",
+      top: "20px",
+      left: "10%",
+      right: "10%",
+      height: "3px",
+      background: "var(--border)",
+      borderRadius: "4px",
+      zIndex: 0,
   },
-  historyList: { display: "flex", flexDirection: "column" },
-  historyItem: {
-    display: "flex",
-    gap: "1rem",
-    paddingBottom: "1.25rem",
+      trackFill: {
+        height: "100%",
+      background: "linear-gradient(90deg, var(--accent), var(--success))",
+      borderRadius: "4px",
+      zIndex: 1,
   },
-  timelineCol: {
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    flexShrink: 0,
-    width: "12px",
+      stepsRow: {
+        display: "flex",
+      justifyContent: "space-between",
+      position: "relative",
+      zIndex: 2,
+      paddingTop: "0",
   },
-  timelineDot: {
-    width: "10px",
-    height: "10px",
-    borderRadius: "50%",
-    flexShrink: 0,
-    marginTop: "4px",
+      stepCol: {
+        display: "flex",
+      flexDirection: "column",
+      alignItems: "center",
+      flex: 1,
+      gap: "0.4rem",
   },
-  timelineLine: {
-    width: "2px",
-    flex: 1,
-    background: "#27272a",
-    marginTop: "4px",
-    minHeight: "20px",
+      stepDot: {
+        width: "40px",
+      height: "40px",
+      borderRadius: "50%",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      fontSize: "0.9rem",
+      color: "#fff",
   },
-  historyContent: { flex: 1, paddingBottom: "0.25rem" },
-  historyTop: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: "0.2rem",
+      stepLabel: {
+        fontSize: "0.68rem",
+      textAlign: "center",
+      fontFamily: "'Inter', sans-serif",
+      lineHeight: 1.3,
   },
-  historyStatus: {
-    fontSize: "0.85rem",
-    fontWeight: 600,
-    fontFamily: "'Inter', sans-serif",
-  },
-  historyTime: {
-    fontSize: "0.72rem",
-    color: "#a1a1aa",
-  },
-  historyMsg: {
-    fontSize: "0.8rem",
-    color: "#a1a1aa",
-    margin: 0,
-    lineHeight: 1.5,
+      stepDesc: {
+        fontSize: "0.6rem",
+      color: "var(--grey)",
+      textAlign: "center",
+      fontStyle: "italic",
   },
 
-  // Help footer
-  helpFooter: {
-    marginTop: "1.5rem",
-    paddingTop: "1.25rem",
-    borderTop: "1px solid #27272a",
-    textAlign: "center",
+      // Divider
+      divider: {
+        height: "1px",
+      background: "var(--border)",
+      margin: "1.5rem 0",
   },
 
-  // Shimmer skeleton
-  shimbleWrap: { display: "flex", flexDirection: "column", gap: "1rem" },
-  shimble: {
-    height: "18px",
-    borderRadius: "8px",
-    background: "linear-gradient(90deg,#18181b 25%,#27272a 50%,#18181b 75%)",
-    backgroundSize: "200% 100%",
-    animation: "shimmer 1.4s infinite",
+      // History
+      sectionTitle: {
+        fontFamily: "'Cormorant Garamond', serif",
+      fontSize: "1.1rem",
+      fontWeight: 700,
+      textTransform: "uppercase",
+      letterSpacing: "0.08em",
+      color: "var(--accent)",
+      margin: "0 0 1.25rem",
+  },
+      historyList: {display: "flex", flexDirection: "column" },
+      historyItem: {
+        display: "flex",
+      gap: "1rem",
+      paddingBottom: "1.25rem",
+  },
+      timelineCol: {
+        display: "flex",
+      flexDirection: "column",
+      alignItems: "center",
+      flexShrink: 0,
+      width: "12px",
+  },
+      timelineDot: {
+        width: "10px",
+      height: "10px",
+      borderRadius: "50%",
+      flexShrink: 0,
+      marginTop: "4px",
+  },
+      timelineLine: {
+        width: "2px",
+      flex: 1,
+      background: "var(--border)",
+      marginTop: "4px",
+      minHeight: "20px",
+  },
+      historyContent: {flex: 1, paddingBottom: "0.25rem" },
+      historyTop: {
+        display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center",
+      marginBottom: "0.2rem",
+  },
+      historyStatus: {
+        fontSize: "0.85rem",
+      fontWeight: 600,
+      fontFamily: "'Inter', sans-serif",
+  },
+      historyTime: {
+        fontSize: "0.72rem",
+      color: "var(--grey)",
+  },
+      historyMsg: {
+        fontSize: "0.8rem",
+      color: "var(--grey)",
+      margin: 0,
+      lineHeight: 1.5,
+  },
+
+      // Help footer
+      helpFooter: {
+        marginTop: "1.5rem",
+      paddingTop: "1.25rem",
+      borderTop: "1px solid var(--border)",
+      textAlign: "center",
+  },
+
+      // Shimmer skeleton
+      shimbleWrap: {display: "flex", flexDirection: "column", gap: "1rem" },
+      shimble: {
+        height: "18px",
+      borderRadius: "8px",
+      background: "linear-gradient(90deg, var(--black) 25%, var(--border) 50%, var(--black) 75%)",
+      backgroundSize: "200% 100%",
+      animation: "shimmer 1.4s infinite",
   },
 };
 
-const shimmerCSS = `
-  @keyframes shimmer {
-    0% { background-position: 200% 0; }
-    100% { background-position: -200% 0; }
+      const shimmerCSS = `
+      @keyframes shimmer {
+        0 % { background- position: 200% 0; }
+      100% {background - position: -200% 0; }
   }
-`;
+      `;
 
-const animCSS = `
-  @keyframes fadeUp {
-    from { opacity: 0; transform: translateY(16px); }
-    to   { opacity: 1; transform: translateY(0); }
+      const animCSS = `
+      @keyframes fadeUp {
+        from {opacity: 0; transform: translateY(16px); }
+      to   {opacity: 1; transform: translateY(0); }
   }
-`;
+      `;

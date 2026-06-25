@@ -14,11 +14,14 @@ export const BASE_URL = (() => {
   return "http://localhost:3000/api";
 })();
 
-export const getProducts = async (page, category = "All", search = "") => {
+export const getProducts = async (page, category = "All", search = "", subcategory = "All") => {
   try {
     let url = `${BASE_URL}/products?page=${page}`;
     if (category && category !== "All") {
       url += `&category=${encodeURIComponent(category)}`;
+    }
+    if (subcategory && subcategory !== "All") {
+      url += `&subcategory=${encodeURIComponent(subcategory)}`;
     }
     if (search) {
       url += `&search=${encodeURIComponent(search)}`;
@@ -430,4 +433,46 @@ export const checkPincode = async (pincode) => {
     console.error("checkPincode API error:", err);
     return { serviceable: false, error: err.message };
   }
+};
+
+export const sendOtp = async (phone, type = "register") => {
+  const res = await fetch(`${BASE_URL}/auth/send-otp`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ phone, type })
+  });
+  return res.json();
+};
+
+export const verifyOtp = async (phone, otp) => {
+  const res = await fetch(`${BASE_URL}/auth/verify-otp`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ phone, otp })
+  });
+  return res.json();
+};
+
+export const sendPasswordOtp = async () => {
+  const token = localStorage.getItem("token");
+  const res = await fetch(`${BASE_URL}/profile/send-password-otp`, {
+    method: "POST",
+    headers: {
+      "Authorization": `Bearer ${token}`
+    }
+  });
+  return res.json();
+};
+
+export const changePasswordOtp = async (otp, newPassword) => {
+  const token = localStorage.getItem("token");
+  const res = await fetch(`${BASE_URL}/profile/change-password-otp`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${token}`
+    },
+    body: JSON.stringify({ otp, newPassword })
+  });
+  return res.json();
 };
