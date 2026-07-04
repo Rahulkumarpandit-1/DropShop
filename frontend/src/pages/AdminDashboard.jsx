@@ -1,15 +1,17 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { 
-  getProfile, 
-  getAllOrdersAdmin, 
-  updateOrderStatusAdmin, 
-  getProducts, 
-  addProductAdmin, 
-  updateProductAdmin, 
+import {
+  getProfile,
+  getAllOrdersAdmin,
+  updateOrderStatusAdmin,
+  getProducts,
+  addProductAdmin,
+  updateProductAdmin,
   deleteProductAdmin,
   getAllUsersAdmin,
-  updateUserRoleAdmin
+  updateUserRoleAdmin,
+  deleteUserAdmin,
+  changeUserPasswordAdmin
 } from "../services/api";
 import toast from "react-hot-toast";
 
@@ -467,6 +469,10 @@ const dashboardStyles = `
     to { transform: translateY(0); opacity: 1; }
   }
 
+  html, body {
+    background-color: #09090b !important;
+  }
+
   @media (max-width: 992px) {
     .mobile-top-bar {
       display: flex !important;
@@ -486,6 +492,13 @@ const dashboardStyles = `
     }
     .seller-header {
       margin-top: 52px;
+      position: sticky;
+      top: 52px;
+      z-index: 90;
+    }
+    .seller-body {
+      padding: 1rem;
+      overflow-y: visible;
     }
     .menu-toggle-btn {
       display: block !important;
@@ -513,7 +526,7 @@ function AdminDashboard() {
 
   // Orders state
   const [orders, setOrders] = useState([]);
-  
+
   // Products state
   const [products, setProducts] = useState([]);
   const [newProduct, setNewProduct] = useState({
@@ -546,6 +559,9 @@ function AdminDashboard() {
   // User Management state
   const [users, setUsers] = useState([]);
   const [currentUserId, setCurrentUserId] = useState(null);
+  const [selectedUser, setSelectedUser] = useState(null);
+  const [isChangePasswordModalOpen, setIsChangePasswordModalOpen] = useState(false);
+  const [adminUserPassword, setAdminUserPassword] = useState("");
 
   useEffect(() => {
     checkAdminAccess();
@@ -587,7 +603,7 @@ function AdminDashboard() {
       toast.error("You cannot demote yourself from admin status.");
       return;
     }
-    
+
     if (!window.confirm(`Are you sure you want to change this user's role to ${targetRole}?`)) {
       fetchUsersList();
       return;
@@ -606,6 +622,50 @@ function AdminDashboard() {
       console.error("Update role error", err);
       toast.error("Failed to update user role");
       fetchUsersList();
+    }
+  };
+
+  const handleDeleteUser = async (userId, userName) => {
+    if (userId === currentUserId) {
+      toast.error("You cannot delete your own account.");
+      return;
+    }
+    if (window.confirm(`Are you sure you want to permanently delete user "${userName}"? This action cannot be undone.`)) {
+      try {
+        const res = await deleteUserAdmin(userId);
+        if (res.message && res.message.includes("successfully")) {
+          toast.success(res.message);
+          fetchUsersList();
+        } else {
+          toast.error(res.error || "Failed to delete user");
+        }
+      } catch (err) {
+        console.error("Delete user error:", err);
+        toast.error("Failed to delete user");
+      }
+    }
+  };
+
+  const handleChangePasswordSubmit = async (e) => {
+    e.preventDefault();
+    if (!adminUserPassword || adminUserPassword.length < 6) {
+      toast.error("Password must be at least 6 characters long.");
+      return;
+    }
+
+    try {
+      const res = await changeUserPasswordAdmin(selectedUser._id, adminUserPassword);
+      if (res.message && res.message.includes("successfully")) {
+        toast.success(`Password for ${selectedUser.name} updated successfully!`);
+        setIsChangePasswordModalOpen(false);
+        setSelectedUser(null);
+        setAdminUserPassword("");
+      } else {
+        toast.error(res.error || "Failed to update password");
+      }
+    } catch (err) {
+      console.error("Change password error:", err);
+      toast.error("Failed to update user password");
     }
   };
 
@@ -691,7 +751,7 @@ function AdminDashboard() {
         const base64 = await compressImage(file);
         compressed.push(base64);
       }
-      
+
       const updatedImages = [...(newProduct.images || []), ...compressed];
       const updatedMainImage = newProduct.image || compressed[0] || "";
 
@@ -718,7 +778,7 @@ function AdminDashboard() {
         const base64 = await compressImage(file);
         compressed.push(base64);
       }
-      
+
       const updatedImages = [...(editProduct.images || []), ...compressed];
       const updatedMainImage = editProduct.image || compressed[0] || "";
 
@@ -847,7 +907,7 @@ function AdminDashboard() {
   const filteredOrders = orders.filter(o => {
     const matchesStatus = orderStatusFilter === "All" || o.trackingStatus === orderStatusFilter;
     const lowerSearch = orderSearchQuery.toLowerCase();
-    const matchesSearch = 
+    const matchesSearch =
       o._id.toLowerCase().includes(lowerSearch) ||
       (o.userId?.name || "").toLowerCase().includes(lowerSearch) ||
       (o.userId?.email || "").toLowerCase().includes(lowerSearch);
@@ -858,7 +918,7 @@ function AdminDashboard() {
     const matchesCategory = productCategoryFilter === "All" || p.category === productCategoryFilter;
     const matchesSubcategory = productSubcategoryFilter === "All" || p.subcategory === productSubcategoryFilter;
     const lowerSearch = productSearchQuery.toLowerCase();
-    const matchesSearch = 
+    const matchesSearch =
       p.name.toLowerCase().includes(lowerSearch) ||
       (p.description || "").toLowerCase().includes(lowerSearch);
     return matchesCategory && matchesSubcategory && matchesSearch;
@@ -887,7 +947,7 @@ function AdminDashboard() {
   return (
     <div className="seller-layout">
       <style dangerouslySetInnerHTML={{ __html: dashboardStyles }} />
-      
+
       {/* Mobile Top Bar */}
       <div className="mobile-top-bar" style={{
         display: "none",
@@ -931,25 +991,25 @@ function AdminDashboard() {
         </div>
 
         <div className="sidebar-menu">
-          <div 
+          <div
             className={`sidebar-link ${activeTab === "overview" ? "active" : ""}`}
             onClick={() => { setActiveTab("overview"); setSidebarOpen(false); }}
           >
             <span style={{ fontSize: "1.15rem" }}>📊</span> Dashboard Overview
           </div>
-          <div 
+          <div
             className={`sidebar-link ${activeTab === "orders" ? "active" : ""}`}
             onClick={() => { setActiveTab("orders"); setSidebarOpen(false); }}
           >
             <span style={{ fontSize: "1.15rem" }}>📦</span> Customer Orders
           </div>
-          <div 
+          <div
             className={`sidebar-link ${activeTab === "products" ? "active" : ""}`}
             onClick={() => { setActiveTab("products"); setSidebarOpen(false); }}
           >
             <span style={{ fontSize: "1.15rem" }}>🏷️</span> Inventory Catalog
           </div>
-          <div 
+          <div
             className={`sidebar-link ${activeTab === "users" ? "active" : ""}`}
             onClick={() => { setActiveTab("users"); setSidebarOpen(false); }}
           >
@@ -967,13 +1027,13 @@ function AdminDashboard() {
               <p style={{ margin: 0, fontSize: "0.68rem", color: "#a1a1aa", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>admin@dropshop.com</p>
             </div>
           </div>
-          <button 
+          <button
             onClick={() => navigate("/")}
             style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5rem", width: "100%", background: "transparent", border: "1px solid #27272a", borderRadius: "8px", padding: "0.5rem", color: "#f4f4f5", fontSize: "0.78rem", cursor: "pointer", transition: "all 0.2s" }}
           >
             <span>🏠</span> Back to Shop
           </button>
-          <button 
+          <button
             onClick={handleSignOut}
             style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5rem", width: "100%", background: "rgba(239, 68, 68, 0.08)", border: "1px solid rgba(239, 68, 68, 0.15)", borderRadius: "8px", padding: "0.5rem", color: "#ef4444", fontSize: "0.78rem", cursor: "pointer", transition: "all 0.2s" }}
           >
@@ -995,7 +1055,7 @@ function AdminDashboard() {
             </div>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
-            <button 
+            <button
               onClick={() => navigate("/")}
               style={{ background: "#e2b87f", color: "#09090b", border: "none", borderRadius: "980px", padding: "0.45rem 1.25rem", fontSize: "0.78rem", fontWeight: 600, cursor: "pointer", transition: "all 0.2s" }}
               onMouseEnter={e => e.currentTarget.style.boxShadow = "0 4px 15px rgba(226, 184, 127, 0.3)"}
@@ -1008,7 +1068,7 @@ function AdminDashboard() {
 
         {/* Tab Contents */}
         <main className="seller-body">
-          
+
           {/* TAB 1: OVERVIEW */}
           {activeTab === "overview" && (
             <div>
@@ -1067,7 +1127,7 @@ function AdminDashboard() {
                     +12.4% vs last week
                   </div>
                 </div>
-                
+
                 <div style={{ marginTop: "1rem" }}>
                   <svg viewBox="0 0 500 180" width="100%" height="180">
                     <defs>
@@ -1080,7 +1140,7 @@ function AdminDashboard() {
                     <line x1="40" y1="65" x2="480" y2="65" stroke="#27272a" strokeWidth="1" strokeDasharray="4 4" />
                     <line x1="40" y1="110" x2="480" y2="110" stroke="#27272a" strokeWidth="1" strokeDasharray="4 4" />
                     <line x1="40" y1="150" x2="480" y2="150" stroke="#27272a" strokeWidth="1" />
-                    
+
                     <path
                       d="M 40 140 L 110 115 L 180 130 L 250 85 L 320 95 L 390 60 L 460 45"
                       fill="none"
@@ -1089,12 +1149,12 @@ function AdminDashboard() {
                       strokeLinecap="round"
                       strokeLinejoin="round"
                     />
-                    
+
                     <path
                       d="M 40 140 L 110 115 L 180 130 L 250 85 L 320 95 L 390 60 L 460 45 L 460 150 L 40 150 Z"
                       fill="url(#chartGradient)"
                     />
-                    
+
                     <circle cx="40" cy="140" r="3.5" fill="#e2b87f" stroke="#09090b" strokeWidth="1.5" />
                     <circle cx="110" cy="115" r="3.5" fill="#e2b87f" stroke="#09090b" strokeWidth="1.5" />
                     <circle cx="180" cy="130" r="3.5" fill="#e2b87f" stroke="#09090b" strokeWidth="1.5" />
@@ -1116,19 +1176,19 @@ function AdminDashboard() {
 
               {/* Two Column Layout: Pending Orders and Out of stock warnings */}
               <div className="dashboard-two-col" style={{ display: "grid", gridTemplateColumns: "1.2fr 0.8fr", gap: "1.5rem" }}>
-                
+
                 {/* Pending Orders */}
                 <div className="dashboard-card">
                   <div className="card-header-flex">
                     <h3 className="card-title">Recent Pending Shipments</h3>
-                    <button 
+                    <button
                       onClick={() => setActiveTab("orders")}
                       style={{ background: "transparent", border: "none", color: "#e2b87f", fontSize: "0.78rem", cursor: "pointer", fontWeight: 500 }}
                     >
                       View All Orders →
                     </button>
                   </div>
-                  
+
                   {orders.filter(o => o.trackingStatus === "Placed" || o.trackingStatus === "Confirmed").length === 0 ? (
                     <p style={{ textAlign: "center", color: "#a1a1aa", fontSize: "0.85rem", padding: "2rem 0" }}>No pending order operations</p>
                   ) : (
@@ -1166,7 +1226,7 @@ function AdminDashboard() {
                 {/* Stock Warning Box */}
                 <div className="dashboard-card">
                   <h3 className="card-title" style={{ marginBottom: "1.25rem" }}>Restocking Alert Center</h3>
-                  
+
                   {lowStockCount === 0 ? (
                     <div style={{ textAlign: "center", color: "#a1a1aa", padding: "2.5rem 1rem" }}>
                       <p style={{ fontSize: "1.5rem", margin: 0 }}>✓</p>
@@ -1189,7 +1249,7 @@ function AdminDashboard() {
                         </div>
                       ))}
                       {products.filter(p => p.stock !== undefined && p.stock <= 5).length > 5 && (
-                        <button 
+                        <button
                           onClick={() => { setActiveTab("products"); setProductCategoryFilter("All"); }}
                           style={{ background: "transparent", border: "none", color: "#e2b87f", fontSize: "0.75rem", cursor: "pointer", textAlign: "center", marginTop: "0.5rem" }}
                         >
@@ -1217,9 +1277,9 @@ function AdminDashboard() {
                 <div style={{ display: "flex", gap: "1rem", flexWrap: "wrap", alignItems: "center" }}>
                   <div style={{ flex: 1, minWidth: "250px", position: "relative" }}>
                     <span style={{ position: "absolute", left: "12px", top: "50%", transform: "translateY(-50%)", color: "#71717a", fontSize: "0.9rem" }}>🔍</span>
-                    <input 
-                      type="text" 
-                      placeholder="Search orders by Order ID, Client Name or Email..." 
+                    <input
+                      type="text"
+                      placeholder="Search orders by Order ID, Client Name or Email..."
                       value={orderSearchQuery}
                       onChange={(e) => setOrderSearchQuery(e.target.value)}
                       style={{
@@ -1241,11 +1301,11 @@ function AdminDashboard() {
                   { id: "Delivered", label: "Delivered" },
                   { id: "Cancelled", label: "Cancelled" }
                 ].map(tab => {
-                  const count = tab.id === "All" 
-                    ? orders.length 
+                  const count = tab.id === "All"
+                    ? orders.length
                     : orders.filter(o => o.trackingStatus === tab.id).length;
                   return (
-                    <div 
+                    <div
                       key={tab.id}
                       className={`filter-pill ${orderStatusFilter === tab.id ? "active" : ""}`}
                       onClick={() => setOrderStatusFilter(tab.id)}
@@ -1274,8 +1334,8 @@ function AdminDashboard() {
                         <div>
                           <p style={{ margin: 0, fontSize: "0.72rem", color: "#a1a1aa", textTransform: "uppercase", fontWeight: 600, letterSpacing: "0.02em" }}>Order ID</p>
                           <p style={{ margin: "0.2rem 0 0", fontSize: "0.88rem", fontWeight: 600, color: "#f4f4f5" }}>
-                            {order._id} 
-                            <span 
+                            {order._id}
+                            <span
                               style={{ marginLeft: "0.5rem", fontSize: "0.7rem", color: "#e2b87f", cursor: "pointer", textDecoration: "underline" }}
                               onClick={() => {
                                 navigator.clipboard.writeText(order._id);
@@ -1319,8 +1379,8 @@ function AdminDashboard() {
                         {/* Dropdown status selector */}
                         <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", background: "#09090b", padding: "0.6rem 0.85rem", borderRadius: "10px", border: "1px solid #27272a" }}>
                           <span style={{ fontSize: "0.75rem", color: "#a1a1aa", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.02em" }}>Fulfillment status</span>
-                          <select 
-                            value={order.trackingStatus || "Placed"} 
+                          <select
+                            value={order.trackingStatus || "Placed"}
                             onChange={(e) => handleUpdateStatus(order._id, e.target.value)}
                             style={{
                               background: "#18181b", color: "#f4f4f5", border: "1px solid #27272a", borderRadius: "6px", padding: "0.3rem 0.5rem", fontSize: "0.82rem", outline: "none", cursor: "pointer"
@@ -1350,7 +1410,7 @@ function AdminDashboard() {
                   <h1 style={{ fontSize: "1.5rem", fontWeight: 700, margin: 0, fontFamily: "Cormorant Garamond, serif", letterSpacing: "0.02em" }}>Product Listings</h1>
                   <p style={{ color: "#a1a1aa", fontSize: "0.8rem", margin: "0.2rem 0 0" }}>Update stock, prices, descriptions, and categories across listings</p>
                 </div>
-                <button 
+                <button
                   onClick={() => setIsAddModalOpen(true)}
                   style={{
                     background: "#e2b87f", color: "#09090b", border: "none", borderRadius: "980px", padding: "0.6rem 1.5rem", fontSize: "0.84rem", fontWeight: 700, cursor: "pointer", transition: "all 0.2s"
@@ -1365,13 +1425,13 @@ function AdminDashboard() {
               {/* Filters and Searches */}
               <div style={{ background: "#18181b", border: "1px solid #27272a", borderRadius: "16px", padding: "1.25rem", marginBottom: "1.5rem" }}>
                 <div style={{ display: "flex", gap: "1rem", flexWrap: "wrap", alignItems: "center" }}>
-                  
+
                   {/* Search */}
                   <div style={{ flex: 1, minWidth: "220px", position: "relative" }}>
                     <span style={{ position: "absolute", left: "12px", top: "50%", transform: "translateY(-50%)", color: "#71717a", fontSize: "0.9rem" }}>🔍</span>
-                    <input 
-                      type="text" 
-                      placeholder="Search listings by title or description..." 
+                    <input
+                      type="text"
+                      placeholder="Search listings by title or description..."
                       value={productSearchQuery}
                       onChange={(e) => setProductSearchQuery(e.target.value)}
                       style={{
@@ -1383,7 +1443,7 @@ function AdminDashboard() {
                   {/* Category Filter */}
                   <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
                     <span style={{ fontSize: "0.78rem", color: "#a1a1aa", fontWeight: 600, textTransform: "uppercase" }}>Category</span>
-                    <select 
+                    <select
                       value={productCategoryFilter}
                       onChange={(e) => {
                         setProductCategoryFilter(e.target.value);
@@ -1405,7 +1465,7 @@ function AdminDashboard() {
                   {productCategoryFilter !== "All" && (
                     <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
                       <span style={{ fontSize: "0.78rem", color: "#a1a1aa", fontWeight: 600, textTransform: "uppercase" }}>Subcategory</span>
-                      <select 
+                      <select
                         value={productSubcategoryFilter}
                         onChange={(e) => setProductSubcategoryFilter(e.target.value)}
                         style={{
@@ -1459,29 +1519,29 @@ function AdminDashboard() {
 
                           return (
                             <tr key={product._id} className="table-row">
-                            <td style={{ width: "80px" }}>
-                              <img src={product.image} alt={product.name} style={{ width: "44px", height: "44px", objectFit: "contain", background: "#09090b", borderRadius: "8px", padding: "0.2rem", border: "1px solid #27272a" }} />
-                            </td>
-                            <td>
-                              <div style={{ fontWeight: 600, color: "#f4f4f5" }}>{product.name}</div>
-                              <div style={{ fontSize: "0.72rem", color: "#a1a1aa", marginTop: "0.15rem", maxWidth: "250px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{product.description}</div>
-                            </td>
-                            <td style={{ color: "#e2b87f", fontWeight: 600 }}>
-                              <div>₹{product.price?.toLocaleString()}</div>
-                              {product.originalPrice && product.originalPrice > product.price && (
-                                <div style={{ fontSize: "0.72rem", color: "#71717a", textDecoration: "line-through", fontWeight: 400 }}>
-                                  ₹{product.originalPrice?.toLocaleString()}
-                                </div>
-                              )}
-                            </td>
-                            <td>
-                              <div style={{ display: "flex", flexDirection: "column", gap: "0.25rem" }}>
-                                <span style={{ fontSize: "0.8rem", background: "rgba(255,255,255,0.04)", border: "1px solid #27272a", padding: "0.2rem 0.5rem", borderRadius: "4px", textTransform: "capitalize", width: "fit-content" }}>{product.category}</span>
-                                {product.subcategory && (
-                                  <span style={{ fontSize: "0.72rem", color: "#a1a1aa" }}>{product.subcategory}</span>
+                              <td style={{ width: "80px" }}>
+                                <img src={product.image} alt={product.name} style={{ width: "44px", height: "44px", objectFit: "contain", background: "#09090b", borderRadius: "8px", padding: "0.2rem", border: "1px solid #27272a" }} />
+                              </td>
+                              <td>
+                                <div style={{ fontWeight: 600, color: "#f4f4f5" }}>{product.name}</div>
+                                <div style={{ fontSize: "0.72rem", color: "#a1a1aa", marginTop: "0.15rem", maxWidth: "250px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{product.description}</div>
+                              </td>
+                              <td style={{ color: "#e2b87f", fontWeight: 600 }}>
+                                <div>₹{product.price?.toLocaleString()}</div>
+                                {product.originalPrice && product.originalPrice > product.price && (
+                                  <div style={{ fontSize: "0.72rem", color: "#71717a", textDecoration: "line-through", fontWeight: 400 }}>
+                                    ₹{product.originalPrice?.toLocaleString()}
+                                  </div>
                                 )}
-                              </div>
-                            </td>
+                              </td>
+                              <td>
+                                <div style={{ display: "flex", flexDirection: "column", gap: "0.25rem" }}>
+                                  <span style={{ fontSize: "0.8rem", background: "rgba(255,255,255,0.04)", border: "1px solid #27272a", padding: "0.2rem 0.5rem", borderRadius: "4px", textTransform: "capitalize", width: "fit-content" }}>{product.category}</span>
+                                  {product.subcategory && (
+                                    <span style={{ fontSize: "0.72rem", color: "#a1a1aa" }}>{product.subcategory}</span>
+                                  )}
+                                </div>
+                              </td>
                               <td>
                                 <span className={`stock-pill ${stockClass}`}>
                                   {stockLabel}
@@ -1489,7 +1549,7 @@ function AdminDashboard() {
                               </td>
                               <td>
                                 <div style={{ display: "flex", gap: "0.5rem", justifyContent: "flex-end" }}>
-                                  <button 
+                                  <button
                                     onClick={() => handleEditClick(product)}
                                     style={{ background: "rgba(255,255,255,0.06)", border: "1px solid #27272a", color: "#f4f4f5", borderRadius: "8px", padding: "0.4rem 0.8rem", fontSize: "0.75rem", cursor: "pointer", transition: "all 0.2s" }}
                                     onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.12)"}
@@ -1497,7 +1557,7 @@ function AdminDashboard() {
                                   >
                                     Edit
                                   </button>
-                                  <button 
+                                  <button
                                     onClick={() => handleDeleteProduct(product._id)}
                                     style={{ background: "rgba(255,59,48,0.08)", border: "1px solid rgba(255,59,48,0.2)", color: "#ff453a", borderRadius: "8px", padding: "0.4rem 0.8rem", fontSize: "0.75rem", cursor: "pointer", transition: "all 0.2s" }}
                                     onMouseEnter={e => e.currentTarget.style.background = "rgba(255,59,48,0.18)"}
@@ -1531,9 +1591,9 @@ function AdminDashboard() {
                 <div style={{ display: "flex", gap: "1rem", flexWrap: "wrap", alignItems: "center" }}>
                   <div style={{ flex: 1, minWidth: "250px", position: "relative" }}>
                     <span style={{ position: "absolute", left: "12px", top: "50%", transform: "translateY(-50%)", color: "#71717a", fontSize: "0.9rem" }}>🔍</span>
-                    <input 
-                      type="text" 
-                      placeholder="Search users by name, email, phone, or role..." 
+                    <input
+                      type="text"
+                      placeholder="Search users by name, email, phone, or role..."
                       value={userSearchQuery}
                       onChange={(e) => setUserSearchQuery(e.target.value)}
                       style={{
@@ -1577,9 +1637,9 @@ function AdminDashboard() {
                               </span>
                             </td>
                             <td>
-                              <div style={{ display: "flex", gap: "0.5rem", justifyContent: "flex-end", alignItems: "center" }}>
-                                <select 
-                                  value={user.role} 
+                              <div style={{ display: "flex", gap: "0.6rem", justifyContent: "flex-end", alignItems: "center" }}>
+                                <select
+                                  value={user.role}
                                   disabled={user._id === currentUserId}
                                   onChange={(e) => handleUpdateUserRole(user._id, e.target.value)}
                                   style={{
@@ -1589,6 +1649,52 @@ function AdminDashboard() {
                                   <option value="user">User (Customer)</option>
                                   <option value="admin">Admin (Staff)</option>
                                 </select>
+
+                                <button
+                                  onClick={() => { setSelectedUser(user); setIsChangePasswordModalOpen(true); }}
+                                  style={{
+                                    background: "rgba(226, 184, 127, 0.08)",
+                                    border: "1px solid rgba(226, 184, 127, 0.2)",
+                                    color: "#e2b87f",
+                                    borderRadius: "8px",
+                                    padding: "0.4rem 0.6rem",
+                                    fontSize: "0.78rem",
+                                    cursor: "pointer",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: "0.3rem",
+                                    transition: "all 0.2s"
+                                  }}
+                                  title="Change User Password"
+                                  onMouseEnter={e => e.currentTarget.style.background = "rgba(226, 184, 127, 0.15)"}
+                                  onMouseLeave={e => e.currentTarget.style.background = "rgba(226, 184, 127, 0.08)"}
+                                >
+                                  🔑 Password
+                                </button>
+
+                                <button
+                                  onClick={() => handleDeleteUser(user._id, user.name)}
+                                  disabled={user._id === currentUserId}
+                                  style={{
+                                    background: "rgba(239, 68, 68, 0.08)",
+                                    border: "1px solid rgba(239, 68, 68, 0.2)",
+                                    color: "#ef4444",
+                                    borderRadius: "8px",
+                                    padding: "0.4rem 0.6rem",
+                                    fontSize: "0.78rem",
+                                    cursor: user._id === currentUserId ? "not-allowed" : "pointer",
+                                    opacity: user._id === currentUserId ? 0.4 : 1,
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: "0.3rem",
+                                    transition: "all 0.2s"
+                                  }}
+                                  title="Delete User Account"
+                                  onMouseEnter={e => { if (user._id !== currentUserId) e.currentTarget.style.background = "rgba(239, 68, 68, 0.15)"; }}
+                                  onMouseLeave={e => { if (user._id !== currentUserId) e.currentTarget.style.background = "rgba(239, 68, 68, 0.08)"; }}
+                                >
+                                  🗑️ Delete
+                                </button>
                               </div>
                             </td>
                           </tr>
@@ -1616,7 +1722,7 @@ function AdminDashboard() {
               <div className="modal-content">
                 <div className="form-group">
                   <label className="form-label">Product Title</label>
-                  <input 
+                  <input
                     type="text"
                     className="form-input"
                     value={newProduct.name}
@@ -1627,7 +1733,7 @@ function AdminDashboard() {
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "1rem" }}>
                   <div className="form-group">
                     <label className="form-label">Selling Price (₹)</label>
-                    <input 
+                    <input
                       type="number"
                       className="form-input"
                       value={newProduct.price}
@@ -1637,7 +1743,7 @@ function AdminDashboard() {
                   </div>
                   <div className="form-group">
                     <label className="form-label">Original Price (₹ - Optional)</label>
-                    <input 
+                    <input
                       type="number"
                       className="form-input"
                       value={newProduct.originalPrice}
@@ -1647,7 +1753,7 @@ function AdminDashboard() {
                   </div>
                   <div className="form-group">
                     <label className="form-label">Stock Units</label>
-                    <input 
+                    <input
                       type="number"
                       className="form-input"
                       value={newProduct.stock}
@@ -1659,7 +1765,7 @@ function AdminDashboard() {
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
                   <div className="form-group">
                     <label className="form-label">Category</label>
-                    <select 
+                    <select
                       className="form-input"
                       value={newProduct.category}
                       onChange={(e) => {
@@ -1681,7 +1787,7 @@ function AdminDashboard() {
                   </div>
                   <div className="form-group">
                     <label className="form-label">Subcategory</label>
-                    <select 
+                    <select
                       className="form-input"
                       value={newProduct.subcategory}
                       onChange={(e) => setNewProduct({ ...newProduct, subcategory: e.target.value })}
@@ -1699,7 +1805,7 @@ function AdminDashboard() {
                     <span style={{ fontSize: "0.72rem", color: "#a1a1aa", fontWeight: 400 }}>(Add by URL or upload multiple from device)</span>
                   </label>
                   <div style={{ display: "flex", gap: "0.5rem", marginBottom: "0.75rem" }}>
-                    <input 
+                    <input
                       type="text"
                       className="form-input"
                       id="new-product-url-input"
@@ -1736,7 +1842,7 @@ function AdminDashboard() {
                     </button>
                   </div>
                   <div style={{ marginBottom: "1rem" }}>
-                    <label 
+                    <label
                       htmlFor="new-product-file-upload"
                       style={{
                         display: "flex",
@@ -1757,7 +1863,7 @@ function AdminDashboard() {
                       <span style={{ fontSize: "0.8rem", color: "#f4f4f5", fontWeight: 600 }}>Upload images from device</span>
                       <span style={{ fontSize: "0.72rem", color: "#a1a1aa", marginTop: "0.25rem" }}>Supports PNG, JPG, WEBP (Auto-compressed)</span>
                     </label>
-                    <input 
+                    <input
                       type="file"
                       id="new-product-file-upload"
                       multiple
@@ -1839,7 +1945,7 @@ function AdminDashboard() {
                 </div>
                 <div className="form-group">
                   <label className="form-label">Description</label>
-                  <textarea 
+                  <textarea
                     className="form-input"
                     value={newProduct.description}
                     onChange={(e) => setNewProduct({ ...newProduct, description: e.target.value })}
@@ -1850,14 +1956,14 @@ function AdminDashboard() {
                 </div>
               </div>
               <div className="modal-footer">
-                <button 
-                  type="button" 
+                <button
+                  type="button"
                   onClick={() => setIsAddModalOpen(false)}
                   style={{ background: "transparent", border: "1px solid #27272a", color: "#a1a1aa", borderRadius: "980px", padding: "0.5rem 1.5rem", fontSize: "0.85rem", cursor: "pointer" }}
                 >
                   Cancel
                 </button>
-                <button 
+                <button
                   type="submit"
                   style={{ background: "#e2b87f", color: "#09090b", border: "none", borderRadius: "980px", padding: "0.5rem 1.5rem", fontSize: "0.85rem", fontWeight: 700, cursor: "pointer" }}
                 >
@@ -1881,7 +1987,7 @@ function AdminDashboard() {
               <div className="modal-content">
                 <div className="form-group">
                   <label className="form-label">Product Title</label>
-                  <input 
+                  <input
                     type="text"
                     className="form-input"
                     value={editProduct.name}
@@ -1891,7 +1997,7 @@ function AdminDashboard() {
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "1rem" }}>
                   <div className="form-group">
                     <label className="form-label">Price (₹)</label>
-                    <input 
+                    <input
                       type="number"
                       className="form-input"
                       value={editProduct.price}
@@ -1900,7 +2006,7 @@ function AdminDashboard() {
                   </div>
                   <div className="form-group">
                     <label className="form-label">Original Price (₹ - Optional)</label>
-                    <input 
+                    <input
                       type="number"
                       className="form-input"
                       value={editProduct.originalPrice}
@@ -1910,7 +2016,7 @@ function AdminDashboard() {
                   </div>
                   <div className="form-group">
                     <label className="form-label">Stock Quantity</label>
-                    <input 
+                    <input
                       type="number"
                       className="form-input"
                       value={editProduct.stock}
@@ -1921,7 +2027,7 @@ function AdminDashboard() {
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
                   <div className="form-group">
                     <label className="form-label">Category</label>
-                    <select 
+                    <select
                       className="form-input"
                       value={editProduct.category}
                       onChange={(e) => {
@@ -1943,7 +2049,7 @@ function AdminDashboard() {
                   </div>
                   <div className="form-group">
                     <label className="form-label">Subcategory</label>
-                    <select 
+                    <select
                       className="form-input"
                       value={editProduct.subcategory}
                       onChange={(e) => setEditProduct({ ...editProduct, subcategory: e.target.value })}
@@ -1961,7 +2067,7 @@ function AdminDashboard() {
                     <span style={{ fontSize: "0.72rem", color: "#a1a1aa", fontWeight: 400 }}>(Add by URL or upload multiple from device)</span>
                   </label>
                   <div style={{ display: "flex", gap: "0.5rem", marginBottom: "0.75rem" }}>
-                    <input 
+                    <input
                       type="text"
                       className="form-input"
                       id="edit-product-url-input"
@@ -1998,7 +2104,7 @@ function AdminDashboard() {
                     </button>
                   </div>
                   <div style={{ marginBottom: "1rem" }}>
-                    <label 
+                    <label
                       htmlFor="edit-product-file-upload"
                       style={{
                         display: "flex",
@@ -2019,7 +2125,7 @@ function AdminDashboard() {
                       <span style={{ fontSize: "0.8rem", color: "#f4f4f5", fontWeight: 600 }}>Upload images from device</span>
                       <span style={{ fontSize: "0.72rem", color: "#a1a1aa", marginTop: "0.25rem" }}>Supports PNG, JPG, WEBP (Auto-compressed)</span>
                     </label>
-                    <input 
+                    <input
                       type="file"
                       id="edit-product-file-upload"
                       multiple
@@ -2101,7 +2207,7 @@ function AdminDashboard() {
                 </div>
                 <div className="form-group">
                   <label className="form-label">Description</label>
-                  <textarea 
+                  <textarea
                     className="form-input"
                     value={editProduct.description}
                     onChange={(e) => setEditProduct({ ...editProduct, description: e.target.value })}
@@ -2111,18 +2217,70 @@ function AdminDashboard() {
                 </div>
               </div>
               <div className="modal-footer">
-                <button 
-                  type="button" 
+                <button
+                  type="button"
                   onClick={() => setEditingProductId(null)}
                   style={{ background: "transparent", border: "1px solid #27272a", color: "#a1a1aa", borderRadius: "980px", padding: "0.5rem 1.5rem", fontSize: "0.85rem", cursor: "pointer" }}
                 >
                   Cancel
                 </button>
-                <button 
+                <button
                   type="submit"
                   style={{ background: "#e2b87f", color: "#09090b", border: "none", borderRadius: "980px", padding: "0.5rem 1.5rem", fontSize: "0.85rem", fontWeight: 700, cursor: "pointer" }}
                 >
                   Save Modifications
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL 3: CHANGE PASSWORD (ADMIN ACTION ON USER) */}
+      {isChangePasswordModalOpen && selectedUser && (
+        <div className="modal-backdrop" onClick={() => { setIsChangePasswordModalOpen(false); setSelectedUser(null); setAdminUserPassword(""); }}>
+          <div className="seller-modal" onClick={e => e.stopPropagation()}>
+            <div className="modal-header-container">
+              <h3>Change Password for {selectedUser.name}</h3>
+              <button className="modal-close-btn" onClick={() => { setIsChangePasswordModalOpen(false); setSelectedUser(null); setAdminUserPassword(""); }}>✕</button>
+            </div>
+            <form onSubmit={handleChangePasswordSubmit} style={{ display: "flex", flexDirection: "column", flex: 1 }}>
+              <div className="modal-content">
+                <div style={{ background: "rgba(226, 184, 127, 0.05)", border: "1px solid rgba(226, 184, 127, 0.15)", borderRadius: "12px", padding: "1rem", marginBottom: "1.5rem" }}>
+                  <p style={{ margin: 0, fontSize: "0.82rem", color: "#e2b87f", lineHeight: "1.4" }}>
+                    <strong>User Details:</strong><br />
+                    Email: {selectedUser.email || "N/A"}<br />
+                    Phone: {selectedUser.phone || "N/A"}<br />
+                    Role: {selectedUser.role}
+                  </p>
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">New Password</label>
+                  <input
+                    type="password"
+                    className="form-input"
+                    value={adminUserPassword}
+                    onChange={(e) => setAdminUserPassword(e.target.value)}
+                    placeholder="Enter new secure password (min. 6 characters)"
+                    required
+                    autoFocus
+                  />
+                </div>
+              </div>
+              <div className="modal-footer">
+                <button
+                  type="button"
+                  onClick={() => { setIsChangePasswordModalOpen(false); setSelectedUser(null); setAdminUserPassword(""); }}
+                  style={{ background: "transparent", border: "1px solid #27272a", color: "#a1a1aa", borderRadius: "980px", padding: "0.5rem 1.5rem", fontSize: "0.85rem", cursor: "pointer" }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  style={{ background: "#e2b87f", color: "#09090b", border: "none", borderRadius: "980px", padding: "0.5rem 1.5rem", fontSize: "0.85rem", fontWeight: 700, cursor: "pointer" }}
+                >
+                  Update Password
                 </button>
               </div>
             </form>

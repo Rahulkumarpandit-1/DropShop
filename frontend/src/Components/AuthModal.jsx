@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { BASE_URL } from "../services/api";
 
 function AuthModal({ isOpen, onClose, onSuccess }) {
@@ -8,6 +8,90 @@ function AuthModal({ isOpen, onClose, onSuccess }) {
   const [otp, setOtp] = useState("");
   const [form, setForm] = useState({ name: "", password: "", email: "" });
   const [loading, setLoading] = useState(false);
+
+  const [otpValues, setOtpValues] = useState(["", "", "", "", "", ""]);
+  const [cooldown, setCooldown] = useState(0);
+  const otpRefs = useRef([]);
+
+  useEffect(() => {
+    setOtp(otpValues.join(""));
+  }, [otpValues]);
+
+  useEffect(() => {
+    if (otpMode) {
+      setOtpValues(["", "", "", "", "", ""]);
+      setTimeout(() => {
+        otpRefs.current[0]?.focus();
+      }, 50);
+    }
+  }, [otpMode]);
+
+  useEffect(() => {
+    let interval = null;
+    if (cooldown > 0) {
+      interval = setInterval(() => {
+        setCooldown((prev) => prev - 1);
+      }, 1000);
+    } else {
+      clearInterval(interval);
+    }
+    return () => clearInterval(interval);
+  }, [cooldown]);
+
+  const handleOtpChange = (value, index) => {
+    const cleanValue = value.replace(/\D/g, "");
+    const newOtpValues = [...otpValues];
+    
+    if (cleanValue.length > 1) {
+      const pastedData = cleanValue.substring(0, 6).split("");
+      pastedData.forEach((char, i) => {
+        if (newOtpValues[i] !== undefined) {
+          newOtpValues[i] = char;
+        }
+      });
+      setOtpValues(newOtpValues);
+      otpRefs.current[Math.min(pastedData.length - 1, 5)]?.focus();
+      return;
+    }
+
+    newOtpValues[index] = cleanValue;
+    setOtpValues(newOtpValues);
+
+    if (cleanValue && index < 5) {
+      otpRefs.current[index + 1]?.focus();
+    }
+  };
+
+  const handleOtpKeyDown = (key, index) => {
+    if (key === "Backspace") {
+      if (!otpValues[index] && index > 0) {
+        const newOtpValues = [...otpValues];
+        newOtpValues[index - 1] = "";
+        setOtpValues(newOtpValues);
+        otpRefs.current[index - 1]?.focus();
+      } else {
+        const newOtpValues = [...otpValues];
+        newOtpValues[index] = "";
+        setOtpValues(newOtpValues);
+      }
+    }
+  };
+
+  const handleOtpPaste = (e) => {
+    e.preventDefault();
+    const pastedText = e.clipboardData.getData("text").replace(/\D/g, "");
+    if (pastedText.length > 0) {
+      const newOtpValues = [...otpValues];
+      const pastedData = pastedText.substring(0, 6).split("");
+      pastedData.forEach((char, i) => {
+        if (newOtpValues[i] !== undefined) {
+          newOtpValues[i] = char;
+        }
+      });
+      setOtpValues(newOtpValues);
+      otpRefs.current[Math.min(pastedData.length - 1, 5)]?.focus();
+    }
+  };
 
   if (!isOpen) return null;
 
@@ -34,6 +118,7 @@ function AuthModal({ isOpen, onClose, onSuccess }) {
         const data = await res.json();
         setLoading(false);
         alert(data.message || "Verification code resent!");
+        setCooldown(60);
       } else if (otpMode === "login") {
         const res = await fetch(`${BASE_URL}/auth/login`, {
           method: "POST",
@@ -43,6 +128,17 @@ function AuthModal({ isOpen, onClose, onSuccess }) {
         const data = await res.json();
         setLoading(false);
         alert(data.message || "Verification code resent!");
+        setCooldown(60);
+      } else if (otpMode === "forgot-password") {
+        const res = await fetch(`${BASE_URL}/auth/send-email-otp`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: form.email, type: "forgot-password" })
+        });
+        const data = await res.json();
+        setLoading(false);
+        alert(data.message || "Verification code resent!");
+        setCooldown(60);
       }
     } catch (err) {
       setLoading(false);
@@ -53,7 +149,8 @@ function AuthModal({ isOpen, onClose, onSuccess }) {
   const handleSubmit = async () => {
     // A. OTP verification submission
     if (otpMode) {
-      if (otp.length !== 6) {
+      const finalOtp = otpValues.join("");
+      if (finalOtp.length !== 6) {
         alert("Please enter a valid 6-digit verification code");
         return;
       }
@@ -65,7 +162,7 @@ function AuthModal({ isOpen, onClose, onSuccess }) {
             name: form.name,
             email: form.email,
             password: form.password,
-            otp: otp
+            otp: finalOtp
           };
 
           const res = await fetch(`${BASE_URL}/auth/register`, {
@@ -93,7 +190,7 @@ function AuthModal({ isOpen, onClose, onSuccess }) {
           const payload = {
             email: form.email,
             password: form.password,
-            otp: otp
+            otp: finalOtp
           };
 
           const res = await fetch(`${BASE_URL}/auth/verify-login-otp`, {
@@ -116,6 +213,38 @@ function AuthModal({ isOpen, onClose, onSuccess }) {
           } else {
             alert("Login failed");
           }
+        } else if (otpMode === "forgot-password") {
+          if (!form.password) {
+            alert("Please enter a new password");
+            setLoading(false);
+            return;
+          }
+          if (form.password.length < 6) {
+            alert("Password must be at least 6 characters long");
+            setLoading(false);
+            return;
+          }
+          const payload = {
+            email: form.email,
+            password: form.password,
+            otp: finalOtp
+          };
+
+          const res = await fetch(`${BASE_URL}/auth/reset-password-email-otp`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+          });
+          const data = await res.json();
+          setLoading(false);
+
+          if (!res.ok) {
+            alert(data.message || "Verification failed");
+            return;
+          }
+
+          alert("Password updated successfully! Please sign in with your new password.");
+          handleClose();
         }
       } catch (err) {
         setLoading(false);
@@ -192,6 +321,7 @@ function AuthModal({ isOpen, onClose, onSuccess }) {
 
         setOtpMode("register");
         setOtp("");
+        setCooldown(60);
       } catch (err) {
         setLoading(false);
         alert("Something went wrong sending verification code");
@@ -207,18 +337,21 @@ function AuthModal({ isOpen, onClose, onSuccess }) {
     }
     setLoading(true);
     try {
-      const res = await fetch(`${BASE_URL}/auth/forgot-password`, {
+      const res = await fetch(`${BASE_URL}/auth/send-email-otp`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: form.email })
+        body: JSON.stringify({ email: form.email, type: "forgot-password" })
       });
       const data = await res.json();
       setLoading(false);
-      alert(data.message || "Reset link sent!");
-      if (res.ok) {
-        setIsForgot(false);
-        setIsLogin(true);
+      if (!res.ok) {
+        alert(data.message || "Failed to send verification code");
+        return;
       }
+      alert(data.message || "Verification code sent to your email!");
+      setOtpMode("forgot-password");
+      setOtp("");
+      setCooldown(60);
     } catch (err) {
       setLoading(false);
       alert("Something went wrong");
@@ -286,9 +419,11 @@ function AuthModal({ isOpen, onClose, onSuccess }) {
           </h2>
           <p style={{ fontSize: "0.85rem", color: "#86868b", margin: 0 }}>
             {otpMode 
-              ? `Enter the 6-digit code sent to ${form.email}.`
+              ? otpMode === "forgot-password"
+                ? `Enter the 6-digit code and a new password.`
+                : `Enter the 6-digit code sent to ${form.email}.`
               : isForgot 
-                ? "Enter your email to receive a reset link." 
+                ? "Enter your email to receive a verification code." 
                 : isLogin 
                   ? "Sign in to continue shopping." 
                   : "Join DropShop today."}
@@ -333,25 +468,55 @@ function AuthModal({ isOpen, onClose, onSuccess }) {
         <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem", marginBottom: "1.25rem" }}>
           {otpMode ? (
             <>
-              <input
-                type="text"
-                name="otp"
-                placeholder="6-Digit Verification Code"
-                value={otp}
-                maxLength={6}
-                onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))}
-                style={{
-                  background: "rgba(255,255,255,0.05)",
-                  border: "1px solid rgba(255,255,255,0.08)",
-                  borderRadius: "12px", padding: "0.85rem 1rem",
-                  fontSize: "1.1rem", color: "#f5f5f7",
-                  outline: "none", fontFamily: "monospace",
-                  textAlign: "center", letterSpacing: "4px",
-                  transition: "border-color 0.2s ease"
-                }}
-                onFocus={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.3)"}
-                onBlur={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)"}
-              />
+              <div style={{ display: "flex", gap: "0.5rem", justifyContent: "space-between", margin: "0.5rem 0" }}>
+                {otpValues.map((val, idx) => (
+                  <input
+                    key={idx}
+                    ref={(el) => (otpRefs.current[idx] = el)}
+                    type="text"
+                    maxLength={1}
+                    value={val}
+                    onChange={(e) => handleOtpChange(e.target.value, idx)}
+                    onKeyDown={(e) => handleOtpKeyDown(e.key, idx)}
+                    onPaste={handleOtpPaste}
+                    style={{
+                      width: "48px",
+                      height: "48px",
+                      background: "rgba(255,255,255,0.05)",
+                      border: "1px solid rgba(255,255,255,0.08)",
+                      borderRadius: "10px",
+                      fontSize: "1.25rem",
+                      fontWeight: "700",
+                      color: "#f5f5f7",
+                      textAlign: "center",
+                      outline: "none",
+                      transition: "border-color 0.2s ease"
+                    }}
+                    onFocus={(e) => (e.currentTarget.style.borderColor = "#e8d5b7")}
+                    onBlur={(e) => (e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)")}
+                  />
+                ))}
+              </div>
+              {otpMode === "forgot-password" && (
+                <input
+                  type="password"
+                  name="password"
+                  placeholder="New Password (min. 6 characters)"
+                  value={form.password}
+                  onChange={handleChange}
+                  style={{
+                    background: "rgba(255,255,255,0.05)",
+                    border: "1px solid rgba(255,255,255,0.08)",
+                    borderRadius: "12px", padding: "0.85rem 1rem",
+                    fontSize: "0.88rem", color: "#f5f5f7",
+                    outline: "none", fontFamily: "Inter, sans-serif",
+                    transition: "border-color 0.2s ease",
+                    marginTop: "0.5rem"
+                  }}
+                  onFocus={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.3)"}
+                  onBlur={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)"}
+                />
+              )}
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "0.25rem" }}>
                 <span
                   onClick={() => setOtpMode("")}
@@ -359,13 +524,22 @@ function AuthModal({ isOpen, onClose, onSuccess }) {
                 >
                   ← Edit Details
                 </span>
-                <span
-                  onClick={handleResendOtp}
-                  style={{ fontSize: "0.78rem", color: "#e8d5b7", cursor: "pointer", textDecoration: "underline", textUnderlineOffset: "2px" }}
-                >
-                  Resend Code
-                </span>
+                {cooldown > 0 ? (
+                  <span style={{ fontSize: "0.78rem", color: "#86868b" }}>
+                    Resend in {cooldown}s
+                  </span>
+                ) : (
+                  <span
+                    onClick={handleResendOtp}
+                    style={{ fontSize: "0.78rem", color: "#e8d5b7", cursor: "pointer", textDecoration: "underline", textUnderlineOffset: "2px" }}
+                  >
+                    Resend Code
+                  </span>
+                )}
               </div>
+              <p style={{ fontSize: "0.72rem", color: "#86868b", textAlign: "center", marginTop: "1rem", margin: "1rem 0 0" }}>
+                💡 Didn't receive the code? Please check your <strong>Spam</strong> or <strong>Promotions</strong> folder.
+              </p>
             </>
           ) : isForgot ? (
             <input
@@ -500,12 +674,14 @@ function AuthModal({ isOpen, onClose, onSuccess }) {
         >
           {loading 
             ? "Please wait..." 
-            : isForgot 
-              ? "Send Reset Link" 
-              : otpMode 
-                ? otpMode === "register" 
-                  ? "Verify & Create Account" 
+            : otpMode 
+              ? otpMode === "register" 
+                ? "Verify & Create Account" 
+                : otpMode === "forgot-password"
+                  ? "Verify & Reset Password"
                   : "Verify & Sign In"
+              : isForgot 
+                ? "Send Verification Code" 
                 : isLogin 
                   ? "Sign In" 
                   : "Create Account"}

@@ -336,8 +336,10 @@ const sendPasswordResetEmail = async (to, token) => {
   try {
     await transporter.sendMail(mailOptions);
     console.log("Password reset email sent to:", to);
+    return true;
   } catch (err) {
     console.log("Password reset email error:", err.message);
+    throw err;
   }
 };
 
@@ -494,8 +496,10 @@ const sendOtpEmail = async (to, otp) => {
   try {
     await transporter.sendMail(mailOptions);
     console.log("OTP email sent to:", to);
+    return true;
   } catch (err) {
     console.log("OTP email error:", err.message);
+    throw err;
   }
 };
 
@@ -604,11 +608,11 @@ const verifyTransporter = async () => {
 };
 verifyTransporter();
 
-module.exports = { 
-  sendOrderConfirmation, 
-  sendWelcomeEmail, 
-  sendPasswordResetEmail, 
-  sendOrderStatusUpdateEmail, 
+module.exports = {
+  sendOrderConfirmation,
+  sendWelcomeEmail,
+  sendPasswordResetEmail,
+  sendOrderStatusUpdateEmail,
   sendOtpEmail,
   sendLoginNotificationEmail
 };

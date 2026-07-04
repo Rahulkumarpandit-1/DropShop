@@ -1,5 +1,5 @@
 const express=require("express");
-const {register, login, forgotPassword, resetPassword, sendOtp, verifyOtp, resetPasswordPhone, sendEmailOtp, verifyLoginOtp}=require("../controllers/authController");
+const {register, login, forgotPassword, resetPassword, sendOtp, verifyOtp, resetPasswordPhone, sendEmailOtp, verifyLoginOtp, resetPasswordEmailOtp}=require("../controllers/authController");
 const router = express.Router();
 const passport = require("../middleware/passport");
 const { googleCallback } = require("../controllers/authController");
@@ -14,6 +14,7 @@ router.post("/verify-login-otp", verifyLoginOtp);
 router.post("/forgot-password", forgotPassword);
 router.post("/reset-password", resetPassword);
 router.post("/reset-password-phone", resetPasswordPhone);
+router.post("/reset-password-email-otp", resetPasswordEmailOtp);
 console.log("googleCallback:", googleCallback); // check if function is defined
 // Google routes
 router.get("/google",

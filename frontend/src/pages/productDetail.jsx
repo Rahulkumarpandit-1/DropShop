@@ -24,6 +24,7 @@ function ProductDetail() {
   const [activeImage, setActiveImage] = useState("");
   const [isDescExpanded, setIsDescExpanded] = useState(false);
   const [inWishlist, setInWishlist] = useState(false);
+  const [relatedProducts, setRelatedProducts] = useState([]);
 
   const matchedVariant = product?.variants?.find(v => {
     return Object.entries(selectedAttributes).every(([k, val]) => {
@@ -56,7 +57,7 @@ function ProductDetail() {
   useEffect(() => {
     fetchProduct();
     fetchReviews();
-  }, []);
+  }, [id]);
 
   useEffect(() => {
     if (product) {
@@ -97,6 +98,23 @@ function ProductDetail() {
         console.error("Failed to load wishlist status", err);
       }
     }
+    
+    // Fetch related products
+    try {
+      if (data.category) {
+        const relatedRes = await fetch(`${BASE_URL}/products?category=${encodeURIComponent(data.category)}`);
+        const relatedData = await relatedRes.json();
+        const relatedList = Array.isArray(relatedData) 
+          ? relatedData 
+          : (relatedData.products || []);
+        // Filter out current product
+        const filteredRelated = relatedList.filter(p => p._id !== data._id).slice(0, 4);
+        setRelatedProducts(filteredRelated);
+      }
+    } catch (err) {
+      console.error("Failed to load related products", err);
+    }
+
     setLoading(false);
   };
 
@@ -726,6 +744,44 @@ function ProductDetail() {
             >
               {submitting ? "Submitting..." : "Submit Review"}
             </button>
+          </div>
+        )}
+
+        {/* Related Products */}
+        {relatedProducts.length > 0 && (
+          <div style={{ marginTop: "3rem", marginBottom: "3rem", borderTop: "1px solid var(--border)", paddingTop: "2rem" }}>
+            <h3 style={{ fontSize: "1.2rem", fontWeight: 600, color: "var(--white)", marginBottom: "1.5rem", fontFamily: "Playfair Display, serif" }}>
+              Related Products
+            </h3>
+            <div style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))",
+              gap: "1.5rem"
+            }}>
+              {relatedProducts.map(p => (
+                <div
+                  key={p._id}
+                  onClick={() => {
+                    navigate(`/product/${p._id}`);
+                    window.scrollTo({ top: 0, behavior: "smooth" });
+                  }}
+                  className="premium-card"
+                  style={{ cursor: "pointer", background: "var(--card-bg)", border: "1px solid var(--border)", borderRadius: "16px", overflow: "hidden" }}
+                >
+                  <div style={{ height: "160px", background: "rgba(0,0,0,0.02)", display: "flex", alignItems: "center", justifyContent: "center", borderBottom: "1px solid var(--border)", padding: "1rem" }}>
+                    <img src={p.image} alt={p.name} style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain" }} />
+                  </div>
+                  <div style={{ padding: "1rem" }}>
+                    <h4 style={{ fontSize: "0.85rem", fontWeight: 600, color: "var(--white)", margin: "0 0 0.25rem", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                      {p.name}
+                    </h4>
+                    <p style={{ fontSize: "0.9rem", fontWeight: 700, color: "var(--accent)", margin: 0 }}>
+                      ₹{p.price?.toLocaleString()}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         )}
 

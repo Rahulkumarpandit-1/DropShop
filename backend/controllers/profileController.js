@@ -322,7 +322,12 @@ exports.sendPasswordOtp = async (req, res) => {
 
         console.log(`\n==========================================\n[CHANGE PASSWORD OTP] Email: ${user.email} | OTP: ${otpCode}\n==========================================\n`);
 
-        await sendOtpEmail(user.email.toLowerCase(), otpCode);
+        try {
+            await sendOtpEmail(user.email.toLowerCase(), otpCode);
+        } catch (emailErr) {
+            console.error("Failed to send change password OTP email:", emailErr.message);
+            return res.status(500).json({ error: "Failed to send verification email. Please check SMTP configuration." });
+        }
         res.json({ success: true, message: "Verification code sent to your email" });
     } catch (err) {
         res.status(500).json({ error: err.message });

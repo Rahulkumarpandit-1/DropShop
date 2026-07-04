@@ -18,7 +18,17 @@ const getProducts = async (req, res) => {
       query.name = { $regex: req.query.search, $options: "i" };
     }
 
-    const products = await Product.find(query).skip(skip).limit(limit);
+    const sort = {};
+    if (req.query.sort) {
+      if (req.query.sort === "price-asc") sort.price = 1;
+      else if (req.query.sort === "price-desc") sort.price = -1;
+      else if (req.query.sort === "name-asc") sort.name = 1;
+      else if (req.query.sort === "name-desc") sort.name = -1;
+    } else {
+      sort.createdAt = -1; // Default to newest
+    }
+
+    const products = await Product.find(query).sort(sort).skip(skip).limit(limit);
     const total = await Product.countDocuments(query);
     res.json({
       products,
@@ -89,8 +99,9 @@ const getTrendingProducts = async (req, res) => {
     // Fallback if there aren't enough ordered products to fill the limit
     if (trending.length < limit) {
       const fillLimit = limit - trending.length;
-      const extraProducts = await Product.find({ _id: { $nin: productIds } }).limit(fillLimit);
-      trending = [...trending, ...extraProducts];
+      const extraProducts = await Product.find({ _id: { $nin: productIds } });
+      const shuffled = extraProducts.sort(() => 0.5 - Math.random());
+      trending = [...trending, ...shuffled.slice(0, fillLimit)];
     }
 
     res.json(trending);

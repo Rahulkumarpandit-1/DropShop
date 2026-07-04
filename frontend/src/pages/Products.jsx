@@ -385,7 +385,6 @@ function Products() {
                 : selectedCategory === "All"
                   ? "All Products"
                   : selectedCategory}
-              <span className="catalog-count-label">({filteredProducts.length})</span>
             </h1>
           </div>
 

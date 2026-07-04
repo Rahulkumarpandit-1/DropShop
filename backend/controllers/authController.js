@@ -134,7 +134,7 @@ exports.sendEmailOtp = async (req, res) => {
       if (existingUser) {
         return res.status(400).json({ message: "User with this email already exists" });
       }
-    } else if (type === "login") {
+    } else if (type === "login" || type === "forgot-password") {
       const user = await User.findOne({ email: emailLower });
       if (!user) {
         return res.status(404).json({ message: "User with this email is not registered" });
@@ -150,7 +150,12 @@ exports.sendEmailOtp = async (req, res) => {
 
     console.log(`\n==========================================\n[SEND EMAIL OTP] Type: ${type || "default"} | Email: ${emailLower} | OTP: ${otpCode}\n==========================================\n`);
 
-    await sendOtpEmail(emailLower, otpCode);
+    try {
+      await sendOtpEmail(emailLower, otpCode);
+    } catch (emailErr) {
+      console.error("Failed to send OTP email:", emailErr.message);
+      return res.status(500).json({ message: "Failed to send verification email. Please check SMTP configuration." });
+    }
 
     res.json({ success: true, message: "OTP sent successfully to your email" });
   } catch (err) {
@@ -266,7 +271,12 @@ exports.login = async (req, res) => {
 
       console.log(`\n==========================================\n[LOGIN OTP] Email: ${user.email} | OTP: ${otpCode}\n==========================================\n`);
 
-      await sendOtpEmail(user.email, otpCode);
+      try {
+        await sendOtpEmail(user.email, otpCode);
+      } catch (emailErr) {
+        console.error("Failed to send login OTP email:", emailErr.message);
+        return res.status(500).json({ message: "Failed to send verification email. Please check SMTP configuration." });
+      }
 
       return res.json({
         success: true,
@@ -389,7 +399,12 @@ exports.forgotPassword = async (req, res) => {
     await user.save();
 
     // Send email
-    await sendPasswordResetEmail(user.email, token);
+    try {
+      await sendPasswordResetEmail(user.email, token);
+    } catch (emailErr) {
+      console.error("Failed to send password reset email:", emailErr.message);
+      return res.status(500).json({ message: "Failed to send password reset email. Please check SMTP configuration." });
+    }
 
     res.json({ message: "Password reset link sent to your email" });
   } catch (err) {
@@ -465,6 +480,44 @@ exports.resetPasswordPhone = async (req, res) => {
     res.json({ success: true, message: "Password has been successfully updated" });
   } catch (err) {
     console.error("RESET PASSWORD PHONE ERROR:", err.message);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+exports.resetPasswordEmailOtp = async (req, res) => {
+  try {
+    const { email, otp, password } = req.body;
+    if (!email || !otp || !password) {
+      return res.status(400).json({ message: "Email, OTP, and password are required" });
+    }
+
+    const emailLower = email.toLowerCase();
+
+    // Verify OTP
+    const isValid = await verifyOtpCode(emailLower, otp);
+    if (!isValid) {
+      return res.status(400).json({ message: "Invalid or expired OTP code" });
+    }
+
+    // Find user
+    const user = await User.findOne({ email: emailLower });
+    if (!user) {
+      return res.status(404).json({ message: "User with this email is not registered" });
+    }
+
+    // Update password
+    const hashedPassword = await bcrypt.hash(password, 10);
+    user.password = hashedPassword;
+    
+    // Clear any token fields
+    user.resetPasswordToken = "";
+    user.resetPasswordExpires = undefined;
+    
+    await user.save();
+
+    res.json({ success: true, message: "Password has been successfully updated" });
+  } catch (err) {
+    console.error("RESET PASSWORD EMAIL OTP ERROR:", err.message);
     res.status(500).json({ message: "Server error" });
   }
 };

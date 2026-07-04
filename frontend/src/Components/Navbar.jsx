@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import AuthModal from "./AuthModal";
-import { BASE_URL } from "../services/api";
+import { BASE_URL, getCart } from "../services/api";
 
 
 function Navbar({ selectedCategory, setSelectedCategory, setPage }) {
@@ -14,6 +14,28 @@ function Navbar({ selectedCategory, setSelectedCategory, setPage }) {
   const [isLoggedIn, setIsLoggedIn] = useState(!!localStorage.getItem("token"));
   const [userName, setUserName] = useState("");
   const [userRole, setUserRole] = useState("user");
+  const [cartCount, setCartCount] = useState(0);
+
+  const fetchCartCount = async () => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      setCartCount(0);
+      return;
+    }
+    try {
+      const data = await getCart();
+      const count = (data.items || []).reduce((acc, item) => acc + item.quantity, 0);
+      setCartCount(count);
+    } catch {
+      setCartCount(0);
+    }
+  };
+
+  useEffect(() => {
+    fetchCartCount();
+    window.addEventListener("cart-updated", fetchCartCount);
+    return () => window.removeEventListener("cart-updated", fetchCartCount);
+  }, [isLoggedIn]);
 
   // Navbar.jsx — replace your current login check useEffect with this:
   useEffect(() => {
@@ -421,7 +443,7 @@ function Navbar({ selectedCategory, setSelectedCategory, setPage }) {
                 <path d="M16 10a4 4 0 01-8 0" />
               </svg>
               {/* Optional cart count badge */}
-              <span className="navbar__cart-badge">3</span>
+              {cartCount > 0 && <span className="navbar__cart-badge">{cartCount}</span>}
             </div>
 
             {isLoggedIn ? (

@@ -14,6 +14,7 @@ function Home({ selectedCategory, setSelectedCategory }) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [activeFaq, setActiveFaq] = useState(null);
   const [wishlist, setWishlist] = useState([]);
+  const [sortBy, setSortBy] = useState("");
   const navigate = useNavigate();
   const location = useLocation();
   const searchQuery = new URLSearchParams(location.search).get("search") || "";
@@ -35,7 +36,7 @@ function Home({ selectedCategory, setSelectedCategory }) {
   useEffect(() => {
     document.title = "DropShop | Premium Curated Collection";
     fetchProducts();
-  }, [page, selectedCategory, searchQuery]);
+  }, [page, selectedCategory, searchQuery, sortBy]);
 
   useEffect(() => {
     if (!images.length) return;
@@ -45,7 +46,7 @@ function Home({ selectedCategory, setSelectedCategory }) {
 
   const fetchProducts = async () => {
     try {
-      const data = await getProducts(page, selectedCategory, searchQuery);
+      const data = await getProducts(page, selectedCategory, searchQuery, "All", sortBy);
       setProducts(Array.isArray(data) ? data : data.products || []);
       setTotalPages(data.totalPages || 1);
     } catch { setProducts([]); }
@@ -108,16 +109,15 @@ function Home({ selectedCategory, setSelectedCategory }) {
   };
 
   const filteredProducts = Array.isArray(products) ? products : [];
-  // Home.jsx — add this useEffect
   useEffect(() => {
     setPage(1);
-  }, [selectedCategory, searchQuery]); // 👈 reset whenever category OR search changes
+  }, [selectedCategory, searchQuery, sortBy]); // 👈 reset whenever category, search OR sorting changes
   const categories = [
     { name: "All", icon: "🛍️" },
     { name: "Electronic", icon: "⚡" },
     { name: "Fashion", icon: "👗" },
     { name: "Accessories", icon: "💎" },
-    { name: "Home", icon: "🏠" },
+    { name: "Home", icon: "🏠" }
   ];
 
   return (
@@ -126,7 +126,7 @@ function Home({ selectedCategory, setSelectedCategory }) {
       {/* ── HERO ── */}
       <div className="premium-hero">
         {images.length > 0 ? (
-          <img src={images[currentIndex]} alt="hero" style={{ width: "100%", height: "100%", objectFit: "cover", opacity: 0.3 }} />
+          <img src={images[currentIndex]} alt="hero" style={{ width: "100%", height: "100%", objectFit: "cover", opacity: 0.55 }} />
         ) : (
           <div style={{
             width: "100%", height: "100%",
@@ -175,14 +175,14 @@ function Home({ selectedCategory, setSelectedCategory }) {
           {[
             { icon: "🚚", label: "Free Delivery", sub: "On all orders" },
             { icon: "💳", label: "Secure Payment", sub: "100% protected" },
-            { icon: "↩️", label: "Easy Returns", sub: "7 day policy" },
+            { icon: "↩️", label: "Easy Returns", sub: "7-day policy" },
             { icon: "🎧", label: "24/7 Support", sub: "Always here" },
           ].map(({ icon, label, sub }) => (
-            <div key={label} style={{ display: "flex", alignItems: "center", gap: "0.75rem", justifyContent: "flex-start", padding: "0.5rem 1rem", background: "var(--card-bg)", borderRadius: "12px", border: "1px solid var(--border)" }}>
-              <span style={{ fontSize: "1.5rem" }}>{icon}</span>
+            <div key={label} className="premium-trust-item">
+              <span className="premium-trust-icon-box">{icon}</span>
               <div>
-                <p style={{ fontSize: "0.82rem", fontWeight: 600, color: "var(--white)", margin: 0 }}>{label}</p>
-                <p style={{ fontSize: "0.72rem", color: "var(--grey)", margin: 0 }}>{sub}</p>
+                <h4 style={{ fontSize: "0.88rem", fontWeight: 600, color: "var(--white)", margin: "0 0 0.15rem" }}>{label}</h4>
+                <p style={{ fontSize: "0.75rem", color: "var(--grey)", margin: 0 }}>{sub}</p>
               </div>
             </div>
           ))}
@@ -191,22 +191,56 @@ function Home({ selectedCategory, setSelectedCategory }) {
 
 
 
-      {/* ── CATEGORIES ── */}
       <div className="home-section">
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem" }}>
-          <h2 style={{ fontSize: "1.4rem", fontWeight: 600, color: "var(--white)", margin: 0, fontFamily: "Cormorant Garamond, serif" }}>Shop by Category</h2>
-        </div>
-        <div className="category-scroll-container">
+        <div style={{ display: "flex", gap: "2rem", overflowX: "auto", padding: "1rem 0.5rem", scrollbarWidth: "none", msOverflowStyle: "none" }} className="category-scroll-container">
           {categories.map(({ name, icon }) => (
             <div
               key={name}
               onClick={() => {
-                navigate(`/products?category=${name}`)
+                setSelectedCategory(name);
+                document.getElementById("products")?.scrollIntoView({ behavior: "smooth" });
               }}
-              className={`category-pill ${selectedCategory === name ? "category-pill--active" : ""}`}
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                cursor: "pointer",
+                gap: "0.55rem",
+                minWidth: "72px",
+                flexShrink: 0
+              }}
             >
-              <span style={{ fontSize: "1rem" }}>{icon}</span>
-              {name}
+              <div style={{
+                width: "60px",
+                height: "60px",
+                borderRadius: "50%",
+                background: selectedCategory === name ? "var(--accent)" : "var(--card-bg)",
+                border: "1px solid var(--border)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontSize: "1.5rem",
+                boxShadow: selectedCategory === name ? "0 8px 24px rgba(212, 160, 23, 0.2)" : "0 4px 12px rgba(0,0,0,0.03)",
+                transition: "all 0.3s cubic-bezier(0.16, 1, 0.3, 1)"
+              }}
+              className="category-circle-btn"
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = "translateY(-4px)";
+                if (selectedCategory !== name) e.currentTarget.style.borderColor = "var(--accent)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = "none";
+                if (selectedCategory !== name) e.currentTarget.style.borderColor = "var(--border)";
+              }}
+              >
+                {icon}
+              </div>
+              <span style={{
+                fontSize: "0.78rem",
+                fontWeight: selectedCategory === name ? 700 : 500,
+                color: selectedCategory === name ? "var(--accent)" : "var(--white)",
+                transition: "color 0.2s"
+              }}>{name}</span>
             </div>
           ))}
         </div>
@@ -298,9 +332,37 @@ function Home({ selectedCategory, setSelectedCategory }) {
                 className="premium-card"
                 style={{ cursor: "pointer" }}
               >
-                <div style={{ position: "relative", height: "180px", background: "rgba(255,255,255,0.01)", display: "flex", alignItems: "center", justifyContent: "center" }} className="premium-card__img-wrap">
-                  <img src={p.image} alt={p.name} style={{ width: "100%", height: "100%", objectFit: "contain", padding: "1rem" }} className="premium-card__img" />
+                <div style={{ position: "relative", height: "180px", background: "rgba(0,0,0,0.02)", display: "flex", alignItems: "center", justifyContent: "center", borderBottom: "1px solid var(--border)", overflow: "hidden" }} className="premium-card__img-wrap">
+                  <img src={p.image} alt={p.name} style={{ width: "100%", height: "100%", objectFit: "contain", padding: "1rem", transition: "transform 0.5s ease" }} className="premium-card__img" />
                   <span style={{ position: "absolute", top: "10px", left: "10px", background: "var(--error)", color: "#fff", fontSize: "0.65rem", fontWeight: 700, padding: "0.2rem 0.6rem", borderRadius: "980px" }}>🔥 HOT</span>
+
+                  {/* Floating Wishlist Heart */}
+                  <button
+                    onClick={(e) => handleToggleWishlist(e, p._id)}
+                    style={{
+                      position: "absolute",
+                      top: "10px",
+                      right: "10px",
+                      background: "rgba(255, 255, 255, 0.9)",
+                      border: "none",
+                      borderRadius: "50%",
+                      width: "30px",
+                      height: "30px",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      cursor: "pointer",
+                      boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+                      zIndex: 2,
+                      transition: "transform 0.2s ease"
+                    }}
+                    onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.1)")}
+                    onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
+                  >
+                    <span style={{ color: wishlist.includes(p._id) ? "var(--error)" : "#86868b", fontSize: "1rem" }}>
+                      {wishlist.includes(p._id) ? "❤️" : "🤍"}
+                    </span>
+                  </button>
                 </div>
                 <div style={{ padding: "1rem" }} className="premium-card__body">
                   <h3 style={{ fontSize: "0.88rem", fontWeight: 600, color: "var(--white)", margin: "0 0 0.25rem", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }} className="premium-card__title">{p.name}</h3>
@@ -330,7 +392,7 @@ function Home({ selectedCategory, setSelectedCategory }) {
         <div className="promo-banner">
           <div>
             <p style={{ fontSize: "0.72rem", letterSpacing: "0.15em", textTransform: "uppercase", color: "var(--accent)", marginBottom: "0.5rem" }}>Limited Offer</p>
-            <h2 style={{ fontSize: "1.8rem", fontWeight: 600, color: "var(--white)", margin: "0 0 0.5rem", lineHeight: 1.2, fontFamily: "Cormorant Garamond, serif" }}>
+            <h2 style={{ fontSize: "1.8rem", fontWeight: 600, color: "white", margin: "0 0 0.5rem", lineHeight: 1.2, fontFamily: "Cormorant Garamond, serif" }}>
               Free Delivery on<br />All Orders 🚚
             </h2>
             <p style={{ color: "var(--grey)", fontSize: "0.88rem", margin: 0 }}>No minimum. No conditions. Just shop!</p>
@@ -344,7 +406,7 @@ function Home({ selectedCategory, setSelectedCategory }) {
 
       {/* ── ALL PRODUCTS ── */}
       <div id="products" className="home-section home-section--bottom">
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "2rem" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "2rem", flexWrap: "wrap", gap: "1rem" }}>
           <div>
             <p style={{ fontSize: "0.72rem", letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--grey)", marginBottom: "0.3rem" }}>
               {searchQuery ? "Search Results" : "Our Collection"}
@@ -353,9 +415,29 @@ function Home({ selectedCategory, setSelectedCategory }) {
               {searchQuery ? `"${searchQuery}"` : "All Products"}
             </h2>
           </div>
-          <span style={{ fontSize: "0.82rem", color: "var(--grey)", background: "var(--card-bg)", border: "1px solid var(--border)", padding: "0.3rem 0.75rem", borderRadius: "980px" }}>
-            {filteredProducts.length} items
-          </span>
+          <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              style={{
+                background: "var(--card-bg)",
+                border: "1px solid var(--border)",
+                color: "var(--white)",
+                borderRadius: "980px",
+                padding: "0.38rem 1rem",
+                fontSize: "0.82rem",
+                outline: "none",
+                cursor: "pointer",
+                fontFamily: "Inter, sans-serif"
+              }}
+            >
+              <option value="">Sort: Default</option>
+              <option value="price-asc">Price: Low to High</option>
+              <option value="price-desc">Price: High to Low</option>
+              <option value="name-asc">Name: A to Z</option>
+              <option value="name-desc">Name: Z to A</option>
+            </select>
+          </div>
         </div>
 
         {loading ? (
@@ -385,10 +467,39 @@ function Home({ selectedCategory, setSelectedCategory }) {
                 className="premium-card"
                 style={{ cursor: "pointer" }}
               >
-                <div style={{ position: "relative", height: "220px", background: "rgba(255,255,255,0.01)", display: "flex", alignItems: "center", justifyContent: "center" }} className="premium-card__img-wrap">
-                  <img src={p.image} alt={p.name} style={{ width: "100%", height: "100%", objectFit: "contain", padding: "1.25rem" }} className="premium-card__img" />
+                <div style={{ position: "relative", height: "220px", background: "rgba(0,0,0,0.02)", display: "flex", alignItems: "center", justifyContent: "center", borderBottom: "1px solid var(--border)", overflow: "hidden" }} className="premium-card__img-wrap">
+                  <img src={p.image} alt={p.name} style={{ width: "100%", height: "100%", objectFit: "contain", padding: "1.25rem", transition: "transform 0.5s ease" }} className="premium-card__img" />
+
+                  {/* Floating Wishlist Heart */}
+                  <button
+                    onClick={(e) => handleToggleWishlist(e, p._id)}
+                    style={{
+                      position: "absolute",
+                      top: "10px",
+                      right: "10px",
+                      background: "rgba(255, 255, 255, 0.9)",
+                      border: "none",
+                      borderRadius: "50%",
+                      width: "30px",
+                      height: "30px",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      cursor: "pointer",
+                      boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+                      zIndex: 2,
+                      transition: "transform 0.2s ease"
+                    }}
+                    onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.1)")}
+                    onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
+                  >
+                    <span style={{ color: wishlist.includes(p._id) ? "var(--error)" : "#86868b", fontSize: "1rem" }}>
+                      {wishlist.includes(p._id) ? "❤️" : "🤍"}
+                    </span>
+                  </button>
+
                   {p.stock !== undefined && p.stock <= 5 && p.stock > 0 && (
-                    <span style={{ position: "absolute", top: "10px", right: "10px", background: "rgba(226,184,127,0.1)", color: "var(--accent)", fontSize: "0.68rem", fontWeight: 600, padding: "0.2rem 0.6rem", borderRadius: "980px", border: "1px solid rgba(226,184,127,0.2)" }}>
+                    <span style={{ position: "absolute", top: "10px", left: "10px", background: "rgba(226,184,127,0.1)", color: "var(--accent)", fontSize: "0.68rem", fontWeight: 600, padding: "0.2rem 0.6rem", borderRadius: "980px", border: "1px solid rgba(226,184,127,0.2)" }}>
                       Only {p.stock} left!
                     </span>
                   )}
@@ -604,7 +715,7 @@ function Home({ selectedCategory, setSelectedCategory }) {
               placeholder="Enter your email address"
               style={{
                 flex: 1,
-                background: "rgba(255, 255, 255, 0.05)",
+                background: "#ffffff",
                 border: "1px solid var(--border)",
                 borderRadius: "980px",
                 padding: "0.9rem 1.5rem",
@@ -674,8 +785,13 @@ function Home({ selectedCategory, setSelectedCategory }) {
             ))}
           </div>
           <div style={{ height: "1px", background: "#222", marginBottom: "1.5rem" }} />
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "1rem" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "1.5rem" }}>
             <p style={{ fontSize: "0.78rem", color: "#555" }}>© 2026 DropShop. All rights reserved.</p>
+            <div style={{ display: "flex", gap: "1.25rem", fontSize: "0.78rem", color: "#555", flexWrap: "wrap" }}>
+              <span>💳 Visa / Mastercard / UPI / COD</span>
+              <span>•</span>
+              <span>🇮🇳 India (INR)</span>
+            </div>
             <div style={{ display: "flex", gap: "1.5rem" }}>
               {["Privacy Policy", "Terms", "Cookies"].map(link => (
                 <p key={link} style={{ fontSize: "0.78rem", color: "#555", cursor: "pointer", transition: "color 0.2s" }}

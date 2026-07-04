@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { getProfile, updateProfile, updateAddress, getOrders, addAddress, updateAddressItem, deleteAddress, setDefaultAddress, sendPasswordOtp, changePasswordOtp } from "../services/api";
+import AuthModal from "../Components/AuthModal";
 
 const profileStyles = `
   .profile-layout {
@@ -290,6 +291,7 @@ function Profile() {
   const navigate = useNavigate();
   const location = useLocation();
   const [user, setUser] = useState(null);
+  const [showAuthModal, setShowAuthModal] = useState(false);
   const [activeTab, setActiveTab] = useState("profile");
   const [profileForm, setProfileForm] = useState({ name: "", email: "" });
   const [addressMode, setAddressMode] = useState("list"); // "list", "add", "edit"
@@ -568,6 +570,52 @@ function Profile() {
   // Calculate order statistics
   const pendingOrders = customerOrders.filter(o => o.trackingStatus !== "Delivered" && o.trackingStatus !== "Cancelled");
   const latestOrder = customerOrders.length > 0 ? customerOrders[customerOrders.length - 1] : null;
+
+  const token = localStorage.getItem("token");
+
+  if (!token) {
+    return (
+      <div className="profile-layout">
+        <style dangerouslySetInnerHTML={{ __html: profileStyles }} />
+        <div style={{
+          textAlign: "center",
+          padding: "4rem 2rem",
+          background: "#18181b",
+          border: "1px solid #27272a",
+          borderRadius: "24px",
+          maxWidth: "480px",
+          margin: "4rem auto",
+          boxShadow: "0 20px 40px rgba(0,0,0,0.4)"
+        }}>
+          <div style={{ fontSize: "3rem", marginBottom: "1.5rem" }}>👤</div>
+          <h2 style={{ fontSize: "1.5rem", fontWeight: 700, color: "#f4f4f5", marginBottom: "0.75rem", fontFamily: "Playfair Display, serif" }}>
+            Sign in to view your profile
+          </h2>
+          <p style={{ color: "#a1a1aa", fontSize: "0.88rem", marginBottom: "2rem", lineHeight: 1.6 }}>
+            Track order status, manage delivery addresses, and update security credentials by signing in.
+          </p>
+          <button 
+            onClick={() => setShowAuthModal(true)} 
+            className="profile-btn"
+            style={{ padding: "0.9rem 2.5rem" }}
+          >
+            Sign In / Register
+          </button>
+
+          {showAuthModal && (
+            <AuthModal 
+              isOpen={showAuthModal} 
+              onClose={() => setShowAuthModal(false)} 
+              onSuccess={() => {
+                setShowAuthModal(false);
+                fetchProfile();
+              }}
+            />
+          )}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="profile-layout">

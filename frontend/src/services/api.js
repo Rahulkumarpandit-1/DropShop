@@ -14,7 +14,7 @@ export const BASE_URL = (() => {
   return "http://localhost:3000/api";
 })();
 
-export const getProducts = async (page, category = "All", search = "", subcategory = "All") => {
+export const getProducts = async (page, category = "All", search = "", subcategory = "All", sort = "") => {
   try {
     let url = `${BASE_URL}/products?page=${page}`;
     if (category && category !== "All") {
@@ -25,6 +25,9 @@ export const getProducts = async (page, category = "All", search = "", subcatego
     }
     if (search) {
       url += `&search=${encodeURIComponent(search)}`;
+    }
+    if (sort) {
+      url += `&sort=${encodeURIComponent(sort)}`;
     }
     const res = await fetch(url);
     const data = await res.json();
@@ -420,6 +423,30 @@ export const updateUserRoleAdmin = async (userId, role) => {
       "Authorization": `Bearer ${token}`
     },
     body: JSON.stringify({ role })
+  });
+  return res.json();
+};
+
+export const deleteUserAdmin = async (userId) => {
+  const token = localStorage.getItem("token");
+  const res = await fetch(`${BASE_URL}/admin/users/${userId}`, {
+    method: "DELETE",
+    headers: {
+      "Authorization": `Bearer ${token}`
+    }
+  });
+  return res.json();
+};
+
+export const changeUserPasswordAdmin = async (userId, password) => {
+  const token = localStorage.getItem("token");
+  const res = await fetch(`${BASE_URL}/admin/users/${userId}/password`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${token}`
+    },
+    body: JSON.stringify({ password })
   });
   return res.json();
 };
