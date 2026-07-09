@@ -53,9 +53,9 @@ const ProductCard = ({
     >
       {/* Image Wrap */}
       <div 
+        className="product-img-wrap"
         style={{
           position: "relative",
-          height: "240px",
           background: "var(--bg-primary)", // slightly contrasting background
           display: "flex",
           alignItems: "center",

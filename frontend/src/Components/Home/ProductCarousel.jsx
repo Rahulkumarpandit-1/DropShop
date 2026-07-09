@@ -89,7 +89,7 @@ const ProductCarousel = ({ title, subtitle, products, onAddToCart, onToggleWishl
         }}
       >
         {products.map((p) => (
-          <div key={p._id} style={{ flex: "0 0 280px", scrollSnapAlign: "start" }}>
+          <div key={p._id} className="carousel-item-wrap" style={{ scrollSnapAlign: "start" }}>
             <ProductCard 
               product={p}
               onAddToCart={onAddToCart}

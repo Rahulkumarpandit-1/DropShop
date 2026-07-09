@@ -48,10 +48,9 @@ const CategoryGrid = ({ onSelectCategory }) => {
         initial="hidden"
         whileInView="visible"
         viewport={{ once: true, margin: "-100px" }}
+        className="category-grid"
         style={{ 
-          display: "grid", 
-          gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", 
-          gap: "1.5rem" 
+          display: "grid"
         }}
       >
         {categories.map((cat, idx) => (
@@ -60,15 +59,13 @@ const CategoryGrid = ({ onSelectCategory }) => {
             variants={itemVariants}
             whileHover={{ y: -5 }}
             onClick={() => onSelectCategory(cat.name)}
+            className="category-card group"
             style={{
               position: "relative",
-              height: "250px",
               borderRadius: "16px",
               overflow: "hidden",
-              cursor: "pointer",
-              group: "true"
+              cursor: "pointer"
             }}
-            className="group"
           >
             <motion.img 
               src={cat.image} 

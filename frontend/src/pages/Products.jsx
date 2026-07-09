@@ -221,7 +221,6 @@ function Products() {
     },
     imgWrap: {
       position: "relative",
-      height: "200px",
       background: "rgba(255, 255, 255, 0.01)",
       display: "flex",
       alignItems: "center",
