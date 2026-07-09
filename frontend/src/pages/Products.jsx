@@ -33,6 +33,7 @@ function Products() {
     Fashion: ["Shirts", "Jeans", "Shoes", "Dresses", "Ethnic"],
     Accessories: ["Watches", "Bags", "Jewellery", "Sunglasses"],
     Home: ["Furniture", "Kitchen", "Decor", "Lighting"],
+    Kids: ["Toys", "Clothing", "Baby Care"],
   };
 
   const priceRanges = [
@@ -42,7 +43,7 @@ function Products() {
     { label: "Above ₹5,000", min: 5000, max: Infinity },
   ];
 
-  const categories = ["All", "Electronic", "Fashion", "Accessories", "Home"];
+  const categories = ["All", "Electronic", "Fashion", "Accessories", "Home", "Kids"];
 
   // ── Sync category & subcategory from URL ──
   useEffect(() => {

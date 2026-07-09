@@ -1,7 +1,17 @@
-import { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, Suspense } from "react";
 import { getProducts, addToCart, getTrendingProducts, getWishlist, toggleWishlist } from "../services/api";
 import { useNavigate, useLocation } from "react-router-dom";
 import toast from "react-hot-toast";
+import { motion } from "framer-motion";
+
+// Lazy Load New Components
+const CategoryGrid = React.lazy(() => import('../Components/Home/CategoryGrid'));
+const FlashSale = React.lazy(() => import('../Components/Home/FlashSale'));
+const ProductCarousel = React.lazy(() => import('../Components/Home/ProductCarousel'));
+const CustomerReviews = React.lazy(() => import('../Components/Home/CustomerReviews'));
+const InstagramGallery = React.lazy(() => import('../Components/Home/InstagramGallery'));
+const WhyChooseUs = React.lazy(() => import('../Components/Home/WhyChooseUs'));
+import ProductCard from "../Components/ProductCard";
 
 function Home({ selectedCategory, setSelectedCategory }) {
   const [products, setProducts] = useState([]);
@@ -12,9 +22,10 @@ function Home({ selectedCategory, setSelectedCategory }) {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [activeFaq, setActiveFaq] = useState(null);
   const [wishlist, setWishlist] = useState([]);
   const [sortBy, setSortBy] = useState("");
+  const [recentlyViewed, setRecentlyViewed] = useState([]);
+
   const navigate = useNavigate();
   const location = useLocation();
   const searchQuery = new URLSearchParams(location.search).get("search") || "";
@@ -36,6 +47,12 @@ function Home({ selectedCategory, setSelectedCategory }) {
   useEffect(() => {
     document.title = "DropShop | Premium Curated Collection";
     fetchProducts();
+    
+    // Load recently viewed
+    try {
+      const viewed = JSON.parse(localStorage.getItem('recentlyViewed') || '[]');
+      setRecentlyViewed(viewed);
+    } catch(e) { console.error(e); }
   }, [page, selectedCategory, searchQuery, sortBy]);
 
   useEffect(() => {
@@ -46,6 +63,7 @@ function Home({ selectedCategory, setSelectedCategory }) {
 
   const fetchProducts = async () => {
     try {
+      setLoading(true);
       const data = await getProducts(page, selectedCategory, searchQuery, "All", sortBy);
       setProducts(Array.isArray(data) ? data : data.products || []);
       setTotalPages(data.totalPages || 1);
@@ -76,8 +94,8 @@ function Home({ selectedCategory, setSelectedCategory }) {
     try {
       const data = await getWishlist();
       setWishlist((data.wishlist || []).map(w => w._id || w));
-    } catch (err) {
-      console.error("fetchWishlist error:", err);
+    } catch {
+      console.error("fetchWishlist error");
     }
   };
 
@@ -109,20 +127,18 @@ function Home({ selectedCategory, setSelectedCategory }) {
   };
 
   const filteredProducts = Array.isArray(products) ? products : [];
+  
   useEffect(() => {
     setPage(1);
-  }, [selectedCategory, searchQuery, sortBy]); // 👈 reset whenever category, search OR sorting changes
-  const categories = [
-    { name: "All", icon: "🛍️" },
-    { name: "Electronic", icon: "⚡" },
-    { name: "Fashion", icon: "👗" },
-    { name: "Accessories", icon: "💎" },
-    { name: "Home", icon: "🏠" }
-  ];
+  }, [selectedCategory, searchQuery, sortBy]);
+
+  const mockRecommended = [...filteredProducts].sort(() => 0.5 - Math.random()).slice(0, 8);
+  const mockTopRated = [...filteredProducts].filter(p => (p.rating || 4.5) >= 4.5).slice(0, 8);
+  const mockNewArrivals = [...filteredProducts].slice(0, 8);
 
   return (
-    <div style={{ background: "var(--black)", minHeight: "100vh", color: "var(--white)" }}>
-
+    <div style={{ background: "var(--bg-primary)", minHeight: "100vh", color: "var(--text-primary)" }}>
+      
       {/* ── HERO ── */}
       <div className="premium-hero">
         {images.length > 0 ? (
@@ -130,38 +146,49 @@ function Home({ selectedCategory, setSelectedCategory }) {
         ) : (
           <div style={{
             width: "100%", height: "100%",
-            background: "linear-gradient(135deg, #18181b 0%, #09090b 100%)"
+            background: "linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-primary) 100%)"
           }} />
         )}
 
         <div className="premium-hero-overlay">
-          <span className="premium-hero-badge">
+          <motion.span 
+            initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}
+            className="premium-hero-badge"
+          >
             New Arrivals 2026
-          </span>
-          <h1 className="premium-hero-title" style={{ color: "white" }}>
+          </motion.span>
+          <motion.h1 
+            initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.2 }}
+            className="premium-hero-title" style={{ color: "#ffffff" }}
+          >
             Shop Premium.<br />
             <span>Live Better.</span>
-          </h1>
-          <p style={{ color: "var(--grey)", fontSize: "1rem", marginBottom: "2.5rem", maxWidth: "480px", lineHeight: 1.7 }}>
+          </motion.h1>
+          <motion.p 
+            initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.4 }}
+            style={{ color: "#ffffff", opacity: 0.8, fontSize: "1rem", marginBottom: "2.5rem", maxWidth: "480px", lineHeight: 1.7 }}
+          >
             Curated products for the modern lifestyle. Free delivery on every order.
-          </p>
-          <div style={{ display: "flex", gap: "1rem" }}>
+          </motion.p>
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.6 }} style={{ display: "flex", gap: "1rem" }}>
             <button
               onClick={() => document.getElementById("products")?.scrollIntoView({ behavior: "smooth" })}
               className="premium-btn-primary"
             >Shop Now</button>
-            <button style={{ color: "white" }}
+            <button style={{ color: "#ffffff", borderColor: "rgba(255, 255, 255, 0.4)" }}
               onClick={() => navigate("/cart")}
               className="premium-btn-secondary"
+              onMouseEnter={(e) => { e.currentTarget.style.borderColor = "#ffffff"; e.currentTarget.style.background = "rgba(255, 255, 255, 0.1)"; }}
+              onMouseLeave={(e) => { e.currentTarget.style.borderColor = "rgba(255, 255, 255, 0.4)"; e.currentTarget.style.background = "transparent"; }}
             >View Cart</button>
-          </div>
+          </motion.div>
         </div>
 
         {/* Prev/Next */}
         {images.length > 1 && <>
-          <button onClick={() => setCurrentIndex((currentIndex - 1 + images.length) % images.length)} style={{ position: "absolute", left: "1.5rem", top: "50%", transform: "translateY(-50%)", background: "rgba(255,255,255,0.15)", border: "1px solid rgba(255,255,255,0.3)", borderRadius: "50%", width: "44px", height: "44px", color: "#fff", fontSize: "1.2rem", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", backdropFilter: "blur(10px)" }}>‹</button>
-          <button onClick={() => setCurrentIndex((currentIndex + 1) % images.length)} style={{ position: "absolute", right: "1.5rem", top: "50%", transform: "translateY(-50%)", background: "rgba(255,255,255,0.15)", border: "1px solid rgba(255,255,255,0.3)", borderRadius: "50%", width: "44px", height: "44px", color: "#fff", fontSize: "1.2rem", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", backdropFilter: "blur(10px)" }}>›</button>
-          <div style={{ position: "absolute", bottom: "1.5rem", left: "50%", transform: "translateX(-50%)", display: "flex", gap: "0.5rem" }}>
+          <button onClick={() => setCurrentIndex((currentIndex - 1 + images.length) % images.length)} style={{ position: "absolute", left: "1.5rem", top: "50%", transform: "translateY(-50%)", background: "rgba(255,255,255,0.15)", border: "1px solid rgba(255,255,255,0.3)", borderRadius: "50%", width: "44px", height: "44px", color: "#fff", fontSize: "1.2rem", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", backdropFilter: "blur(10px)", zIndex: 10 }}>‹</button>
+          <button onClick={() => setCurrentIndex((currentIndex + 1) % images.length)} style={{ position: "absolute", right: "1.5rem", top: "50%", transform: "translateY(-50%)", background: "rgba(255,255,255,0.15)", border: "1px solid rgba(255,255,255,0.3)", borderRadius: "50%", width: "44px", height: "44px", color: "#fff", fontSize: "1.2rem", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", backdropFilter: "blur(10px)", zIndex: 10 }}>›</button>
+          <div style={{ position: "absolute", bottom: "1.5rem", left: "50%", transform: "translateX(-50%)", display: "flex", gap: "0.5rem", zIndex: 10 }}>
             {images.map((_, i) => (
               <div key={i} onClick={() => setCurrentIndex(i)} style={{ width: i === currentIndex ? "24px" : "8px", height: "8px", borderRadius: "980px", background: i === currentIndex ? "#fff" : "rgba(255,255,255,0.4)", cursor: "pointer", transition: "all 0.3s ease" }} />
             ))}
@@ -169,263 +196,134 @@ function Home({ selectedCategory, setSelectedCategory }) {
         </>}
       </div>
 
-      {/* ── TRUST STRIP ── */}
-      <div className="premium-trust-strip">
-        <div className="premium-trust-grid">
-          {[
-            { icon: "🚚", label: "Free Delivery", sub: "On all orders" },
-            { icon: "💳", label: "Secure Payment", sub: "100% protected" },
-            { icon: "↩️", label: "Easy Returns", sub: "7-day policy" },
-            { icon: "🎧", label: "24/7 Support", sub: "Always here" },
-          ].map(({ icon, label, sub }) => (
-            <div key={label} className="premium-trust-item">
-              <span className="premium-trust-icon-box">{icon}</span>
-              <div>
-                <h4 style={{ fontSize: "0.88rem", fontWeight: 600, color: "var(--white)", margin: "0 0 0.15rem" }}>{label}</h4>
-                <p style={{ fontSize: "0.75rem", color: "var(--grey)", margin: 0 }}>{sub}</p>
-              </div>
+      <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "0 1rem" }}>
+        
+        {/* CategoryGrid */}
+        <Suspense fallback={<div className="shimmer-bg" style={{ height: "400px", margin: "2rem 0", borderRadius: "16px" }} />}>
+          <CategoryGrid onSelectCategory={(cat) => {
+            setSelectedCategory(cat);
+            document.getElementById("products")?.scrollIntoView({ behavior: "smooth" });
+          }} />
+        </Suspense>
+
+        <Suspense fallback={null}>
+          <ProductCarousel 
+            title="Recommended For You" 
+            subtitle="Based On Your Interests"
+            products={mockRecommended} 
+            onAddToCart={handleAddToCart}
+            onToggleWishlist={handleToggleWishlist}
+            addedId={addedId}
+            wishlist={wishlist}
+          />
+        </Suspense>
+
+        <Suspense fallback={<div className="shimmer-bg" style={{ height: "400px", margin: "2rem 0", borderRadius: "16px" }} />}>
+          <FlashSale 
+            products={filteredProducts} 
+            onAddToCart={handleAddToCart}
+            onToggleWishlist={handleToggleWishlist}
+            addedId={addedId}
+            wishlist={wishlist}
+          />
+        </Suspense>
+
+        {/* ── TRENDING ── */}
+        <section className="home-section" style={{ margin: "4rem 0" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem" }}>
+            <div>
+              <p style={{ fontSize: "0.72rem", letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--text-secondary)", marginBottom: "0.3rem" }}>Hot right now</p>
+              <h2 style={{ fontSize: "2.2rem", fontWeight: 600, color: "var(--text-primary)", margin: 0, fontFamily: "Cormorant Garamond, serif" }}>Trending Products</h2>
             </div>
-          ))}
-        </div>
-      </div>
-
-
-
-      <div className="home-section">
-        <div style={{ display: "flex", gap: "2rem", overflowX: "auto", padding: "1rem 0.5rem", scrollbarWidth: "none", msOverflowStyle: "none" }} className="category-scroll-container">
-          {categories.map(({ name, icon }) => (
-            <div
-              key={name}
-              onClick={() => {
-                setSelectedCategory(name);
-                document.getElementById("products")?.scrollIntoView({ behavior: "smooth" });
-              }}
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                cursor: "pointer",
-                gap: "0.55rem",
-                minWidth: "72px",
-                flexShrink: 0
-              }}
-            >
-              <div style={{
-                width: "60px",
-                height: "60px",
-                borderRadius: "50%",
-                background: selectedCategory === name ? "var(--accent)" : "var(--card-bg)",
-                border: "1px solid var(--border)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                fontSize: "1.5rem",
-                boxShadow: selectedCategory === name ? "0 8px 24px rgba(212, 160, 23, 0.2)" : "0 4px 12px rgba(0,0,0,0.03)",
-                transition: "all 0.3s cubic-bezier(0.16, 1, 0.3, 1)"
-              }}
-              className="category-circle-btn"
-              onMouseEnter={(e) => {
-                e.currentTarget.style.transform = "translateY(-4px)";
-                if (selectedCategory !== name) e.currentTarget.style.borderColor = "var(--accent)";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.transform = "none";
-                if (selectedCategory !== name) e.currentTarget.style.borderColor = "var(--border)";
-              }}
-              >
-                {icon}
-              </div>
-              <span style={{
-                fontSize: "0.78rem",
-                fontWeight: selectedCategory === name ? 700 : 500,
-                color: selectedCategory === name ? "var(--accent)" : "var(--white)",
-                transition: "color 0.2s"
-              }}>{name}</span>
+            <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+              <button
+                onClick={() => scrollSlider("left")}
+                style={{
+                  background: "var(--card-bg)",
+                  border: "1px solid var(--border)",
+                  color: "var(--text-primary)",
+                  borderRadius: "50%",
+                  width: "36px",
+                  height: "36px",
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  transition: "all 0.2s"
+                }}
+              >‹</button>
+              <button
+                onClick={() => scrollSlider("right")}
+                style={{
+                  background: "var(--card-bg)",
+                  border: "1px solid var(--border)",
+                  color: "var(--text-primary)",
+                  borderRadius: "50%",
+                  width: "36px",
+                  height: "36px",
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  transition: "all 0.2s"
+                }}
+              >›</button>
+              <span onClick={() => navigate("/products")} style={{ fontSize: "0.85rem", color: "var(--text-secondary)", cursor: "pointer", marginLeft: "0.5rem" }}>View all →</span>
             </div>
-          ))}
-        </div>
-      </div>
-
-      {/* ── TRENDING ── */}
-      <div className="home-section">
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem" }}>
-          <div>
-            <p style={{ fontSize: "0.72rem", letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--grey)", marginBottom: "0.3rem" }}>Hot right now</p>
-            <h2 style={{ fontSize: "1.4rem", fontWeight: 600, color: "var(--white)", margin: 0, fontFamily: "Cormorant Garamond, serif" }}>Trending Products</h2>
           </div>
-          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-            <button
-              onClick={() => scrollSlider("left")}
-              style={{
-                background: "var(--card-bg)",
-                border: "1px solid var(--border)",
-                color: "var(--white)",
-                borderRadius: "50%",
-                width: "32px",
-                height: "32px",
-                cursor: "pointer",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                transition: "all 0.2s"
-              }}
-              onMouseEnter={e => e.currentTarget.style.borderColor = "var(--accent)"}
-              onMouseLeave={e => e.currentTarget.style.borderColor = "var(--border)"}
-            >
-              ‹
-            </button>
-            <button
-              onClick={() => scrollSlider("right")}
-              style={{
-                background: "var(--card-bg)",
-                border: "1px solid var(--border)",
-                color: "var(--white)",
-                borderRadius: "50%",
-                width: "32px",
-                height: "32px",
-                cursor: "pointer",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                transition: "all 0.2s"
-              }}
-              onMouseEnter={e => e.currentTarget.style.borderColor = "var(--accent)"}
-              onMouseLeave={e => e.currentTarget.style.borderColor = "var(--border)"}
-            >
-              ›
-            </button>
-            <span
-              onClick={() => navigate("/products")}
-              style={{ fontSize: "0.82rem", color: "var(--grey)", cursor: "pointer", display: "flex", alignItems: "center", gap: "0.3rem", marginLeft: "0.5rem" }}
-              onMouseEnter={e => e.currentTarget.style.color = "var(--accent)"}
-              onMouseLeave={e => e.currentTarget.style.color = "var(--grey)"}
-            >View all →</span>
-          </div>
-        </div>
 
-        <div
-          ref={sliderRef}
-          className="trending-slider"
-        >
-          {trendingLoading ? (
-            /* Loading skeletons for trending products */
-            [...Array(6)].map((_, i) => (
-              <div
-                key={i}
-                className="premium-card"
-                style={{ flex: "0 0 280px" }}
-              >
-                <div style={{ height: "180px", background: "linear-gradient(90deg, var(--black) 25%, var(--border) 50%, var(--black) 75%)", backgroundSize: "200% 100%", animation: "shimmer 1.4s infinite" }} />
-                <div style={{ padding: "1rem" }}>
-                  <div style={{ height: "14px", background: "var(--border)", borderRadius: "6px", marginBottom: "8px", width: "70%" }} />
-                  <div style={{ height: "12px", background: "var(--border)", borderRadius: "6px", width: "50%" }} />
+          <div ref={sliderRef} className="hide-scrollbar" style={{ display: "flex", gap: "1.5rem", overflowX: "auto", scrollSnapType: "x mandatory", paddingBottom: "2rem" }}>
+            {trendingLoading ? (
+              [...Array(6)].map((_, i) => (
+                <div key={i} style={{ flex: "0 0 280px" }}>
+                  <div className="shimmer-bg" style={{ height: "350px", borderRadius: "24px" }} />
                 </div>
-              </div>
-            ))
-          ) : trendingProducts.length === 0 ? (
-            <div style={{ padding: "2rem", color: "var(--grey)", fontSize: "0.88rem" }}>No trending products yet</div>
-          ) : (
-            trendingProducts.map((p) => (
-              <div
-                key={p._id}
-                onClick={() => navigate(`/product/${p._id}`)}
-                className="premium-card"
-                style={{ cursor: "pointer" }}
-              >
-                <div style={{ position: "relative", height: "180px", background: "rgba(0,0,0,0.02)", display: "flex", alignItems: "center", justifyContent: "center", borderBottom: "1px solid var(--border)", overflow: "hidden" }} className="premium-card__img-wrap">
-                  <img src={p.image} alt={p.name} style={{ width: "100%", height: "100%", objectFit: "contain", padding: "1rem", transition: "transform 0.5s ease" }} className="premium-card__img" />
-                  <span style={{ position: "absolute", top: "10px", left: "10px", background: "var(--error)", color: "#fff", fontSize: "0.65rem", fontWeight: 700, padding: "0.2rem 0.6rem", borderRadius: "980px" }}>🔥 HOT</span>
-
-                  {/* Floating Wishlist Heart */}
-                  <button
-                    onClick={(e) => handleToggleWishlist(e, p._id)}
-                    style={{
-                      position: "absolute",
-                      top: "10px",
-                      right: "10px",
-                      background: "rgba(255, 255, 255, 0.9)",
-                      border: "none",
-                      borderRadius: "50%",
-                      width: "30px",
-                      height: "30px",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      cursor: "pointer",
-                      boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-                      zIndex: 2,
-                      transition: "transform 0.2s ease"
-                    }}
-                    onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.1)")}
-                    onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
-                  >
-                    <span style={{ color: wishlist.includes(p._id) ? "var(--error)" : "#86868b", fontSize: "1rem" }}>
-                      {wishlist.includes(p._id) ? "❤️" : "🤍"}
-                    </span>
-                  </button>
+              ))
+            ) : trendingProducts.length === 0 ? (
+              <div style={{ padding: "2rem", color: "var(--text-secondary)" }}>No trending products yet</div>
+            ) : (
+              trendingProducts.map((p) => (
+                <div key={p._id} style={{ flex: "0 0 280px", scrollSnapAlign: "start" }}>
+                  <ProductCard product={p} onAddToCart={handleAddToCart} onToggleWishlist={handleToggleWishlist} addedId={addedId} wishlist={wishlist} />
                 </div>
-                <div style={{ padding: "1rem" }} className="premium-card__body">
-                  <h3 style={{ fontSize: "0.88rem", fontWeight: 600, color: "var(--white)", margin: "0 0 0.25rem", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }} className="premium-card__title">{p.name}</h3>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "0.75rem" }} className="premium-card__bottom">
-                    <div style={{ display: "flex", flexDirection: "column" }} className="premium-card__price-container">
-                      <p style={{ fontSize: "0.95rem", fontWeight: 700, color: "var(--accent)", margin: 0 }} className="premium-card__price">₹{p.price?.toLocaleString()}</p>
-                      {p.originalPrice && p.originalPrice > p.price && (
-                        <div style={{ display: "flex", alignItems: "center", gap: "0.3rem" }} className="premium-card__discount">
-                          <span style={{ fontSize: "0.72rem", color: "var(--grey)", textDecoration: "line-through" }}>₹{p.originalPrice.toLocaleString()}</span>
-                          <span style={{ fontSize: "0.7rem", color: "var(--success)", fontWeight: 600 }}>{Math.round(((p.originalPrice - p.price) / p.originalPrice) * 100)}% OFF</span>
-                        </div>
-                      )}
-                    </div>
-                    <button onClick={(e) => handleAddToCart(e, p._id)} style={{ background: addedId === p._id ? "var(--success)" : "rgba(0, 0, 0, 0.05)", color: addedId === p._id ? "#fff" : "var(--white)", border: "none", borderRadius: "980px", padding: "0.4rem 1rem", fontSize: "0.75rem", fontWeight: 600, cursor: "pointer", transition: "all 0.2s" }} className="premium-card__btn">
-                      {addedId === p._id ? "✓" : "+ Cart"}
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ))
-          )}
-        </div>
-      </div>
-
-      {/* ── PROMO BANNER ── */}
-      <div style={{ maxWidth: "1200px", margin: "3rem auto 0", padding: "0 1rem" }}>
-        <div className="promo-banner">
-          <div>
-            <p style={{ fontSize: "0.72rem", letterSpacing: "0.15em", textTransform: "uppercase", color: "var(--accent)", marginBottom: "0.5rem" }}>Limited Offer</p>
-            <h2 style={{ fontSize: "1.8rem", fontWeight: 600, color: "white", margin: "0 0 0.5rem", lineHeight: 1.2, fontFamily: "Cormorant Garamond, serif" }}>
-              Free Delivery on<br />All Orders 🚚
-            </h2>
-            <p style={{ color: "var(--grey)", fontSize: "0.88rem", margin: 0 }}>No minimum. No conditions. Just shop!</p>
+              ))
+            )}
           </div>
-          <button
-            onClick={() => document.getElementById("products")?.scrollIntoView({ behavior: "smooth" })}
-            className="premium-btn-primary"
-          >Shop Now →</button>
-        </div>
-      </div>
+        </section>
 
-      {/* ── ALL PRODUCTS ── */}
-      <div id="products" className="home-section home-section--bottom">
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "2rem", flexWrap: "wrap", gap: "1rem" }}>
-          <div>
-            <p style={{ fontSize: "0.72rem", letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--grey)", marginBottom: "0.3rem" }}>
-              {searchQuery ? "Search Results" : "Our Collection"}
-            </p>
-            <h2 style={{ fontSize: "1.4rem", fontWeight: 600, color: "var(--white)", margin: 0, fontFamily: "Cormorant Garamond, serif" }}>
-              {searchQuery ? `"${searchQuery}"` : "All Products"}
-            </h2>
-          </div>
-          <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+        <Suspense fallback={null}>
+          <ProductCarousel 
+            title="New Arrivals" 
+            subtitle="Just Dropped"
+            products={mockNewArrivals} 
+            onAddToCart={handleAddToCart}
+            onToggleWishlist={handleToggleWishlist}
+            addedId={addedId}
+            wishlist={wishlist}
+          />
+        </Suspense>
+
+        {/* ── ALL PRODUCTS ── */}
+        <div id="products" className="home-section" style={{ margin: "5rem 0" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "3rem", flexWrap: "wrap", gap: "1rem" }}>
+            <div>
+              <p style={{ fontSize: "0.72rem", letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--text-secondary)", marginBottom: "0.3rem" }}>
+                {searchQuery ? "Search Results" : "Our Collection"}
+              </p>
+              <h2 style={{ fontSize: "2.2rem", fontWeight: 600, color: "var(--text-primary)", margin: 0, fontFamily: "Cormorant Garamond, serif" }}>
+                {searchQuery ? `"${searchQuery}"` : "All Products"}
+              </h2>
+            </div>
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value)}
               style={{
                 background: "var(--card-bg)",
                 border: "1px solid var(--border)",
-                color: "var(--white)",
+                color: "var(--text-primary)",
                 borderRadius: "980px",
-                padding: "0.38rem 1rem",
-                fontSize: "0.82rem",
+                padding: "0.6rem 1.2rem",
+                fontSize: "0.85rem",
                 outline: "none",
                 cursor: "pointer",
                 fontFamily: "Inter, sans-serif"
@@ -438,314 +336,148 @@ function Home({ selectedCategory, setSelectedCategory }) {
               <option value="name-desc">Name: Z to A</option>
             </select>
           </div>
-        </div>
 
-        {loading ? (
-          <div className="premium-product-grid">
-            {[...Array(8)].map((_, i) => (
-              <div key={i} className="premium-card">
-                <div style={{ height: "220px", background: "linear-gradient(90deg, var(--black) 25%, var(--border) 50%, var(--black) 75%)", backgroundSize: "200% 100%", animation: "shimmer 1.4s infinite" }} />
-                <div style={{ padding: "1.25rem" }}>
-                  <div style={{ height: "14px", background: "var(--border)", borderRadius: "6px", marginBottom: "8px", width: "70%" }} />
-                  <div style={{ height: "12px", background: "var(--border)", borderRadius: "6px", width: "50%" }} />
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : filteredProducts.length === 0 ? (
-          <div style={{ textAlign: "center", padding: "6rem 0" }}>
-            <p style={{ fontSize: "3rem", marginBottom: "1rem" }}>🔍</p>
-            <h3 style={{ fontSize: "1.5rem", fontWeight: 700, color: "var(--white)", marginBottom: "0.5rem" }}>No products found</h3>
-            <p style={{ color: "var(--grey)" }}>Try a different category or search term</p>
-          </div>
-        ) : (
-          <div className="premium-product-grid">
-            {filteredProducts.map((p) => (
-              <div
-                key={p._id}
-                onClick={() => navigate(`/product/${p._id}`)}
-                className="premium-card"
-                style={{ cursor: "pointer" }}
-              >
-                <div style={{ position: "relative", height: "220px", background: "rgba(0,0,0,0.02)", display: "flex", alignItems: "center", justifyContent: "center", borderBottom: "1px solid var(--border)", overflow: "hidden" }} className="premium-card__img-wrap">
-                  <img src={p.image} alt={p.name} style={{ width: "100%", height: "100%", objectFit: "contain", padding: "1.25rem", transition: "transform 0.5s ease" }} className="premium-card__img" />
-
-                  {/* Floating Wishlist Heart */}
-                  <button
-                    onClick={(e) => handleToggleWishlist(e, p._id)}
-                    style={{
-                      position: "absolute",
-                      top: "10px",
-                      right: "10px",
-                      background: "rgba(255, 255, 255, 0.9)",
-                      border: "none",
-                      borderRadius: "50%",
-                      width: "30px",
-                      height: "30px",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      cursor: "pointer",
-                      boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-                      zIndex: 2,
-                      transition: "transform 0.2s ease"
-                    }}
-                    onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.1)")}
-                    onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
-                  >
-                    <span style={{ color: wishlist.includes(p._id) ? "var(--error)" : "#86868b", fontSize: "1rem" }}>
-                      {wishlist.includes(p._id) ? "❤️" : "🤍"}
-                    </span>
-                  </button>
-
-                  {p.stock !== undefined && p.stock <= 5 && p.stock > 0 && (
-                    <span style={{ position: "absolute", top: "10px", left: "10px", background: "rgba(226,184,127,0.1)", color: "var(--accent)", fontSize: "0.68rem", fontWeight: 600, padding: "0.2rem 0.6rem", borderRadius: "980px", border: "1px solid rgba(226,184,127,0.2)" }}>
-                      Only {p.stock} left!
-                    </span>
-                  )}
-                  {p.stock === 0 && (
-                    <div style={{ position: "absolute", inset: 0, background: "rgba(255,255,255,0.85)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                      <span style={{ color: "var(--white)", fontSize: "0.85rem", fontWeight: 600, background: "rgba(0,0,0,0.05)", padding: "0.4rem 1rem", borderRadius: "980px" }}>Out of Stock</span>
-                    </div>
-                  )}
-                </div>
-
-                <div style={{ padding: "1.25rem" }} className="premium-card__body">
-                  <h3 style={{ fontSize: "0.92rem", fontWeight: 600, color: "var(--white)", marginBottom: "0.3rem", lineHeight: 1.4, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }} className="premium-card__title">
-                    {p.name}
-                  </h3>
-                  <p style={{ fontSize: "0.78rem", color: "var(--grey)", marginBottom: "1rem", lineHeight: 1.5, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden", minHeight: "2.4rem" }} className="premium-card__desc">
-                    {p.description}
-                  </p>
-                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }} className="premium-card__bottom">
-                    <div style={{ display: "flex", flexDirection: "column" }} className="premium-card__price-container">
-                      <p style={{ fontSize: "1.05rem", fontWeight: 700, color: "var(--accent)", margin: 0 }} className="premium-card__price">
-                        ₹{p.price?.toLocaleString()}
-                      </p>
-                      {p.originalPrice && p.originalPrice > p.price && (
-                        <div style={{ display: "flex", alignItems: "center", gap: "0.3rem" }} className="premium-card__discount">
-                          <span style={{ fontSize: "0.75rem", color: "var(--grey)", textDecoration: "line-through" }}>₹{p.originalPrice.toLocaleString()}</span>
-                          <span style={{ fontSize: "0.72rem", color: "var(--success)", fontWeight: 600 }}>{Math.round(((p.originalPrice - p.price) / p.originalPrice) * 100)}% OFF</span>
-                        </div>
-                      )}
-                    </div>
-                    <button
-                      onClick={(e) => handleAddToCart(e, p._id)}
-                      disabled={p.stock === 0}
-                      style={{
-                        background: addedId === p._id ? "var(--success)" : "rgba(0, 0, 0, 0.05)",
-                        color: addedId === p._id ? "#fff" : "var(--white)", border: "none",
-                        borderRadius: "980px", padding: "0.5rem 1.1rem",
-                        fontSize: "0.78rem", fontWeight: 600,
-                        cursor: p.stock === 0 ? "not-allowed" : "pointer",
-                        fontFamily: "Inter, sans-serif",
-                        transition: "all 0.2s ease",
-                        opacity: p.stock === 0 ? 0.4 : 1
-                      }}
-                      className="premium-card__btn"
-                    >
-                      {addedId === p._id ? "✓ Added" : "+ Cart"}
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* Pagination */}
-        {totalPages > 1 && (
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5rem", marginTop: "3rem" }}>
-            <button disabled={page === 1} onClick={() => setPage(page - 1)} style={{ background: page === 1 ? "rgba(0,0,0,0.02)" : "var(--card-bg)", color: page === 1 ? "var(--grey)" : "var(--white)", border: "1px solid var(--border)", borderRadius: "980px", padding: "0.5rem 1.25rem", fontSize: "0.82rem", cursor: page === 1 ? "not-allowed" : "pointer", fontFamily: "Inter, sans-serif" }}>← Prev</button>
-            {[...Array(totalPages)].map((_, i) => (
-              <button key={i} onClick={() => setPage(i + 1)} style={{ width: "36px", height: "36px", borderRadius: "50%", background: page === i + 1 ? "var(--white)" : "var(--card-bg)", color: page === i + 1 ? "var(--black)" : "var(--grey)", border: "1px solid", borderColor: page === i + 1 ? "var(--white)" : "var(--border)", fontSize: "0.82rem", cursor: "pointer", fontFamily: "Inter, sans-serif", transition: "all 0.2s" }}>{i + 1}</button>
-            ))}
-            <button disabled={page === totalPages} onClick={() => setPage(page + 1)} style={{ background: page === totalPages ? "rgba(0,0,0,0.02)" : "var(--card-bg)", color: page === totalPages ? "var(--grey)" : "var(--white)", border: "1px solid var(--border)", borderRadius: "980px", padding: "0.5rem 1.25rem", fontSize: "0.82rem", cursor: page === totalPages ? "not-allowed" : "pointer", fontFamily: "Inter, sans-serif" }}>Next →</button>
-          </div>
-        )}
-      </div>
-
-      {/* ── DESIGNER COLLECTIONS SPOTLIGHT ── */}
-      <section style={{ maxWidth: "1200px", margin: "5rem auto 0", padding: "0 1rem" }}>
-        <div style={{ textAlign: "center", marginBottom: "3rem" }}>
-          <span style={{ fontSize: "0.72rem", letterSpacing: "0.15em", textTransform: "uppercase", color: "var(--accent)", marginBottom: "0.5rem", display: "block" }}>
-            Curated Luxury
-          </span>
-          <h2 style={{ fontSize: "2.2rem", fontWeight: 600, color: "var(--white)", margin: 0, fontFamily: "Cormorant Garamond, serif" }}>
-            The Designer Collections
-          </h2>
-          <p style={{ color: "var(--grey)", fontSize: "0.9rem", marginTop: "0.5rem", maxWidth: "500px", marginLeft: "auto", marginRight: "auto", lineHeight: 1.6 }}>
-            Handpicked milestones of design and functionality, curated specifically for premium tastes.
-          </p>
-        </div>
-
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: "2rem" }}>
-          {[
-            {
-              title: "Elite Soundscapes",
-              desc: "Immersive acoustics and advanced noise cancellation from premium audio developers.",
-              img: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=500&q=80",
-              category: "Electronic",
-              subcategory: "Audio",
-              link: "/products?category=Electronic&subcategory=Audio"
-            },
-            {
-              title: "Architectural Lighting",
-              desc: "Sculptural forms that project warm ambience, redefining your interior spaces.",
-              img: "https://images.unsplash.com/photo-1507473885765-e6ed057f782c?auto=format&fit=crop&w=500&q=80",
-              category: "Home",
-              subcategory: "Lighting",
-              link: "/products?category=Home&subcategory=Lighting"
-            },
-            {
-              title: "Timeless Horology",
-              desc: "Uncompromising precision and style engineered for the modern aesthetic.",
-              img: "https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&w=500&q=80",
-              category: "Accessories",
-              subcategory: "Watches",
-              link: "/products?category=Accessories&subcategory=Watches"
-            }
-          ].map((item, idx) => (
-            <div
-              key={idx}
-              className="lookbook-card-item"
-              onClick={() => navigate(item.link)}
-              style={{
-                background: "var(--card-bg)",
-                border: "1px solid var(--border)",
-                borderRadius: "24px",
-                overflow: "hidden",
-                cursor: "pointer",
-                transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-                display: "flex",
-                flexDirection: "column"
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.transform = "translateY(-6px)";
-                e.currentTarget.style.borderColor = "var(--accent)";
-                e.currentTarget.querySelector(".curated-img").style.transform = "scale(1.06)";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.transform = "none";
-                e.currentTarget.style.borderColor = "var(--border)";
-                e.currentTarget.querySelector(".curated-img").style.transform = "scale(1)";
-              }}
-            >
-              <div style={{ height: "240px", overflow: "hidden", position: "relative" }}>
-                <img
-                  className="curated-img"
-                  src={item.img}
-                  alt={item.title}
-                  style={{
-                    width: "100%",
-                    height: "100%",
-                    objectFit: "cover",
-                    transition: "transform 0.5s ease"
-                  }}
-                />
-                <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(0,0,0,0.6) 0%, transparent 70%)" }} />
-              </div>
-              <div style={{ padding: "1.75rem", flex: 1, display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
-                <div>
-                  <div style={{ display: "flex", alignItems: "center", gap: "0.4rem", marginBottom: "0.5rem" }}>
-                    <span style={{ fontSize: "0.68rem", color: "var(--accent)", textTransform: "uppercase", letterSpacing: "0.08em", fontWeight: 700 }}>
-                      {item.category}
-                    </span>
-                    <span style={{ fontSize: "0.68rem", color: "var(--grey)", opacity: 0.5 }}>•</span>
-                    <span style={{ fontSize: "0.68rem", color: "var(--grey)", textTransform: "uppercase", letterSpacing: "0.08em", fontWeight: 500 }}>
-                      {item.subcategory}
-                    </span>
-                  </div>
-                  <h3 style={{ fontSize: "1.2rem", fontWeight: 600, color: "var(--white)", margin: "0 0 0.5rem" }}>
-                    {item.title}
-                  </h3>
-                  <p style={{ color: "var(--grey)", fontSize: "0.82rem", lineHeight: 1.6, margin: "0 0 1.5rem" }}>
-                    {item.desc}
-                  </p>
-                </div>
-                <span style={{ fontSize: "0.82rem", color: "var(--accent)", fontWeight: 600, display: "flex", alignItems: "center", gap: "0.3rem" }}>
-                  Explore {item.subcategory} →
-                </span>
-              </div>
+          {loading ? (
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: "2rem" }}>
+              {[...Array(8)].map((_, i) => (
+                <div key={i} className="shimmer-bg" style={{ height: "400px", borderRadius: "24px" }} />
+              ))}
             </div>
-          ))}
-        </div>
-      </section>
-
-
-
-      {/* ── FAQ SECTION ── */}
-      <section className="faq-section">
-        <h2 className="faq-title">Frequently Asked Questions</h2>
-        <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-          {[
-            { q: "What is DropShop's shipping policy?", a: "We offer 100% free delivery on all orders across India, with no minimum purchase requirement. Orders are processed within 24 hours and delivered within 3-5 business days." },
-            { q: "How do I return a product?", a: "We have an easy 7-day hassle-free return policy. If you're not completely satisfied with your order, simply request a return from your profile or contact our support team." },
-            { q: "Are payments secure on your platform?", a: "Absolutely. We use industry-leading encryption and partner with Razorpay to support cards, UPI, net banking, and secure Cash on Delivery (COD)." },
-            { q: "How can I track my order status?", a: "Once your order is placed, you can track its progress in real-time by visiting the 'Order History' page in your profile drawer, or by clicking the tracking link sent via email." }
-          ].map((faq, idx) => (
-            <div
-              key={idx}
-              className="faq-item"
-              onClick={() => setActiveFaq(activeFaq === idx ? null : idx)}
-            >
-              <div className="faq-question">
-                <span>{faq.q}</span>
-                <span className={`faq-icon ${activeFaq === idx ? "open" : ""}`}>+</span>
-              </div>
-              <div className={`faq-answer ${activeFaq === idx ? "open" : ""}`}>
-                {faq.a}
-              </div>
+          ) : filteredProducts.length === 0 ? (
+            <div style={{ textAlign: "center", padding: "6rem 0" }}>
+              <p style={{ fontSize: "3rem", marginBottom: "1rem" }}>🔍</p>
+              <h3 style={{ fontSize: "1.5rem", fontWeight: 700, color: "var(--text-primary)", marginBottom: "0.5rem" }}>No products found</h3>
+              <p style={{ color: "var(--text-secondary)" }}>Try a different category or search term</p>
             </div>
-          ))}
-        </div>
-      </section>
+          ) : (
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: "2rem" }}>
+              {filteredProducts.map((p) => (
+                <ProductCard key={p._id} product={p} onAddToCart={handleAddToCart} onToggleWishlist={handleToggleWishlist} addedId={addedId} wishlist={wishlist} />
+              ))}
+            </div>
+          )}
 
-      {/* ── NEWSLETTER SECTION ── */}
-      <section className="newsletter-section">
-        <div className="newsletter-card">
-          <h2 className="newsletter-title">Subscribe to the Club</h2>
-          <p className="newsletter-desc">
-            Join our exclusive inner circle to get early access to new arrivals, curated drops, and luxury member-only offers.
-          </p>
-          <form onSubmit={(e) => { e.preventDefault(); toast.success("Subscribed successfully!"); }} className="newsletter-form">
-            <input
-              type="email"
-              required
-              placeholder="Enter your email address"
-              style={{
-                flex: 1,
-                background: "#ffffff",
-                border: "1px solid var(--border)",
-                borderRadius: "980px",
-                padding: "0.9rem 1.5rem",
-                fontSize: "0.88rem",
-                color: "var(--white)",
-                outline: "none",
-                fontFamily: "'Inter', sans-serif"
-              }}
+          {totalPages > 1 && (
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5rem", marginTop: "4rem" }}>
+              <button disabled={page === 1} onClick={() => setPage(page - 1)} style={{ background: page === 1 ? "rgba(0,0,0,0.02)" : "var(--card-bg)", color: page === 1 ? "var(--text-secondary)" : "var(--text-primary)", border: "1px solid var(--border)", borderRadius: "980px", padding: "0.6rem 1.5rem", fontSize: "0.85rem", cursor: page === 1 ? "not-allowed" : "pointer" }}>← Prev</button>
+              {[...Array(totalPages)].map((_, i) => (
+                <button key={i} onClick={() => setPage(i + 1)} style={{ width: "40px", height: "40px", borderRadius: "50%", background: page === i + 1 ? "var(--text-primary)" : "var(--card-bg)", color: page === i + 1 ? "var(--bg-primary)" : "var(--text-secondary)", border: "1px solid", borderColor: page === i + 1 ? "var(--text-primary)" : "var(--border)", fontSize: "0.85rem", cursor: "pointer" }}>{i + 1}</button>
+              ))}
+              <button disabled={page === totalPages} onClick={() => setPage(page + 1)} style={{ background: page === totalPages ? "rgba(0,0,0,0.02)" : "var(--card-bg)", color: page === totalPages ? "var(--text-secondary)" : "var(--text-primary)", border: "1px solid var(--border)", borderRadius: "980px", padding: "0.6rem 1.5rem", fontSize: "0.85rem", cursor: page === totalPages ? "not-allowed" : "pointer" }}>Next →</button>
+            </div>
+          )}
+        </div>
+
+        <Suspense fallback={null}>
+          <ProductCarousel 
+            title="Top Rated" 
+            subtitle="Customer Favorites"
+            products={mockTopRated} 
+            onAddToCart={handleAddToCart}
+            onToggleWishlist={handleToggleWishlist}
+            addedId={addedId}
+            wishlist={wishlist}
+          />
+        </Suspense>
+
+        {recentlyViewed.length > 0 && (
+          <Suspense fallback={null}>
+            <ProductCarousel 
+              title="Recently Viewed" 
+              subtitle="Pick Up Where You Left Off"
+              products={recentlyViewed} 
+              onAddToCart={handleAddToCart}
+              onToggleWishlist={handleToggleWishlist}
+              addedId={addedId}
+              wishlist={wishlist}
             />
-            <button type="submit" className="premium-btn-primary" style={{ flexShrink: 0 }}>Subscribe</button>
-          </form>
-        </div>
-      </section>
+          </Suspense>
+        )}
 
+        <Suspense fallback={null}>
+          <WhyChooseUs />
+        </Suspense>
+
+        <Suspense fallback={null}>
+          <CustomerReviews />
+        </Suspense>
+
+        {/* ── TRUST STRIP ── */}
+        <div className="premium-trust-strip" style={{ marginTop: "4rem", marginBottom: "2rem" }}>
+          <div className="premium-trust-grid" style={{ background: "var(--card-bg)", borderRadius: "16px", padding: "2rem", boxShadow: "0 10px 30px rgba(0,0,0,0.1)", border: "1px solid var(--border)" }}>
+            {[
+              { icon: "🚚", label: "Free Delivery", sub: "On all orders" },
+              { icon: "💳", label: "Secure Payment", sub: "100% protected" },
+              { icon: "↩️", label: "Easy Returns", sub: "7-day policy" },
+              { icon: "🎧", label: "24/7 Support", sub: "Always here" },
+            ].map(({ icon, label, sub }) => (
+              <div key={label} className="premium-trust-item" style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
+                <span className="premium-trust-icon-box" style={{ fontSize: "1.5rem", background: "var(--bg-primary)", width: "48px", height: "48px", display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "50%", border: "1px solid var(--border)" }}>{icon}</span>
+                <div>
+                  <h4 style={{ fontSize: "0.9rem", fontWeight: 600, color: "var(--text-primary)", margin: "0 0 0.15rem" }}>{label}</h4>
+                  <p style={{ fontSize: "0.75rem", color: "var(--text-secondary)", margin: 0 }}>{sub}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <Suspense fallback={null}>
+          <InstagramGallery />
+        </Suspense>
+
+        {/* ── NEWSLETTER SECTION ── */}
+        <section className="newsletter-section" style={{ margin: "5rem 0" }}>
+          <motion.div 
+            whileHover={{ scale: 1.02 }}
+            transition={{ duration: 0.5 }}
+            className="newsletter-card" style={{ background: "linear-gradient(135deg, var(--card-bg) 0%, var(--bg-primary) 100%)", border: "1px solid var(--border)", borderRadius: "32px", padding: "4rem 2rem", textAlign: "center", boxShadow: "0 20px 40px rgba(0,0,0,0.2)" }}
+          >
+            <h2 className="newsletter-title" style={{ fontSize: "2.5rem", fontWeight: 700, color: "var(--text-primary)", margin: "0 0 1rem", fontFamily: "Cormorant Garamond, serif" }}>Subscribe to the Club</h2>
+            <p className="newsletter-desc" style={{ color: "var(--text-secondary)", fontSize: "1rem", maxWidth: "500px", margin: "0 auto 2rem", lineHeight: 1.6 }}>
+              Join our exclusive inner circle to get early access to new arrivals, curated drops, and luxury member-only offers.
+            </p>
+            <form onSubmit={(e) => { e.preventDefault(); toast.success("Subscribed successfully!"); }} style={{ display: "flex", gap: "1rem", maxWidth: "450px", margin: "0 auto" }}>
+              <input
+                type="email"
+                required
+                placeholder="Enter your email address"
+                style={{
+                  flex: 1,
+                  background: "var(--bg-secondary)",
+                  border: "1px solid var(--border)",
+                  borderRadius: "980px",
+                  padding: "1rem 1.5rem",
+                  fontSize: "0.9rem",
+                  color: "var(--text-primary)",
+                  outline: "none",
+                  fontFamily: "'Inter', sans-serif",
+                  boxShadow: "inset 0 2px 4px rgba(0,0,0,0.05)"
+                }}
+              />
+              <button type="submit" className="premium-btn-primary" style={{ padding: "1rem 2rem", borderRadius: "980px", background: "var(--text-primary)", color: "var(--bg-primary)", fontWeight: 600, border: "none", cursor: "pointer" }}>Subscribe</button>
+            </form>
+          </motion.div>
+        </section>
+
+      </div>
+      
       {/* ── FOOTER ── */}
-      <footer style={{ background: "#111", padding: "3rem 2rem 2rem", marginTop: "4rem" }}>
+      <footer style={{ background: "var(--bg-secondary)", padding: "4rem 2rem 2rem", marginTop: "4rem", borderTop: "1px solid var(--border)" }}>
         <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
-          <div className="footer-grid">
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "3rem", marginBottom: "3rem" }}>
             <div>
-              <h3 style={{ fontSize: "1.5rem", fontWeight: 700, color: "#fff", marginBottom: "0.75rem", fontFamily: "Inter, sans-serif" }}>
-                DropShop<span style={{ color: "#e8d5b7" }}>.</span>
+              <h3 style={{ fontSize: "1.8rem", fontWeight: 700, color: "var(--text-primary)", marginBottom: "1rem", fontFamily: "Cormorant Garamond, serif" }}>
+                DropShop<span style={{ color: "var(--accent)" }}>.</span>
               </h3>
-              <p style={{ fontSize: "0.82rem", color: "#666", lineHeight: 1.7, maxWidth: "260px" }}>
+              <p style={{ fontSize: "0.85rem", color: "var(--text-secondary)", lineHeight: 1.7, maxWidth: "260px" }}>
                 Premium products for the modern lifestyle. Quality guaranteed.
               </p>
-              <div style={{ display: "flex", gap: "0.75rem", marginTop: "1.25rem" }}>
+              <div style={{ display: "flex", gap: "0.75rem", marginTop: "1.5rem" }}>
                 {["𝕏", "in", "f", "ig"].map(s => (
-                  <div key={s} style={{ width: "34px", height: "34px", borderRadius: "50%", border: "1px solid #333", display: "flex", alignItems: "center", justifyContent: "center", color: "#666", fontSize: "0.75rem", cursor: "pointer", transition: "all 0.2s" }}
-                    onMouseEnter={e => { e.currentTarget.style.borderColor = "#fff"; e.currentTarget.style.color = "#fff"; }}
-                    onMouseLeave={e => { e.currentTarget.style.borderColor = "#333"; e.currentTarget.style.color = "#666"; }}
+                  <div key={s} style={{ width: "36px", height: "36px", borderRadius: "50%", border: "1px solid var(--border)", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--text-secondary)", fontSize: "0.85rem", cursor: "pointer", transition: "all 0.2s" }}
+                    onMouseEnter={e => { e.currentTarget.style.borderColor = "var(--text-primary)"; e.currentTarget.style.color = "var(--text-primary)"; }}
+                    onMouseLeave={e => { e.currentTarget.style.borderColor = "var(--border)"; e.currentTarget.style.color = "var(--text-secondary)"; }}
                   >{s}</div>
                 ))}
               </div>
@@ -756,7 +488,7 @@ function Home({ selectedCategory, setSelectedCategory }) {
               { title: "Help", links: ["Help Center", "Track Order", "Returns", "Contact Us"] },
             ].map(({ title, links }) => (
               <div key={title}>
-                <p style={{ fontSize: "0.72rem", letterSpacing: "0.12em", textTransform: "uppercase", color: "#fff", marginBottom: "1rem", fontWeight: 600 }}>{title}</p>
+                <p style={{ fontSize: "0.75rem", letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--text-primary)", marginBottom: "1.2rem", fontWeight: 600 }}>{title}</p>
                 {links.map(link => (
                   <p key={link}
                     onClick={() => {
@@ -776,27 +508,27 @@ function Home({ selectedCategory, setSelectedCategory }) {
                       };
                       navigate(routes[link] || "/");
                     }}
-                    style={{ fontSize: "0.82rem", color: "#666", marginBottom: "0.6rem", cursor: "pointer", transition: "color 0.2s" }}
-                    onMouseEnter={e => e.currentTarget.style.color = "#fff"}
-                    onMouseLeave={e => e.currentTarget.style.color = "#666"}
+                    style={{ fontSize: "0.85rem", color: "var(--text-secondary)", marginBottom: "0.8rem", cursor: "pointer", transition: "color 0.2s" }}
+                    onMouseEnter={e => e.currentTarget.style.color = "var(--text-primary)"}
+                    onMouseLeave={e => e.currentTarget.style.color = "var(--text-secondary)"}
                   >{link}</p>
                 ))}
               </div>
             ))}
           </div>
-          <div style={{ height: "1px", background: "#222", marginBottom: "1.5rem" }} />
+          <div style={{ height: "1px", background: "var(--border)", marginBottom: "2rem" }} />
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "1.5rem" }}>
-            <p style={{ fontSize: "0.78rem", color: "#555" }}>© 2026 DropShop. All rights reserved.</p>
-            <div style={{ display: "flex", gap: "1.25rem", fontSize: "0.78rem", color: "#555", flexWrap: "wrap" }}>
+            <p style={{ fontSize: "0.85rem", color: "var(--text-secondary)" }}>© 2026 DropShop. All rights reserved.</p>
+            <div style={{ display: "flex", gap: "1.25rem", fontSize: "0.85rem", color: "var(--text-secondary)", flexWrap: "wrap" }}>
               <span>💳 Visa / Mastercard / UPI / COD</span>
               <span>•</span>
               <span>🇮🇳 India (INR)</span>
             </div>
             <div style={{ display: "flex", gap: "1.5rem" }}>
               {["Privacy Policy", "Terms", "Cookies"].map(link => (
-                <p key={link} style={{ fontSize: "0.78rem", color: "#555", cursor: "pointer", transition: "color 0.2s" }}
-                  onMouseEnter={e => e.currentTarget.style.color = "#fff"}
-                  onMouseLeave={e => e.currentTarget.style.color = "#555"}
+                <p key={link} style={{ fontSize: "0.85rem", color: "var(--text-secondary)", cursor: "pointer", transition: "color 0.2s" }}
+                  onMouseEnter={e => e.currentTarget.style.color = "var(--text-primary)"}
+                  onMouseLeave={e => e.currentTarget.style.color = "var(--text-secondary)"}
                 >{link}</p>
               ))}
             </div>

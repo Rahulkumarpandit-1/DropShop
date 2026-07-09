@@ -14,7 +14,7 @@ if (process.env.GOOGLE_CLIENT_ID) {
   console.warn("GOOGLE_CLIENT_ID not found. Google Auth is disabled.");
 }
 
-const backendUrl = process.env.RENDER_EXTERNAL_URL || "http://localhost:3000";
+const backendUrl = process.env.BACKEND_URL || process.env.RENDER_EXTERNAL_URL || "http://localhost:3000";
 const callbackURL = `${backendUrl.trim().replace(/\/$/, "")}/api/auth/google/callback`;
 
 passport.use(new GoogleStrategy({

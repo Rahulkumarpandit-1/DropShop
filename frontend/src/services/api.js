@@ -9,7 +9,7 @@ export const BASE_URL = (() => {
   }
   const hostname = window.location.hostname;
   if (hostname !== "localhost" && hostname !== "127.0.0.1" && hostname !== "") {
-    return `http://${hostname}:3000/api`;
+    return "/api";
   }
   return "http://localhost:3000/api";
 })();

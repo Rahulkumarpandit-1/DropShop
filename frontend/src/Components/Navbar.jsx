@@ -232,7 +232,8 @@ function Navbar({ selectedCategory, setSelectedCategory, setPage }) {
             { name: "Electronic", icon: "📱" },
             { name: "Fashion", icon: "👕" },
             { name: "Accessories", icon: "👜" },
-            { name: "Home", icon: "🏠" }
+            { name: "Home", icon: "🏠" },
+            { name: "Kids", icon: "🧸" }
           ].map((cat) => (
             <div
               key={cat.name}

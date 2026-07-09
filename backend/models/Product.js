@@ -9,6 +9,7 @@ const productSchema = new mongoose.Schema({
   description: String,
   image: String,
   images: [{ type: String }],
+  sourceUrl: { type: String, default: "" }, // For drop-shipping source link
   stock: { type: Number, default: 0, required: true },
   specs: { type: Map, of: String, default: {} },
   variants: [{

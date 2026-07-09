@@ -43,9 +43,14 @@ const getProducts = async (req, res) => {
 };
 
 const addProduct = async (req, res) => {
-  const product = new Product(req.body);
-  await product.save();
-  res.json({ message: "Product added successfully" });
+  try {
+    const product = new Product(req.body);
+    await product.save();
+    res.json({ message: "Product added successfully" });
+  } catch (err) {
+    console.error("addProduct error:", err);
+    res.status(500).json({ error: err.message });
+  }
 };
 
 const updateProduct = async (req, res) => {

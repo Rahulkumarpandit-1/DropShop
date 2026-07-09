@@ -1,6 +1,8 @@
 const path = require("path");
 require("dotenv").config({ path: path.join(__dirname, "../.env") });
 
+const frontendUrl = (process.env.FRONTEND_URL || "http://localhost:5173").trim().replace(/\/$/, "");
+
 const nodemailer = require("nodemailer");
 
 const createTransporter = () => {
@@ -138,7 +140,7 @@ const sendOrderConfirmation = async (to, order) => {
 
       <!-- CTA Button -->
       <div style="text-align: center; margin-bottom: 32px;">
-        <a href="http://localhost:5173/orders"
+        <a href="${frontendUrl}/orders"
           style="display: inline-block; background: #111; color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 980px; font-size: 14px; font-weight: 600;">
           Track Your Order →
         </a>
@@ -171,9 +173,9 @@ const sendOrderConfirmation = async (to, order) => {
       <p style="margin: 0 0 8px; font-size: 18px; color: #fff;">DropShop<span style="color: #e8d5b7;">.</span></p>
       <p style="margin: 0 0 16px; font-size: 12px; color: #86868b;">Premium products delivered to your door</p>
       <div style="margin-bottom: 16px;">
-        <a href="http://localhost:5173" style="color: #86868b; text-decoration: none; font-size: 12px; margin: 0 8px;">Home</a>
-        <a href="http://localhost:5173/orders" style="color: #86868b; text-decoration: none; font-size: 12px; margin: 0 8px;">Orders</a>
-        <a href="http://localhost:5173/profile" style="color: #86868b; text-decoration: none; font-size: 12px; margin: 0 8px;">Profile</a>
+        <a href="${frontendUrl}" style="color: #86868b; text-decoration: none; font-size: 12px; margin: 0 8px;">Home</a>
+        <a href="${frontendUrl}/orders" style="color: #86868b; text-decoration: none; font-size: 12px; margin: 0 8px;">Orders</a>
+        <a href="${frontendUrl}/profile" style="color: #86868b; text-decoration: none; font-size: 12px; margin: 0 8px;">Profile</a>
       </div>
       <p style="margin: 0; font-size: 11px; color: #444;">© 2026 DropShop. All rights reserved.</p>
     </div>
@@ -245,7 +247,7 @@ const sendWelcomeEmail = async (to, name) => {
 
       <!-- CTA -->
       <div style="text-align: center; margin-bottom: 32px;">
-        <a href="http://localhost:5173"
+        <a href="${frontendUrl}"
           style="display: inline-block; background: #111; color: #fff; text-decoration: none; padding: 14px 32px; border-radius: 980px; font-size: 14px; font-weight: 600;">
           Start Shopping →
         </a>
@@ -274,7 +276,7 @@ const sendWelcomeEmail = async (to, name) => {
 
 const sendPasswordResetEmail = async (to, token) => {
   const transporter = createTransporter();
-  const resetUrl = `http://localhost:5173/reset-password?token=${token}`;
+  const resetUrl = `${frontendUrl}/reset-password?token=${token}`;
 
   const mailOptions = {
     from: `"DropShop" <${process.env.EMAIL_USER}>`,
@@ -414,7 +416,7 @@ const sendOrderStatusUpdateEmail = async (to, order, status, message) => {
 
       <!-- CTA Button -->
       <div style="text-align: center; margin-bottom: 32px; margin-top: 32px;">
-        <a href="http://localhost:5173/orders/${order._id}/tracking"
+        <a href="${frontendUrl}/orders/${order._id}/tracking"
           style="display: inline-block; background: #111; color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 980px; font-size: 14px; font-weight: 600;">
           Track Live Order Status →
         </a>
@@ -427,9 +429,9 @@ const sendOrderStatusUpdateEmail = async (to, order, status, message) => {
       <p style="margin: 0 0 8px; font-size: 18px; color: #fff;">DropShop<span style="color: #e8d5b7;">.</span></p>
       <p style="margin: 0 0 16px; font-size: 12px; color: #86868b;">Premium products delivered to your door</p>
       <div style="margin-bottom: 16px;">
-        <a href="http://localhost:5173" style="color: #86868b; text-decoration: none; font-size: 12px; margin: 0 8px;">Home</a>
-        <a href="http://localhost:5173/orders" style="color: #86868b; text-decoration: none; font-size: 12px; margin: 0 8px;">Orders</a>
-        <a href="http://localhost:5173/profile" style="color: #86868b; text-decoration: none; font-size: 12px; margin: 0 8px;">Profile</a>
+        <a href="${frontendUrl}" style="color: #86868b; text-decoration: none; font-size: 12px; margin: 0 8px;">Home</a>
+        <a href="${frontendUrl}/orders" style="color: #86868b; text-decoration: none; font-size: 12px; margin: 0 8px;">Orders</a>
+        <a href="${frontendUrl}/profile" style="color: #86868b; text-decoration: none; font-size: 12px; margin: 0 8px;">Profile</a>
       </div>
       <p style="margin: 0; font-size: 11px; color: #444;">© 2026 DropShop. All rights reserved.</p>
     </div>
@@ -569,7 +571,7 @@ const sendLoginNotificationEmail = async (to, userAgent, ipAddress) => {
       </p>
 
       <div style="text-align: center;">
-        <a href="https://frontend-liard-nine-30.vercel.app/profile" 
+        <a href="${frontendUrl}/profile" 
            style="display: inline-block; background: #111111; color: #ffffff; text-decoration: none; padding: 12px 24px; border-radius: 980px; font-size: 13px; font-weight: 600; transition: background 0.2s;">
           Manage Your Account
         </a>

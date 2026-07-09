@@ -50,13 +50,40 @@ We recommend using **Render** or **Railway** as they easily host persistent Expr
 
 ---
 
-## Step 3: Deploy the Frontend (Vercel / Netlify)
+## Step 3: Deploy to Vercel
 
-We recommend using **Vercel** or **Netlify** for hosting Vite single page apps.
+We have configured the project to support two flexible deployment paths on Vercel:
 
-### Deploying to Vercel:
+### Option A: Monorepo Deployment (Recommended — All on Vercel)
+This deploys the React frontend and the Express backend as a single Vercel project. This resolves CORS automatically since both run on the same domain, and eliminates Render cold starts.
+
+1. Push your repository to your GitHub account.
+2. Sign in to [Vercel](https://vercel.com) and click **Add New** -> **Project**.
+3. Import your repository.
+4. Vercel will automatically detect the root-level configuration. Keep the default settings (do NOT set the root directory to `frontend`).
+5. Expand **Environment Variables** and add the following keys:
+   - `MONGODB_URI`: *Your MongoDB Atlas connection URI*
+   - `FRONTEND_URL`: *Your Vercel deployment URL (e.g. `https://dropshop.vercel.app` - if you don't know it yet, you can add it after deployment or keep it blank to default to the hostname)*
+   - `BACKEND_URL`: *Your Vercel deployment URL (e.g. `https://dropshop.vercel.app`)*
+   - `RAZORPAY_KEY_ID`: *Your Razorpay Test Key ID*
+   - `RAZORPAY_KEY_SECRET`: *Your Razorpay Test Key Secret*
+   - `GOOGLE_CLIENT_ID`: *Your Google Client ID*
+   - `GOOGLE_CLIENT_SECRET`: *Your Google Client Secret*
+   - `EMAIL_USER`: `rahulkumar99rah@gmail.com`
+   - `EMAIL_PASS`: `bubicsidgxahhfkq`
+   - `SEED_ADMIN_PHONE`: `6299400242`
+   - `SEED_ADMIN_PASSWORD`: `admin123`
+   - `SEED_ADMIN_EMAIL`: `demo.admin@dropshop.com`
+   - `SEED_ADMIN_NAME`: `Demo Admin`
+6. Click **Deploy**. Vercel will build the frontend static files and compile the Express app into a serverless function automatically.
+
+---
+
+### Option B: Separate Deployment (Frontend on Vercel, Backend on Render/Railway)
+If you prefer to keep the Express backend running on Render and only host the React frontend on Vercel:
+
 1. Sign in to [Vercel](https://vercel.com) and click **Add New** -> **Project**.
-2. Import your GitHub repository.
+2. Import your repository.
 3. Configure the following project settings:
    - **Framework Preset**: `Vite`
    - **Root Directory**: `frontend` (important!)
@@ -66,18 +93,16 @@ We recommend using **Vercel** or **Netlify** for hosting Vite single page apps.
    - Key: `VITE_API_URL`
    - Value: *Your Render Backend URL followed by `/api`* (e.g. `https://dropshop-backend.onrender.com/api`)
 5. Click **Deploy**.
-6. Once deployed, copy your Vercel URL (e.g. `https://dropshop.vercel.app`).
-
-### Step 4: Link Deployed Frontend in Backend Env
-1. Return to your backend dashboard on **Render**.
-2. Under **Environment**, update the `FRONTEND_URL` variable to point to your live Vercel URL (e.g. `https://dropshop.vercel.app`).
-3. Save changes. Render will automatically redeploy the backend with the correct CORS rules configured.
+6. Once deployed, copy your Vercel URL.
+7. Return to your backend dashboard on **Render** (or Railway). Under **Environment**, update the `FRONTEND_URL` variable to point to your live Vercel URL (e.g., `https://dropshop.vercel.app`).
+8. Save changes. The backend will automatically redeploy with the correct CORS rules configured.
 
 ---
 
 ## Verifying the Deployment
 
 1. Open your deployed Vercel frontend URL.
-2. Register a new user account or log in with the seeded admin credentials.
+2. Register a new user account or log in with the seeded admin credentials (`6299400242` / `admin123`).
 3. Check if product categories load properly (proving database connectivity).
 4. Perform an "Add to Cart" and checkout to confirm Razorpay and email flows work correctly.
+

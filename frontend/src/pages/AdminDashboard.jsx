@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   getProfile,
@@ -21,6 +21,7 @@ const categoryMap = {
   Fashion: ["Shirts", "Jeans", "Shoes", "Dresses", "Ethnic"],
   Accessories: ["Watches", "Bags", "Jewellery", "Sunglasses"],
   Home: ["Furniture", "Kitchen", "Decor", "Lighting"],
+  Kids: ["Toys", "Clothing", "Baby Care"]
 };
 
 const dashboardStyles = `
@@ -538,7 +539,8 @@ function AdminDashboard() {
     description: "",
     image: "",
     images: [],
-    stock: ""
+    stock: "",
+    sourceUrl: ""
   });
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
@@ -553,7 +555,8 @@ function AdminDashboard() {
     description: "",
     image: "",
     images: [],
-    stock: ""
+    stock: "",
+    sourceUrl: ""
   });
 
   // User Management state
@@ -565,6 +568,38 @@ function AdminDashboard() {
 
   useEffect(() => {
     checkAdminAccess();
+
+    // Check for Meesho product import query parameter
+    const params = new URLSearchParams(window.location.search);
+    const importDataStr = params.get("importData");
+    if (importDataStr) {
+      try {
+        const imported = JSON.parse(decodeURIComponent(importDataStr));
+        if (imported && imported.name) {
+          setNewProduct({
+            name: imported.name || "",
+            price: imported.price || "",
+            originalPrice: imported.originalPrice || "",
+            category: imported.category || "Electronic",
+            subcategory: imported.subcategory || "Phones",
+            description: imported.description || "",
+            image: imported.image || "",
+            images: imported.images || [],
+            stock: imported.stock || "100",
+            sourceUrl: imported.sourceUrl || ""
+          });
+          setIsAddModalOpen(true);
+          toast.success("Product imported from Meesho! Review details before saving.");
+          
+          // Clear query params so reloading doesn't prompt again
+          const newUrl = window.location.pathname;
+          window.history.replaceState({}, document.title, newUrl);
+        }
+      } catch (err) {
+        console.error("Failed to parse importData:", err);
+        toast.error("Failed to import product data");
+      }
+    }
   }, []);
 
   const checkAdminAccess = async () => {
@@ -767,6 +802,58 @@ function AdminDashboard() {
     }
   };
 
+  const handleGenerateAiImage = async () => {
+    if (!newProduct.name) {
+      return toast.error("Please enter a product title first to generate an image!");
+    }
+    const toastId = toast.loading("Generating AI product image...");
+    try {
+      const prompt = encodeURIComponent(`high resolution premium product photography, studio lighting, white background, ${newProduct.name}`);
+      const seed = Math.floor(Math.random() * 100000);
+      let imageUrl = `https://image.pollinations.ai/prompt/${prompt}?width=800&height=800&nologo=true&seed=${seed}`;
+      
+      if (newProduct.image) {
+        imageUrl += `&image=${encodeURIComponent(newProduct.image)}`;
+      }
+      
+      setNewProduct(prev => ({
+        ...prev,
+        image: imageUrl,
+        images: [imageUrl, ...(prev.images || []).slice(1)]
+      }));
+      toast.success("AI Image generated successfully!", { id: toastId });
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to generate AI image", { id: toastId });
+    }
+  };
+
+  const handleGenerateAiImageEdit = async () => {
+    if (!editProduct.name) {
+      return toast.error("Please enter a product title first to generate an image!");
+    }
+    const toastId = toast.loading("Generating AI product image...");
+    try {
+      const prompt = encodeURIComponent(`high resolution premium product photography, studio lighting, white background, ${editProduct.name}`);
+      const seed = Math.floor(Math.random() * 100000);
+      let imageUrl = `https://image.pollinations.ai/prompt/${prompt}?width=800&height=800&nologo=true&seed=${seed}`;
+      
+      if (editProduct.image) {
+        imageUrl += `&image=${encodeURIComponent(editProduct.image)}`;
+      }
+      
+      setEditProduct(prev => ({
+        ...prev,
+        image: imageUrl,
+        images: [imageUrl, ...(prev.images || []).slice(1)]
+      }));
+      toast.success("AI Image generated successfully!", { id: toastId });
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to generate AI image", { id: toastId });
+    }
+  };
+
   const handleEditProductImageUpload = async (e) => {
     const files = Array.from(e.target.files);
     if (!files.length) return;
@@ -811,7 +898,8 @@ function AdminDashboard() {
         description,
         image,
         images: images && images.length > 0 ? images : [image],
-        stock: Number(stock)
+        stock: Number(stock),
+        sourceUrl
       });
       if (res.message && res.message.includes("successfully")) {
         toast.success("Product added successfully!");
@@ -824,12 +912,13 @@ function AdminDashboard() {
           description: "",
           image: "",
           images: [],
-          stock: ""
+          stock: "",
+          sourceUrl: ""
         });
         setIsAddModalOpen(false);
         fetchProductsList();
       } else {
-        toast.error(res.message || "Failed to add product");
+        toast.error(res.error || res.message || "Failed to add product");
       }
     } catch (err) {
       console.error("Add product error", err);
@@ -848,7 +937,8 @@ function AdminDashboard() {
       description: product.description || "",
       image: product.image || "",
       images: product.images || (product.image ? [product.image] : []),
-      stock: product.stock !== undefined ? product.stock : ""
+      stock: product.stock !== undefined ? product.stock : "",
+      sourceUrl: product.sourceUrl || ""
     });
   };
 
@@ -860,14 +950,15 @@ function AdminDashboard() {
         price: Number(editProduct.price),
         originalPrice: editProduct.originalPrice ? Number(editProduct.originalPrice) : null,
         images: editProduct.images && editProduct.images.length > 0 ? editProduct.images : [editProduct.image],
-        stock: Number(editProduct.stock)
+        stock: Number(editProduct.stock),
+        sourceUrl: editProduct.sourceUrl
       });
       if (res.message && res.message.includes("successfully")) {
         toast.success("Product updated successfully!");
         setEditingProductId(null);
         fetchProductsList();
       } else {
-        toast.error(res.message || "Failed to update product");
+        toast.error(res.error || res.message || "Failed to update product");
       }
     } catch (err) {
       console.error("Update product error", err);
@@ -933,6 +1024,15 @@ function AdminDashboard() {
       (u.role || "").toLowerCase().includes(lowerSearch)
     );
   });
+
+  const bookmarksletHref = `javascript:void((function(){try{const getHighRes=function(url){if(!url)return '';return url.replace(/_[a-z0-9]+\\.(webp|jpg|jpeg|png)/i,'_512.$1');};let name=document.querySelector('meta[property="og:title"]')?.content||document.querySelector('h1')?.innerText||'';name=name.replace(/Buy\\\\s+|online\\\\s+at\\\\s+low\\\\s+price.*/i,'').trim();let image=getHighRes(document.querySelector('meta[property="og:image"]')?.content||'');let images=[];if(image)images.push(image);document.querySelectorAll('img').forEach(img=>{let src=img.src||img.getAttribute('data-src')||img.getAttribute('data-lazy')||'';if(src&&src.startsWith('https://images.meesho.com/')&&src.includes('/products/')){const highResUrl=getHighRes(src);if(!images.includes(highResUrl)){images.push(highResUrl);}}});let priceText='';let priceMeta=document.querySelector('meta[property="product:price:amount"]')?.content;if(priceMeta){priceText=priceMeta;}else{let bodyText=document.body.innerText;let match=bodyText.match(/₹\\\\s*([0-9,]+)/);if(match){priceText=match[1].replace(/,/g,'');}}let price=parseFloat(priceText)||0;let description=document.querySelector('meta[property="og:description"]')?.content||'';const importData={name,price,originalPrice:Math.round(price*1.5),image,images:images.slice(0,5),description:description.substring(0,1000),category:'All',stock:100,sourceUrl:window.location.href};const finalUrl='${window.location.origin}/admin?importData='+encodeURIComponent(JSON.stringify(importData));window.open(finalUrl,'_blank');}catch(e){alert('Import failed: '+e.message);}})());`;
+
+  const linkRef = useRef(null);
+  useEffect(() => {
+    if (linkRef.current) {
+      linkRef.current.setAttribute("href", bookmarksletHref);
+    }
+  }, [bookmarksletHref]);
 
   if (loading) {
     return (
@@ -1368,8 +1468,15 @@ function AdminDashboard() {
                           <p style={{ margin: "0 0 0.5rem", fontSize: "0.75rem", color: "#a1a1aa", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.02em" }}>Order Items</p>
                           <div style={{ display: "flex", flexDirection: "column", gap: "0.4rem" }}>
                             {order.items.map((item, idx) => (
-                              <div key={idx} style={{ display: "flex", justifyContent: "space-between", fontSize: "0.82rem" }}>
-                                <span style={{ color: "#e4e4e7" }}>{item.name} <span style={{ color: "#a1a1aa", marginLeft: "0.25rem" }}>x{item.quantity}</span></span>
+                              <div key={idx} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "0.82rem", marginBottom: "0.4rem" }}>
+                                <span style={{ color: "#e4e4e7", display: "flex", alignItems: "center", flexWrap: "wrap", gap: "0.5rem" }}>
+                                  <span>{item.name} <span style={{ color: "#a1a1aa" }}>x{item.quantity}</span></span>
+                                  {item.productId && item.productId.sourceUrl && (
+                                    <a href={item.productId.sourceUrl} target="_blank" rel="noreferrer" style={{ color: "#e2b87f", textDecoration: "none", fontSize: "0.7rem", border: "1px solid rgba(226, 184, 127, 0.4)", padding: "0.1rem 0.4rem", borderRadius: "4px", background: "rgba(226, 184, 127, 0.1)", display: "inline-block" }}>
+                                      Order on Meesho ↗
+                                    </a>
+                                  )}
+                                </span>
                                 <span style={{ color: "#a1a1aa" }}>₹{(item.price * item.quantity).toLocaleString()}</span>
                               </div>
                             ))}
@@ -1422,6 +1529,84 @@ function AdminDashboard() {
                 </button>
               </div>
 
+              {/* Meesho Importer Banner */}
+              <div style={{
+                background: "linear-gradient(135deg, rgba(226, 184, 127, 0.08) 0%, rgba(24, 24, 27, 0.5) 100%)",
+                border: "1px solid rgba(226, 184, 127, 0.2)",
+                borderRadius: "16px",
+                padding: "1.25rem",
+                marginBottom: "1.5rem",
+                display: "flex",
+                flexDirection: "column",
+                gap: "0.75rem"
+              }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                  <span style={{ fontSize: "1.2rem" }}>🛍️</span>
+                  <h3 style={{ margin: 0, fontSize: "0.95rem", fontWeight: 600, color: "#e2b87f" }}>Meesho 1-Click Importer</h3>
+                </div>
+                <p style={{ color: "#a1a1aa", fontSize: "0.82rem", margin: 0, lineHeight: 1.5 }}>
+                  Want to import products from Meesho without typing everything manually? 
+                  Drag the button below to your browser's bookmarks bar. When viewing any product page on Meesho, click the bookmark to instantly pre-fill the product form on DropShop! (Make sure you are logged in to this Admin panel first).
+                </p>
+                <div style={{ display: "flex", alignItems: "center", gap: "1rem", flexWrap: "wrap" }}>
+                  <a
+                    ref={linkRef}
+                    style={{
+                      display: "inline-block",
+                      background: "rgba(226, 184, 127, 0.15)",
+                      color: "#e2b87f",
+                      border: "1px dashed #e2b87f",
+                      borderRadius: "980px",
+                      padding: "0.5rem 1.25rem",
+                      fontSize: "0.8rem",
+                      fontWeight: 600,
+                      textDecoration: "none",
+                      cursor: "grab",
+                      transition: "all 0.2s"
+                    }}
+                    onClick={e => {
+                      if (e.button === 0 && !e.ctrlKey && !e.metaKey) {
+                        e.preventDefault();
+                        toast.info("Drag this button to your browser's Bookmarks Bar!");
+                      }
+                    }}
+                    onMouseEnter={e => {
+                      e.currentTarget.style.background = "rgba(226, 184, 127, 0.25)";
+                    }}
+                    onMouseLeave={e => {
+                      e.currentTarget.style.background = "rgba(226, 184, 127, 0.15)";
+                    }}
+                  >
+                    📦 Drag to Bookmarks
+                  </a>
+                  <span style={{ color: "#71717a", fontSize: "0.8rem" }}>or</span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      navigator.clipboard.writeText(bookmarksletHref);
+                      toast.success("Code copied! Right-click bookmarks bar -> Add Page -> Paste code in URL field.", { duration: 5000 });
+                    }}
+                    style={{
+                      display: "inline-block",
+                      background: "rgba(255, 255, 255, 0.08)",
+                      color: "#f4f4f5",
+                      border: "1px solid #27272a",
+                      borderRadius: "980px",
+                      padding: "0.5rem 1.25rem",
+                      fontSize: "0.8rem",
+                      fontWeight: 600,
+                      cursor: "pointer",
+                      transition: "all 0.2s"
+                    }}
+                    onMouseEnter={e => e.currentTarget.style.background = "rgba(255, 255, 255, 0.15)"}
+                    onMouseLeave={e => e.currentTarget.style.background = "rgba(255, 255, 255, 0.08)"}
+                  >
+                    📋 Copy Bookmark Code
+                  </button>
+                  <span style={{ fontSize: "0.75rem", color: "#71717a" }}>← Drag the link or copy code as a manual bookmark</span>
+                </div>
+              </div>
+
               {/* Filters and Searches */}
               <div style={{ background: "#18181b", border: "1px solid #27272a", borderRadius: "16px", padding: "1.25rem", marginBottom: "1.5rem" }}>
                 <div style={{ display: "flex", gap: "1rem", flexWrap: "wrap", alignItems: "center" }}>
@@ -1458,6 +1643,7 @@ function AdminDashboard() {
                       <option value="Fashion">Fashion</option>
                       <option value="Accessories">Accessories</option>
                       <option value="Home">Home</option>
+                      <option value="Kids">Kids</option>
                     </select>
                   </div>
 
@@ -1730,6 +1916,16 @@ function AdminDashboard() {
                     placeholder="e.g. Vintage Leather Messenger Bag"
                   />
                 </div>
+                <div className="form-group">
+                  <label className="form-label">Source URL (Meesho Drop-shipping Link)</label>
+                  <input
+                    type="text"
+                    className="form-input"
+                    value={newProduct.sourceUrl}
+                    onChange={(e) => setNewProduct({ ...newProduct, sourceUrl: e.target.value })}
+                    placeholder="https://www.meesho.com/s/p/..."
+                  />
+                </div>
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "1rem" }}>
                   <div className="form-group">
                     <label className="form-label">Selling Price (₹)</label>
@@ -1783,6 +1979,7 @@ function AdminDashboard() {
                       <option value="Fashion">Fashion</option>
                       <option value="Accessories">Accessories</option>
                       <option value="Home">Home</option>
+                      <option value="Kids">Kids</option>
                     </select>
                   </div>
                   <div className="form-group">
@@ -1839,6 +2036,25 @@ function AdminDashboard() {
                       }}
                     >
                       Add URL
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleGenerateAiImage}
+                      style={{
+                        background: "rgba(226, 184, 127, 0.12)",
+                        border: "1px solid rgba(226, 184, 127, 0.3)",
+                        color: "#e2b87f",
+                        borderRadius: "8px",
+                        padding: "0 1rem",
+                        fontSize: "0.85rem",
+                        fontWeight: 600,
+                        cursor: "pointer",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "0.3rem"
+                      }}
+                    >
+                      ✨ Generate AI Cover
                     </button>
                   </div>
                   <div style={{ marginBottom: "1rem" }}>
@@ -1994,6 +2210,15 @@ function AdminDashboard() {
                     onChange={(e) => setEditProduct({ ...editProduct, name: e.target.value })}
                   />
                 </div>
+                <div className="form-group">
+                  <label className="form-label">Source URL (Meesho Drop-shipping Link)</label>
+                  <input
+                    type="text"
+                    className="form-input"
+                    value={editProduct.sourceUrl || ""}
+                    onChange={(e) => setEditProduct({ ...editProduct, sourceUrl: e.target.value })}
+                  />
+                </div>
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "1rem" }}>
                   <div className="form-group">
                     <label className="form-label">Price (₹)</label>
@@ -2045,6 +2270,7 @@ function AdminDashboard() {
                       <option value="Fashion">Fashion</option>
                       <option value="Accessories">Accessories</option>
                       <option value="Home">Home</option>
+                      <option value="Kids">Kids</option>
                     </select>
                   </div>
                   <div className="form-group">
@@ -2101,6 +2327,25 @@ function AdminDashboard() {
                       }}
                     >
                       Add URL
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleGenerateAiImageEdit}
+                      style={{
+                        background: "rgba(226, 184, 127, 0.12)",
+                        border: "1px solid rgba(226, 184, 127, 0.3)",
+                        color: "#e2b87f",
+                        borderRadius: "8px",
+                        padding: "0 1rem",
+                        fontSize: "0.85rem",
+                        fontWeight: 600,
+                        cursor: "pointer",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "0.3rem"
+                      }}
+                    >
+                      ✨ Generate AI Cover
                     </button>
                   </div>
                   <div style={{ marginBottom: "1rem" }}>
