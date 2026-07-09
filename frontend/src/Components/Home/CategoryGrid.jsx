@@ -35,7 +35,7 @@ const CategoryGrid = ({ onSelectCategory }) => {
   return (
     <section className="home-section" style={{ margin: "4rem 0" }}>
       <div style={{ textAlign: "center", marginBottom: "3rem" }}>
-        <h2 style={{ fontSize: "2.2rem", fontWeight: 600, color: "var(--text-primary)", margin: 0, fontFamily: "Outfit", sans-serif" }}>
+        <h2 style={{ fontSize: "2.2rem", fontWeight: 600, color: "var(--text-primary)", margin: 0, fontFamily: "\"Outfit\", sans-serif" }}>
           Shop by Category
         </h2>
         <p style={{ color: "var(--text-secondary)", fontSize: "0.9rem", marginTop: "0.5rem" }}>

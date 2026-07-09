@@ -191,7 +191,7 @@ function Navbar({ selectedCategory, setSelectedCategory, setPage }) {
         >✕</button>
 
         <div style={{ marginBottom: "2rem" }}>
-          <h2 style={{ color: "var(--white)", margin: 0, fontFamily: "Outfit", sans-serif", fontSize: "1.5rem", fontWeight: 700, letterSpacing: "0.05em" }}>
+          <h2 style={{ color: "var(--white)", margin: 0, fontFamily: "\"Outfit\", sans-serif", fontSize: "1.5rem", fontWeight: 700, letterSpacing: "0.05em" }}>
             DropShop<span style={{ color: "var(--accent)" }}>.</span>
           </h2>
           <p style={{ margin: "0.15rem 0 0", color: "var(--grey)", fontSize: "0.72rem", textTransform: "uppercase", letterSpacing: "0.05em" }}>Navigation Menu</p>

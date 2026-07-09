@@ -12,7 +12,7 @@ const FeaturedBrands = () => {
         <p style={{ fontSize: "0.72rem", letterSpacing: "0.15em", textTransform: "uppercase", color: "var(--text-secondary)", marginBottom: "0.5rem" }}>
           Trusted By The Best
         </p>
-        <h2 style={{ fontSize: "1.8rem", fontWeight: 600, color: "var(--text-primary)", margin: 0, fontFamily: "Outfit", sans-serif" }}>
+        <h2 style={{ fontSize: "1.8rem", fontWeight: 600, color: "var(--text-primary)", margin: 0, fontFamily: "\"Outfit\", sans-serif" }}>
           Featured Brands
         </h2>
       </div>

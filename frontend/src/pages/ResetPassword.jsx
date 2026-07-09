@@ -87,7 +87,7 @@ function ResetPassword() {
         <div style={{ marginBottom: "2.5rem", textAlign: "center" }}>
           <p
             style={{
-              fontFamily: "Outfit", sans-serif",
+              fontFamily: "\"Outfit\", sans-serif",
               fontSize: "1.4rem",
               fontWeight: 600,
               color: "#f5f5f7",
@@ -98,7 +98,7 @@ function ResetPassword() {
           </p>
           <h2
             style={{
-              fontFamily: "Outfit", sans-serif",
+              fontFamily: "\"Outfit\", sans-serif",
               fontSize: "2.2rem",
               fontWeight: 600,
               color: "#f5f5f7",

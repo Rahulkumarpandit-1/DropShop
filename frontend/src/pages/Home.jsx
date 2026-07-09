@@ -224,7 +224,7 @@ function Home({ selectedCategory, setSelectedCategory }) {
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem" }}>
             <div>
               <p style={{ fontSize: "0.72rem", letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--text-secondary)", marginBottom: "0.3rem" }}>Hot right now</p>
-              <h2 style={{ fontSize: "2.2rem", fontWeight: 600, color: "var(--text-primary)", margin: 0, fontFamily: "Outfit", sans-serif" }}>Trending Products</h2>
+              <h2 style={{ fontSize: "2.2rem", fontWeight: 600, color: "var(--text-primary)", margin: 0, fontFamily: "\"Outfit\", sans-serif" }}>Trending Products</h2>
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
               <button
@@ -301,7 +301,7 @@ function Home({ selectedCategory, setSelectedCategory }) {
               <p style={{ fontSize: "0.72rem", letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--text-secondary)", marginBottom: "0.3rem" }}>
                 {searchQuery ? "Search Results" : "Our Collection"}
               </p>
-              <h2 style={{ fontSize: "2.2rem", fontWeight: 600, color: "var(--text-primary)", margin: 0, fontFamily: "Outfit", sans-serif" }}>
+              <h2 style={{ fontSize: "2.2rem", fontWeight: 600, color: "var(--text-primary)", margin: 0, fontFamily: "\"Outfit\", sans-serif" }}>
                 {searchQuery ? `"${searchQuery}"` : "All Products"}
               </h2>
             </div>
@@ -424,7 +424,7 @@ function Home({ selectedCategory, setSelectedCategory }) {
             transition={{ duration: 0.5 }}
             className="newsletter-card" style={{ background: "linear-gradient(135deg, var(--card-bg) 0%, var(--bg-primary) 100%)", border: "1px solid var(--border)", borderRadius: "32px", textAlign: "center", boxShadow: "0 20px 40px rgba(0,0,0,0.2)" }}
           >
-            <h2 className="newsletter-title" style={{ fontSize: "2.5rem", fontWeight: 700, color: "var(--text-primary)", margin: "0 0 1rem", fontFamily: "Outfit", sans-serif" }}>Subscribe to the Club</h2>
+            <h2 className="newsletter-title" style={{ fontSize: "2.5rem", fontWeight: 700, color: "var(--text-primary)", margin: "0 0 1rem", fontFamily: "\"Outfit\", sans-serif" }}>Subscribe to the Club</h2>
             <p className="newsletter-desc" style={{ color: "var(--text-secondary)", fontSize: "1rem", maxWidth: "500px", margin: "0 auto 2rem", lineHeight: 1.6 }}>
               Join our exclusive inner circle to get early access to new arrivals, curated drops, and luxury member-only offers.
             </p>
@@ -459,7 +459,7 @@ function Home({ selectedCategory, setSelectedCategory }) {
         <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "3rem", marginBottom: "3rem" }}>
             <div>
-              <h3 style={{ fontSize: "1.8rem", fontWeight: 700, color: "var(--text-primary)", marginBottom: "1rem", fontFamily: "Outfit", sans-serif" }}>
+              <h3 style={{ fontSize: "1.8rem", fontWeight: 700, color: "var(--text-primary)", marginBottom: "1rem", fontFamily: "\"Outfit\", sans-serif" }}>
                 DropShop<span style={{ color: "var(--accent)" }}>.</span>
               </h3>
               <p style={{ fontSize: "0.85rem", color: "var(--text-secondary)", lineHeight: 1.7, maxWidth: "260px" }}>

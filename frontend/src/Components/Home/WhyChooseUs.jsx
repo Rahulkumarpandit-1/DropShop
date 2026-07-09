@@ -17,7 +17,7 @@ const WhyChooseUs = () => {
         <p style={{ fontSize: "0.72rem", letterSpacing: "0.15em", textTransform: "uppercase", color: "var(--accent)", marginBottom: "0.5rem" }}>
           The DropShop Promise
         </p>
-        <h2 style={{ fontSize: "2.2rem", fontWeight: 600, color: "var(--text-primary)", margin: 0, fontFamily: "Outfit", sans-serif" }}>
+        <h2 style={{ fontSize: "2.2rem", fontWeight: 600, color: "var(--text-primary)", margin: 0, fontFamily: "\"Outfit\", sans-serif" }}>
           Why Choose Us
         </h2>
       </div>

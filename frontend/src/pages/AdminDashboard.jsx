@@ -1067,7 +1067,7 @@ function AdminDashboard() {
           <button onClick={() => setSidebarOpen(!sidebarOpen)} style={{ background: "none", border: "none", color: "#f4f4f5", fontSize: "1.25rem", cursor: "pointer" }}>
             ☰
           </button>
-          <span style={{ fontSize: "1.1rem", fontWeight: 700, fontFamily: "Outfit", sans-serif", letterSpacing: "0.05em" }}>
+          <span style={{ fontSize: "1.1rem", fontWeight: 700, fontFamily: "\"Outfit\", sans-serif", letterSpacing: "0.05em" }}>
             DropShop<span style={{ color: "#e2b87f" }}>.</span> <span style={{ fontSize: "0.72rem", color: "#a1a1aa", border: "1px solid #27272a", padding: "0.1rem 0.4rem", borderRadius: "4px" }}>PARTNER</span>
           </span>
         </div>
@@ -1080,7 +1080,7 @@ function AdminDashboard() {
       <div className={`seller-sidebar ${sidebarOpen ? "open" : ""}`}>
         <div className="sidebar-header">
           <div>
-            <h2 style={{ fontSize: "1.4rem", fontWeight: 700, margin: 0, fontFamily: "Outfit", sans-serif", letterSpacing: "0.05em" }}>
+            <h2 style={{ fontSize: "1.4rem", fontWeight: 700, margin: 0, fontFamily: "\"Outfit\", sans-serif", letterSpacing: "0.05em" }}>
               DropShop<span style={{ color: "#e2b87f" }}>.</span>
             </h2>
             <span style={{ fontSize: "0.68rem", color: "#a1a1aa", letterSpacing: "0.08em", textTransform: "uppercase", fontWeight: 600 }}>Seller Hub</span>
@@ -1173,7 +1173,7 @@ function AdminDashboard() {
           {activeTab === "overview" && (
             <div>
               <div style={{ marginBottom: "1.5rem" }}>
-                <h1 style={{ fontSize: "1.5rem", fontWeight: 700, margin: 0, fontFamily: "Outfit", sans-serif", letterSpacing: "0.02em" }}>Dashboard Overview</h1>
+                <h1 style={{ fontSize: "1.5rem", fontWeight: 700, margin: 0, fontFamily: "\"Outfit\", sans-serif", letterSpacing: "0.02em" }}>Dashboard Overview</h1>
                 <p style={{ color: "#a1a1aa", fontSize: "0.8rem", margin: "0.2rem 0 0" }}>Real-time catalog analytics, performance summaries, and active alerts</p>
               </div>
 
@@ -1368,7 +1368,7 @@ function AdminDashboard() {
           {activeTab === "orders" && (
             <div>
               <div style={{ marginBottom: "1.5rem" }}>
-                <h1 style={{ fontSize: "1.5rem", fontWeight: 700, margin: 0, fontFamily: "Outfit", sans-serif", letterSpacing: "0.02em" }}>Customer Shipments</h1>
+                <h1 style={{ fontSize: "1.5rem", fontWeight: 700, margin: 0, fontFamily: "\"Outfit\", sans-serif", letterSpacing: "0.02em" }}>Customer Shipments</h1>
                 <p style={{ color: "#a1a1aa", fontSize: "0.8rem", margin: "0.2rem 0 0" }}>Fulfill active orders, process payments, and trace client deliveries</p>
               </div>
 
@@ -1514,7 +1514,7 @@ function AdminDashboard() {
             <div>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "1rem", marginBottom: "1.5rem" }}>
                 <div>
-                  <h1 style={{ fontSize: "1.5rem", fontWeight: 700, margin: 0, fontFamily: "Outfit", sans-serif", letterSpacing: "0.02em" }}>Product Listings</h1>
+                  <h1 style={{ fontSize: "1.5rem", fontWeight: 700, margin: 0, fontFamily: "\"Outfit\", sans-serif", letterSpacing: "0.02em" }}>Product Listings</h1>
                   <p style={{ color: "#a1a1aa", fontSize: "0.8rem", margin: "0.2rem 0 0" }}>Update stock, prices, descriptions, and categories across listings</p>
                 </div>
                 <button
@@ -1768,7 +1768,7 @@ function AdminDashboard() {
           {activeTab === "users" && (
             <div>
               <div style={{ marginBottom: "1.5rem" }}>
-                <h1 style={{ fontSize: "1.5rem", fontWeight: 700, margin: 0, fontFamily: "Outfit", sans-serif", letterSpacing: "0.02em" }}>User & Staff Management</h1>
+                <h1 style={{ fontSize: "1.5rem", fontWeight: 700, margin: 0, fontFamily: "\"Outfit\", sans-serif", letterSpacing: "0.02em" }}>User & Staff Management</h1>
                 <p style={{ color: "#a1a1aa", fontSize: "0.8rem", margin: "0.2rem 0 0" }}>View registered customers and promote staff members to admin roles</p>
               </div>
 

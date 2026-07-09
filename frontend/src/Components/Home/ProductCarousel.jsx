@@ -27,7 +27,7 @@ const ProductCarousel = ({ title, subtitle, products, onAddToCart, onToggleWishl
               {subtitle}
             </p>
           )}
-          <h2 style={{ fontSize: "2.2rem", fontWeight: 600, color: "var(--text-primary)", margin: 0, fontFamily: "Outfit", sans-serif" }}>
+          <h2 style={{ fontSize: "2.2rem", fontWeight: 600, color: "var(--text-primary)", margin: 0, fontFamily: "\"Outfit\", sans-serif" }}>
             {title}
           </h2>
         </div>
