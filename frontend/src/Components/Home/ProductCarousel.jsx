@@ -89,14 +89,16 @@ const ProductCarousel = ({ title, subtitle, products, onAddToCart, onToggleWishl
         }}
       >
         {products.map((p) => (
-          <div key={p._id} className="carousel-item-wrap" style={{ scrollSnapAlign: "start" }}>
-            <ProductCard 
-              product={p}
-              onAddToCart={onAddToCart}
-              onToggleWishlist={onToggleWishlist}
-              addedId={addedId}
-              wishlist={wishlist}
-            />
+          <div key={p._id} className="carousel-item-wrap" style={{ scrollSnapAlign: "start", display: "flex", height: "100%" }}>
+            <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
+              <ProductCard 
+                product={p}
+                onAddToCart={onAddToCart}
+                onToggleWishlist={onToggleWishlist}
+                addedId={addedId}
+                wishlist={wishlist}
+              />
+            </div>
           </div>
         ))}
       </div>
