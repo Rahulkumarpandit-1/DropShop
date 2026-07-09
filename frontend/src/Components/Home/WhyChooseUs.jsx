@@ -12,7 +12,7 @@ const features = [
 
 const WhyChooseUs = () => {
   return (
-    <section className="home-section" style={{ margin: "5rem 0", padding: "4rem 2rem", background: "var(--card-bg)", borderRadius: "32px", border: "1px solid var(--border)" }}>
+    <section className="home-section why-choose-us-section" style={{ background: "var(--card-bg)", borderRadius: "32px", border: "1px solid var(--border)" }}>
       <div style={{ textAlign: "center", marginBottom: "4rem" }}>
         <p style={{ fontSize: "0.72rem", letterSpacing: "0.15em", textTransform: "uppercase", color: "var(--accent)", marginBottom: "0.5rem" }}>
           The DropShop Promise
@@ -22,7 +22,7 @@ const WhyChooseUs = () => {
         </h2>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "2.5rem" }}>
+      <div className="why-choose-us-grid">
         {features.map((item, idx) => (
           <motion.div 
             key={idx}

@@ -329,7 +329,7 @@ function Home({ selectedCategory, setSelectedCategory }) {
           </div>
 
           {loading ? (
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: "2rem" }}>
+            <div className="product-grid">
               {[...Array(8)].map((_, i) => (
                 <div key={i} className="shimmer-bg" style={{ height: "400px", borderRadius: "24px" }} />
               ))}
@@ -418,18 +418,19 @@ function Home({ selectedCategory, setSelectedCategory }) {
         </Suspense>
 
         {/* ── NEWSLETTER SECTION ── */}
-        <section className="newsletter-section" style={{ margin: "5rem 0" }}>
+        <section className="newsletter-section">
           <motion.div 
             whileHover={{ scale: 1.02 }}
             transition={{ duration: 0.5 }}
-            className="newsletter-card" style={{ background: "linear-gradient(135deg, var(--card-bg) 0%, var(--bg-primary) 100%)", border: "1px solid var(--border)", borderRadius: "32px", padding: "4rem 2rem", textAlign: "center", boxShadow: "0 20px 40px rgba(0,0,0,0.2)" }}
+            className="newsletter-card" style={{ background: "linear-gradient(135deg, var(--card-bg) 0%, var(--bg-primary) 100%)", border: "1px solid var(--border)", borderRadius: "32px", textAlign: "center", boxShadow: "0 20px 40px rgba(0,0,0,0.2)" }}
           >
             <h2 className="newsletter-title" style={{ fontSize: "2.5rem", fontWeight: 700, color: "var(--text-primary)", margin: "0 0 1rem", fontFamily: "Cormorant Garamond, serif" }}>Subscribe to the Club</h2>
             <p className="newsletter-desc" style={{ color: "var(--text-secondary)", fontSize: "1rem", maxWidth: "500px", margin: "0 auto 2rem", lineHeight: 1.6 }}>
               Join our exclusive inner circle to get early access to new arrivals, curated drops, and luxury member-only offers.
             </p>
-            <form onSubmit={(e) => { e.preventDefault(); toast.success("Subscribed successfully!"); }} style={{ display: "flex", gap: "1rem", maxWidth: "450px", margin: "0 auto" }}>
+            <form className="newsletter-form" onSubmit={(e) => { e.preventDefault(); toast.success("Subscribed successfully!"); }} style={{ display: "flex", gap: "1rem", maxWidth: "450px", margin: "0 auto" }}>
               <input
+                className="newsletter-input"
                 type="email"
                 required
                 placeholder="Enter your email address"
@@ -446,7 +447,7 @@ function Home({ selectedCategory, setSelectedCategory }) {
                   boxShadow: "inset 0 2px 4px rgba(0,0,0,0.05)"
                 }}
               />
-              <button type="submit" className="premium-btn-primary" style={{ padding: "1rem 2rem", borderRadius: "980px", background: "var(--text-primary)", color: "var(--bg-primary)", fontWeight: 600, border: "none", cursor: "pointer" }}>Subscribe</button>
+              <button type="submit" className="premium-btn-primary newsletter-btn" style={{ padding: "1rem 2rem", borderRadius: "980px", background: "var(--text-primary)", color: "var(--bg-primary)", fontWeight: 600, border: "none", cursor: "pointer" }}>Subscribe</button>
             </form>
           </motion.div>
         </section>
