@@ -68,7 +68,7 @@ function Orders() {
               <p style={{ fontSize: "0.72rem", letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--grey)", marginBottom: "0.4rem", fontWeight: 600 }}>
                 Your Account
               </p>
-              <h2 style={{ fontSize: "2.4rem", fontWeight: 600, color: "var(--white)", margin: 0, fontFamily: "Cormorant Garamond, serif" }}>
+              <h2 style={{ fontSize: "2.4rem", fontWeight: 600, color: "var(--white)", margin: 0, fontFamily: "Outfit", sans-serif" }}>
                 My Orders
               </h2>
             </div>
@@ -94,7 +94,7 @@ function Orders() {
         {!loading && orders.length === 0 && (
           <div style={{ textAlign: "center", padding: "6rem 0", background: "var(--card-bg)", border: "1px solid var(--border)", borderRadius: "24px", boxShadow: "0 20px 50px rgba(0,0,0,0.02)" }}>
             <p style={{ fontSize: "4.5rem", marginBottom: "1rem" }}>📦</p>
-            <h3 style={{ fontSize: "1.8rem", fontWeight: 600, color: "var(--white)", marginBottom: "0.5rem", fontFamily: "Cormorant Garamond, serif" }}>
+            <h3 style={{ fontSize: "1.8rem", fontWeight: 600, color: "var(--white)", marginBottom: "0.5rem", fontFamily: "Outfit", sans-serif" }}>
               No orders yet
             </h3>
             <p style={{ color: "var(--grey)", fontSize: "0.9rem", marginBottom: "2.25rem" }}>

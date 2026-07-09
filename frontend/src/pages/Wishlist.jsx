@@ -62,7 +62,7 @@ function Wishlist() {
         
         {/* Header */}
         <div style={{ display: "flex", alignItems: "baseline", gap: "1rem", marginBottom: "2.5rem", paddingBottom: "1rem", borderBottom: "1px solid var(--border)" }}>
-          <h2 style={{ fontSize: "1.8rem", fontWeight: 600, fontFamily: "'Cormorant Garamond', serif", color: "var(--white)", margin: 0 }}>My Wishlist</h2>
+          <h2 style={{ fontSize: "1.8rem", fontWeight: 600, fontFamily: ""Outfit", sans-serif", color: "var(--white)", margin: 0 }}>My Wishlist</h2>
           <span style={{ fontSize: "0.85rem", color: "var(--grey)" }}>{wishlist.length} {wishlist.length === 1 ? "item" : "items"}</span>
         </div>
 

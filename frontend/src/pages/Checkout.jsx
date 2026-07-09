@@ -314,7 +314,7 @@ const itemIdRef = useRef(location.state?.itemId || null);
 
         {/* Left — Form */}
         <div>
-          <h2 style={{ fontSize: "2.2rem", color: "var(--white)", fontFamily: "Cormorant Garamond, serif", marginBottom: "0.3rem" }}>Checkout</h2>
+          <h2 style={{ fontSize: "2.2rem", color: "var(--white)", fontFamily: "Outfit", sans-serif", marginBottom: "0.3rem" }}>Checkout</h2>
           <p style={{ fontSize: "0.85rem", color: "var(--grey)", marginBottom: "2rem", paddingBottom: "1rem", borderBottom: "1px solid var(--border)" }}>
             Complete your order below
           </p>
@@ -508,7 +508,7 @@ const itemIdRef = useRef(location.state?.itemId || null);
           position: "sticky",
           top: "100px"
         }}>
-          <h3 style={{ fontSize: "1.1rem", fontWeight: 600, color: "var(--white)", marginBottom: "1.25rem", fontFamily: "Cormorant Garamond, serif" }}>Order Summary</h3>
+          <h3 style={{ fontSize: "1.1rem", fontWeight: 600, color: "var(--white)", marginBottom: "1.25rem", fontFamily: "Outfit", sans-serif" }}>Order Summary</h3>
           
           {/* Items List */}
           <div style={{ display: "flex", flexDirection: "column", gap: "1rem", maxHeight: "200px", overflowY: "auto", marginBottom: "1.25rem" }}>

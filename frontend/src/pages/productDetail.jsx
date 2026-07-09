@@ -375,7 +375,7 @@ function ProductDetail() {
             <h1 style={{
               fontSize: "clamp(1.5rem, 3vw, 2.2rem)",
               fontWeight: 600, color: "var(--white)",
-              fontFamily: "Cormorant Garamond, serif",
+              fontFamily: "Outfit", sans-serif",
               lineHeight: 1.2, marginBottom: "0.75rem"
             }}>
               {product.name}
@@ -684,7 +684,7 @@ function ProductDetail() {
         {/* Write Review */}
         {localStorage.getItem("token") && (
           <div style={{ background: "var(--card-bg)", border: "1px solid var(--border)", borderRadius: "20px", padding: "2rem", marginBottom: "2rem" }}>
-            <h3 style={{ fontSize: "1.1rem", fontWeight: 600, color: "var(--white)", margin: "0 0 1.25rem", fontFamily: "Cormorant Garamond, serif" }}>Write a Review</h3>
+            <h3 style={{ fontSize: "1.1rem", fontWeight: 600, color: "var(--white)", margin: "0 0 1.25rem", fontFamily: "Outfit", sans-serif" }}>Write a Review</h3>
 
             {/* Star Selector */}
             <div style={{ display: "flex", gap: "0.4rem", marginBottom: "1rem" }}>
@@ -786,7 +786,7 @@ function ProductDetail() {
         )}
 
         {/* Reviews List */}
-        <h3 style={{ fontSize: "1.1rem", fontWeight: 600, color: "var(--white)", margin: "0 0 1rem", fontFamily: "Cormorant Garamond, serif" }}>
+        <h3 style={{ fontSize: "1.1rem", fontWeight: 600, color: "var(--white)", margin: "0 0 1rem", fontFamily: "Outfit", sans-serif" }}>
           Customer Reviews ({totalReviews})
         </h3>
 

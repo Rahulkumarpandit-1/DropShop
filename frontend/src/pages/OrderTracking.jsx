@@ -139,7 +139,7 @@ export default function OrderTracking() {
         `}</style>
         <div style={{ ...s.card, maxWidth: "450px", textAlign: "center", padding: "3rem 2rem" }}>
           <div style={{ fontSize: "3rem", marginBottom: "1.25rem" }}>🔒</div>
-          <h3 style={{ fontSize: "1.5rem", fontWeight: 600, color: "var(--white)", marginBottom: "0.5rem", fontFamily: "Cormorant Garamond, serif" }}>
+          <h3 style={{ fontSize: "1.5rem", fontWeight: 600, color: "var(--white)", marginBottom: "0.5rem", fontFamily: "Outfit", sans-serif" }}>
             Guest Order Tracking
           </h3>
           <p style={{ color: "var(--grey)", fontSize: "0.85rem", marginBottom: "2rem", lineHeight: 1.5 }}>
@@ -215,7 +215,7 @@ export default function OrderTracking() {
       <div style={s.page}>
         <div style={{ ...s.card, textAlign: "center", padding: "3rem 2rem" }}>
           <p style={{ fontSize: "2.5rem", marginBottom: "1rem" }}>😕</p>
-          <h3 style={{ fontFamily: "'Cormorant Garamond', serif", color: "var(--white)", marginBottom: "0.5rem" }}>
+          <h3 style={{ fontFamily: ""Outfit", sans-serif", color: "var(--white)", marginBottom: "0.5rem" }}>
             Order not found
           </h3>
           <p style={{ color: "var(--grey)", fontSize: "0.85rem", marginBottom: "1.5rem" }}>
@@ -609,7 +609,7 @@ export default function OrderTracking() {
       fontWeight: 700,
       color: "var(--white)",
       margin: 0,
-      fontFamily: "'Cormorant Garamond', serif",
+      fontFamily: ""Outfit", sans-serif",
   },
 
       // Cancelled
@@ -688,7 +688,7 @@ export default function OrderTracking() {
 
       // History
       sectionTitle: {
-        fontFamily: "'Cormorant Garamond', serif",
+        fontFamily: ""Outfit", sans-serif",
       fontSize: "1.1rem",
       fontWeight: 700,
       textTransform: "uppercase",

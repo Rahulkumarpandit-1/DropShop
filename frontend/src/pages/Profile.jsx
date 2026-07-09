@@ -673,7 +673,7 @@ function Profile() {
           </div>
           <div style={{ flex: 1 }}>
             <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-              <h2 style={{ fontSize: "1.4rem", fontWeight: 700, color: "#f4f4f5", margin: 0, fontFamily: "Cormorant Garamond, serif" }}>
+              <h2 style={{ fontSize: "1.4rem", fontWeight: 700, color: "#f4f4f5", margin: 0, fontFamily: "Outfit", sans-serif" }}>
                 {user?.name || "Customer Account"}
               </h2>
               {user?.role === "admin" && (

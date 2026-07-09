@@ -403,14 +403,14 @@ function AuthModal({ isOpen, onClose, onSuccess }) {
         {/* Logo */}
         <div style={{ marginBottom: "2rem" }}>
           <p style={{
-            fontFamily: "Cormorant Garamond, serif",
+            fontFamily: "Outfit", sans-serif",
             fontSize: "1.4rem", fontWeight: 600,
             color: "#f5f5f7", marginBottom: "0.1rem"
           }}>
             DropShop<span style={{ color: "#e8d5b7" }}>.</span>
           </p>
           <h2 style={{
-            fontFamily: "Cormorant Garamond, serif",
+            fontFamily: "Outfit", sans-serif",
             fontSize: "2rem", fontWeight: 600,
             color: "#f5f5f7", margin: "0.5rem 0 0.3rem",
             letterSpacing: "-0.02em"
