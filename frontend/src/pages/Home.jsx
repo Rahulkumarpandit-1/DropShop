@@ -218,15 +218,6 @@ function Home({ selectedCategory, setSelectedCategory }) {
           />
         </Suspense>
 
-        <Suspense fallback={<div className="shimmer-bg" style={{ height: "400px", margin: "2rem 0", borderRadius: "16px" }} />}>
-          <FlashSale 
-            products={filteredProducts} 
-            onAddToCart={handleAddToCart}
-            onToggleWishlist={handleToggleWishlist}
-            addedId={addedId}
-            wishlist={wishlist}
-          />
-        </Suspense>
 
         {/* ── TRENDING ── */}
         <section className="home-section" style={{ margin: "4rem 0" }}>
@@ -350,7 +341,7 @@ function Home({ selectedCategory, setSelectedCategory }) {
               <p style={{ color: "var(--text-secondary)" }}>Try a different category or search term</p>
             </div>
           ) : (
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: "2rem" }}>
+            <div className="product-grid">
               {filteredProducts.map((p) => (
                 <ProductCard key={p._id} product={p} onAddToCart={handleAddToCart} onToggleWishlist={handleToggleWishlist} addedId={addedId} wishlist={wishlist} />
               ))}
