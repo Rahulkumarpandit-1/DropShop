@@ -74,17 +74,15 @@ const CategoryGrid = ({ onSelectCategory }) => {
               transition={{ duration: 0.4 }}
               style={{ width: "100%", height: "100%", objectFit: "cover" }}
             />
-            <div style={{
+            <div className="category-card-overlay" style={{
               position: "absolute",
               inset: 0,
               background: "linear-gradient(to top, rgba(0,0,0,0.8) 0%, transparent 60%)",
               display: "flex",
-              alignItems: "flex-end",
-              padding: "1.25rem"
+              alignItems: "flex-end"
             }}>
-              <h3 style={{ 
+              <h3 className="category-card-title" style={{ 
                 color: "#fff", 
-                fontSize: "1.1rem", 
                 fontWeight: 600, 
                 margin: 0,
                 textShadow: "0 2px 4px rgba(0,0,0,0.3)"

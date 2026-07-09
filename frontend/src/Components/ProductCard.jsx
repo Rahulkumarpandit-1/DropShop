@@ -147,7 +147,7 @@ const ProductCard = ({
       </div>
 
       {/* Body */}
-      <div style={{ padding: "1.5rem", flex: 1, display: "flex", flexDirection: "column" }}>
+      <div className="product-card-body" style={{ flex: 1, display: "flex", flexDirection: "column" }}>
         
         {/* Rating (Mocked if not present) */}
         <div style={{ display: "flex", alignItems: "center", gap: "4px", marginBottom: "0.5rem" }}>
@@ -160,7 +160,7 @@ const ProductCard = ({
           {product.name}
         </h3>
         
-        <p style={{ fontSize: "0.8rem", color: "var(--text-secondary)", marginBottom: "1.25rem", lineHeight: 1.5, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden", flex: 1 }}>
+        <p className="product-desc" style={{ fontSize: "0.8rem", color: "var(--text-secondary)", marginBottom: "1.25rem", lineHeight: 1.5, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden", flex: 1 }}>
           {product.description}
         </p>
         
